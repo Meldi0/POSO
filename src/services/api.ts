@@ -12,7 +12,8 @@ const STORAGE_KEYS = {
   AUTH_USER: 'poso_auth_user',
   LOCAL_TICKETS: 'poso_live_tickets',
   LOCAL_THREADS: 'poso_live_threads',
-  LOCAL_USERS: 'poso_live_users'
+  LOCAL_USERS: 'poso_live_users',
+  DELETED_USERS: 'poso_deleted_users'
 };
 
 const SEED_USERS: User[] = [
@@ -440,6 +441,9 @@ class PosoApiService {
     requester_email?: string;
     requester_name?: string;
     assigned_upt?: string;
+    department?: string;
+    topic?: string;
+    location?: string;
     attachments?: Array<{ name: string; size: string; type: string; dataUrl?: string }>;
   }): Promise<ApiResponse<Ticket>> {
     const gasUrl = this.getGasUrl();
@@ -449,7 +453,14 @@ class PosoApiService {
         if (res && res.status === 'success' && res.data) {
           // Also save locally
           const localTickets = getStored<Ticket[]>(STORAGE_KEYS.LOCAL_TICKETS, SEED_TICKETS);
-          localTickets.unshift(res.data);
+          const newT: Ticket = {
+            ...res.data,
+            department: payload.department,
+            topic: payload.topic,
+            location: payload.location,
+            requester_name: payload.requester_name
+          };
+          localTickets.unshift(newT);
           setStored(STORAGE_KEYS.LOCAL_TICKETS, localTickets);
           return res;
         }
@@ -482,10 +493,14 @@ class PosoApiService {
       updated_at: now.toISOString(),
       subject: payload.subject,
       category: payload.category || 'Umum',
+      department: payload.department,
+      topic: payload.topic,
+      location: payload.location,
       description: payload.description,
       status: 'open',
       priority,
       channel: 'web',
+      requester_name: name,
       requester_email: email,
       assigned_upt: payload.assigned_upt || '',
       assigned_operator: '',
@@ -508,7 +523,7 @@ class PosoApiService {
       ticket_id: ticketId,
       sender_id: currentUser?.user_id || 'USR-PUBLIC',
       sender_name: name,
-      sender_role: currentUser?.role || 'pengguna_umum',
+      sender_role: 'pengguna_umum',
       message: initialMessage,
       visibility: 'public',
       created_at: now.toISOString()
@@ -561,11 +576,36 @@ class PosoApiService {
     // Security Filter: Public users only see their own tickets
     if (currentUser?.role === 'pengguna_umum') {
       tickets = tickets.filter(t => t.requester_email.toLowerCase() === currentUser.email.toLowerCase());
-    } else if (currentUser?.role === 'upt' && currentUser.upt_unit) {
-      tickets = tickets.filter(t => 
-        t.assigned_upt?.toLowerCase() === currentUser.upt_unit?.toLowerCase() ||
-        t.requester_email.toLowerCase() === currentUser.email.toLowerCase()
-      );
+    } else if (currentUser?.role === 'upt') {
+      const userUpt = (currentUser.upt_unit || 'UPT TI & Jaringan').toLowerCase();
+      tickets = tickets.filter(t => {
+        const assigned = (t.assigned_upt || '').toLowerCase();
+        const category = (t.category || '').toLowerCase();
+        const dept = (t.department || '').toLowerCase();
+        
+        // Exact match
+        if (assigned === userUpt) return true;
+        if (t.requester_email.toLowerCase() === currentUser.email.toLowerCase()) return true;
+
+        // Keyword/Fuzzy matching
+        if (userUpt.includes('sarana') || userUpt.includes('cgs')) {
+          return assigned.includes('sarana') || assigned.includes('cgs') || category.includes('sarana') || dept.includes('cgs');
+        }
+        if (userUpt.includes('ti') || userUpt.includes('jaringan') || userUpt.includes('sistem')) {
+          return assigned.includes('ti') || assigned.includes('jaringan') || category.includes('jaringan') || category.includes('sistem') || category.includes('akun');
+        }
+        if (userUpt.includes('operasi') || userUpt.includes('transportasi') || userUpt.includes('workshop')) {
+          return assigned.includes('operasi') || assigned.includes('transportasi') || assigned.includes('hardware') || assigned.includes('workshop');
+        }
+        if (userUpt.includes('security') || userUpt.includes('keamanan')) {
+          return assigned.includes('security') || assigned.includes('keamanan');
+        }
+        if (userUpt.includes('quality') || userUpt.includes('qc')) {
+          return assigned.includes('quality') || assigned.includes('qc');
+        }
+
+        return assigned.includes(userUpt) || userUpt.includes(assigned);
+      });
     }
 
     if (params?.status && params.status !== 'all') {
@@ -757,20 +797,30 @@ class PosoApiService {
   // --- Admin User Management Methods ---
 
   async getUsers(): Promise<ApiResponse<User[]>> {
-    const localUsers = getStored<User[]>(STORAGE_KEYS.LOCAL_USERS, SEED_USERS);
+    const deletedIds = getStored<string[]>(STORAGE_KEYS.DELETED_USERS, []);
+    const isDeleted = (id: string, email: string) => {
+      const lowerEmail = (email || '').toLowerCase().trim();
+      return deletedIds.includes(id) || deletedIds.includes(lowerEmail);
+    };
+
+    const localUsers = getStored<User[]>(STORAGE_KEYS.LOCAL_USERS, SEED_USERS)
+      .filter(u => !isDeleted(u.user_id, u.email));
+
     const gasUrl = this.getGasUrl();
     if (gasUrl) {
       try {
         const res = await this.callGas<User[]>('getUsers', 'GET');
         if (res && res.status === 'success' && res.data) {
-          // Merge local passwords with remote users
-          const merged = res.data.map(u => {
-            const match = localUsers.find(lu => lu.email.toLowerCase() === u.email.toLowerCase());
-            return {
-              ...u,
-              password_plain: match?.password_plain || (u.role === 'admin' ? 'Admin123!' : u.role === 'operator' ? 'Operator123!' : 'Poso123!')
-            };
-          });
+          // Merge local passwords with remote users, filtering out deleted ones
+          const merged = res.data
+            .filter(u => !isDeleted(u.user_id, u.email))
+            .map(u => {
+              const match = localUsers.find(lu => lu.email.toLowerCase() === u.email.toLowerCase());
+              return {
+                ...u,
+                password_plain: match?.password_plain || (u.role === 'admin' ? 'Admin123!' : u.role === 'operator' ? 'Operator123!' : 'Poso123!')
+              };
+            });
           setStored(STORAGE_KEYS.LOCAL_USERS, merged);
           return { status: 'success', data: merged };
         }
@@ -792,7 +842,28 @@ class PosoApiService {
     password?: string;
     role: any;
     upt_unit?: string;
+    nip?: string;
+    department?: string;
+    role_title?: string;
+    avatar_url?: string;
+    jabatan_fungsional?: string;
+    kantor_penempatan?: string;
+    phone_number?: string;
+    nopen_kc?: string;
+    nama_kc?: string;
+    nopen_kcu?: string;
+    nama_kcu?: string;
+    regional_code?: string;
+    regional_name?: string;
   }): Promise<ApiResponse<User>> {
+    const emailLower = payload.email.trim().toLowerCase();
+    
+    // If this email was previously deleted, un-blacklist it
+    const deletedIds = getStored<string[]>(STORAGE_KEYS.DELETED_USERS, []);
+    if (deletedIds.includes(emailLower)) {
+      setStored(STORAGE_KEYS.DELETED_USERS, deletedIds.filter(id => id !== emailLower));
+    }
+
     const gasUrl = this.getGasUrl();
     if (gasUrl) {
       try {
@@ -802,7 +873,20 @@ class PosoApiService {
           const localUsers = getStored<User[]>(STORAGE_KEYS.LOCAL_USERS, SEED_USERS);
           const newUser: User = {
             ...res.data,
-            password_plain: payload.password
+            password_plain: payload.password,
+            nip: payload.nip,
+            department: payload.department,
+            role_title: payload.role_title,
+            avatar_url: payload.avatar_url,
+            jabatan_fungsional: payload.jabatan_fungsional,
+            kantor_penempatan: payload.kantor_penempatan,
+            phone_number: payload.phone_number,
+            nopen_kc: payload.nopen_kc,
+            nama_kc: payload.nama_kc,
+            nopen_kcu: payload.nopen_kcu,
+            nama_kcu: payload.nama_kcu,
+            regional_code: payload.regional_code,
+            regional_name: payload.regional_name
           };
           localUsers.push(newUser);
           setStored(STORAGE_KEYS.LOCAL_USERS, localUsers);
@@ -816,20 +900,33 @@ class PosoApiService {
     await new Promise(r => setTimeout(r, 150));
     const localUsers = getStored<User[]>(STORAGE_KEYS.LOCAL_USERS, SEED_USERS);
 
-    if (localUsers.some(u => u.email.toLowerCase() === payload.email.toLowerCase())) {
+    if (localUsers.some(u => u.email.toLowerCase() === emailLower)) {
       return { status: 'error', code: 409, message: 'Email sudah terdaftar dalam sistem.' };
     }
 
     const newUser: User = {
       user_id: `USR-${Date.now().toString().slice(-4)}`,
       name: payload.name.trim(),
-      email: payload.email.trim().toLowerCase(),
+      email: emailLower,
       role: payload.role,
       upt_unit: payload.role === 'upt' ? payload.upt_unit : undefined,
       is_active: true,
       created_by: this.getStoredUser()?.email || 'admin@poso.local',
       created_at: new Date().toISOString(),
-      password_plain: payload.password || 'Poso123!'
+      password_plain: payload.password || 'Poso123!',
+      nip: payload.nip,
+      department: payload.department,
+      role_title: payload.role_title,
+      avatar_url: payload.avatar_url,
+      jabatan_fungsional: payload.jabatan_fungsional,
+      kantor_penempatan: payload.kantor_penempatan,
+      phone_number: payload.phone_number,
+      nopen_kc: payload.nopen_kc,
+      nama_kc: payload.nama_kc,
+      nopen_kcu: payload.nopen_kcu,
+      nama_kcu: payload.nama_kcu,
+      regional_code: payload.regional_code,
+      regional_name: payload.regional_name
     };
 
     localUsers.push(newUser);
@@ -895,16 +992,14 @@ class PosoApiService {
   }
 
   async deleteUser(userId: string): Promise<ApiResponse<boolean>> {
-    await new Promise(r => setTimeout(r, 100));
+    const gasUrl = this.getGasUrl();
+    const currentUser = this.getStoredUser();
+
+    // 1. Remove from local storage immediately and record to blacklist
     const localUsers = getStored<User[]>(STORAGE_KEYS.LOCAL_USERS, SEED_USERS);
     const target = localUsers.find(u => u.user_id === userId);
 
-    if (!target) {
-      return { status: 'error', code: 404, message: 'Pengguna tidak ditemukan.' };
-    }
-
-    // PROTECTED SUPER ADMIN: Cannot be deleted!
-    if (target.email.toLowerCase() === 'admin@poso.local' || (target.role === 'admin' && target.user_id === 'USR-ADMIN01')) {
+    if (target && (target.email.toLowerCase() === 'admin@poso.local' || (target.role === 'admin' && target.user_id === 'USR-ADMIN01'))) {
       return { 
         status: 'error', 
         code: 403, 
@@ -912,13 +1007,43 @@ class PosoApiService {
       };
     }
 
+    // Blacklist user id & email so it never reappears even if remote sync lags
+    const deletedIds = getStored<string[]>(STORAGE_KEYS.DELETED_USERS, []);
+    if (!deletedIds.includes(userId)) deletedIds.push(userId);
+    if (target && target.email && !deletedIds.includes(target.email.toLowerCase())) {
+      deletedIds.push(target.email.toLowerCase());
+    }
+    setStored(STORAGE_KEYS.DELETED_USERS, deletedIds);
+
     const updated = localUsers.filter(u => u.user_id !== userId);
     setStored(STORAGE_KEYS.LOCAL_USERS, updated);
 
+    // 2. Sync deletion to Google Apps Script / Google Sheets
+    if (gasUrl) {
+      try {
+        const res = await this.callGas<boolean>('deleteUser', 'POST', {
+          target_user_id: userId,
+          user_id: userId,
+          user_email: currentUser?.email || 'admin@poso.local'
+        });
+        if (res && res.status === 'success') {
+          return {
+            status: 'success',
+            code: 200,
+            message: res.message || `Akun ${target?.name || userId} berhasil dihapus dari database Google Sheets.`,
+            data: true
+          };
+        }
+      } catch (err: any) {
+        console.warn('GAS deleteUser warning, fallback to local removal:', err.message);
+      }
+    }
+
+    await new Promise(r => setTimeout(r, 80));
     return {
       status: 'success',
       code: 200,
-      message: `Akun ${target.name} (${target.email}) berhasil dihapus dari sistem.`,
+      message: `Akun ${target?.name || userId} berhasil dihapus dari sistem.`,
       data: true
     };
   }

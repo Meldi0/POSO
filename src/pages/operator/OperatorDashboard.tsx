@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { apiService } from '../../services/api';
 import { Ticket } from '../../types';
-import { SageSidebar } from '../../components/operator/SageSidebar';
+import { SageSidebar, DashboardViewType } from '../../components/operator/SageSidebar';
 import { SageTopBar } from '../../components/operator/SageTopBar';
 import { SageKanbanBoard } from '../../components/operator/SageKanbanBoard';
 import { SageTableView } from '../../components/operator/SageTableView';
 import { SageTicketDrawer } from '../../components/operator/SageTicketDrawer';
+import { SageTicketTrackerView } from '../../components/operator/SageTicketTrackerView';
 import { UserManagement } from '../../components/admin/UserManagement';
 import { DataSourceConfig } from '../../components/admin/DataSourceConfig';
 import { Plus, Archive, CheckCircle2 } from 'lucide-react';
@@ -16,8 +17,8 @@ export const OperatorDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Active view tab from sidebar
-  const [activeView, setActiveView] = useState<'tickets' | 'archive' | 'users' | 'datasource'>('tickets');
+  // Active view tab from sidebar (includes in-dashboard 'track' tab)
+  const [activeView, setActiveView] = useState<DashboardViewType>('tickets');
   // View mode switcher (Kanban vs Table) on topbar
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
 
@@ -143,6 +144,7 @@ export const OperatorDashboard: React.FC = () => {
               onRefresh={fetchTickets}
               isLoading={isLoading}
               onOpenCreateTicket={() => navigate('/submit')}
+              onTrackClick={() => setActiveView('track')}
             />
           </header>
         )}
@@ -210,14 +212,21 @@ export const OperatorDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* View 3: Kelola Staf & UPT (Admin Only) */}
+          {/* View 3: In-Dashboard Lacak Status Tiket (Without Leaving Dashboard) */}
+          {activeView === 'track' && (
+            <div className="flex-1">
+              <SageTicketTrackerView recentTickets={tickets} />
+            </div>
+          )}
+
+          {/* View 4: Kelola Staf & UPT (Admin Only) */}
           {activeView === 'users' && (
             <div className="flex-1">
               <UserManagement />
             </div>
           )}
 
-          {/* View 4: Sumber Data Google Drive (Admin Only) */}
+          {/* View 5: Sumber Data Google Drive (Admin Only) */}
           {activeView === 'datasource' && (
             <div className="flex-1">
               <DataSourceConfig />
@@ -231,7 +240,7 @@ export const OperatorDashboard: React.FC = () => {
         type="button"
         onClick={() => navigate('/submit')}
         title="Buat Tiket Baru"
-        className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-[#0D5C75] hover:bg-[#083342] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 z-30"
+        className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-[#002B49] hover:bg-[#001D33] text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 z-30 cursor-pointer"
       >
         <Plus className="w-5 h-5" />
       </button>
