@@ -1,240 +1,166 @@
-# PANDUAN LENGKAP PENGGUNAAN APLIKASI "POSO"
-## Sistem Helpdesk & Manajemen Tiket Multi-Channel Berbasis Google Workspace
+# PANDUAN LENGKAP PENGGUNAAN APLIKASI "POSO" (v2.0)
+## Sistem Helpdesk & Manajemen Pengaduan Terpadu Berbasis Google Workspace
 
 ---
 
 ## DAFTAR ISI
 1. [Pengantar & Konsep Aplikasi](#1-pengantar--konsep-aplikasi)
-2. [Akses Awal & Mode Pengoperasian (Live vs Simulasi)](#2-akses-awal--mode-pengoperasian-live-vs-simulasi)
+2. [Akses Awal & Mode Pengoperasian](#2-akses-awal--mode-pengoperasian)
 3. [Panduan untuk Pengguna Umum (Pelapor / Public User)](#3-panduan-untuk-pengguna-umum-pelapor--public-user)
-   - 3.1 Registrasi Mandiri Akun Baru
-   - 3.2 Masuk (Login)
-   - 3.3 Mengajukan Tiket Keluhan / Permintaan Baru
-   - 3.4 Memantau Status & Mengirim Balasan
+   - 3.1 Beranda Publik & Katalog Layanan
+   - 3.2 Mengajukan Tiket Baru & Pratinjau Real-Time (*Live Preview*)
+   - 3.3 Melacak Progres Tiket dengan Stepper Timeline Visual
+   - 3.4 Mengelola Riwayat Tiket Pribadi (Portal Pengguna Terdaftar)
 4. [Panduan untuk Operator Helpdesk (Garda Terdepan)](#4-panduan-untuk-operator-helpdesk-garda-terdepan)
-   - 4.1 Menavigasi Dashboard Triase
-   - 4.2 Mengklasifikasi & Merouting Tiket ke UPT
-   - 4.3 Mengubah Status & Tingkat Prioritas (SLA)
-   - 4.4 Berkomunikasi: Balasan Publik vs Catatan Internal 🔒
-5. [Panduan untuk Pengguna UPT (Unit Pelaksana Teknis)](#5-panduan-untuk-pengguna-upt-unit-pelaksana-teknis)
-   - 5.1 Membuka Workstation Unit UPT
-   - 5.2 Menjalankan & Memperbarui Progres Tiket
-   - 5.3 Berkoordinasi via Catatan Internal Privat
-   - 5.4 Menyelesaikan Tiket
-6. [Panduan untuk Administrator (Super Access)](#6-panduan-untuk-administrator-super-access)
-   - 6.1 Manajemen Pengguna & Peran (Role Switcher Instan)
-   - 6.2 Menambah Akun Staff / Operator / UPT Baru
-   - 6.3 Pengaturan Matriks Hak Akses Fitur (RBAC)
-   - 6.4 Mengganti Sumber Data (Data Source Switcher Google Drive)
-   - 6.5 Membaca Log Audit / Jejak Keamanan
-   - 6.6 Memantau Laporan & Ekspor Data Analitik
-7. [Fitur Multi-Channel: Email-to-Ticket](#7-fitur-multi-channel-email-to-ticket)
-8. [Tanya Jawab & Tips Penggunaan (FAQ)](#8-tanya-jawab--tips-penggunaan-faq)
+   - 4.1 Navigasi Workstation & Drawer Responsif
+   - 4.2 Triase Tiket via Papan Kanban & Tampilan Tabel Adaptif
+   - 4.3 Menggunakan Laci Detail Tiket Bertab (*Multi-Tab Drawer*)
+   - 4.4 Berkomunikasi: Balasan Publik vs Catatan Internal Privat (🔒)
+   - 4.5 Pintasan Keyboard Cepat (*Keyboard Shortcuts*)
+5. [Panduan untuk Tim UPT (Unit Pelaksana Teknis)](#5-panduan-untuk-tim-upt-unit-pelaksana-teknis)
+   - 5.1 Melihat Tiket yang Didelegasikan
+   - 5.2 Memperbarui Progres Pengerjaan & Menutup Tiket Selesai
+6. [Panduan untuk Administrator (Super Admin)](#6-panduan-untuk-administrator-super-admin)
+   - 6.1 Manajemen Staf, Operator, dan Delegasi UPT
+   - 6.2 Konfigurasi Sumber Data Google Drive & Spreadsheet
+7. [Tanya Jawab & Tips Praktis (FAQ)](#7-tanya-jawab--tips-praktis-faq)
 
 ---
 
 ## 1. PENGANTAR & KONSEP APLIKASI
 
-**POSO** adalah aplikasi helpdesk dan manajemen tiket modern bergaya *Dark Glassmorphism / Spatial Dashboard*. POSO dirancang untuk menampung seluruh keluhan, laporan kerusakan, dan permohonan layanan secara terpusat, dengan penyimpanan berbasis Google Sheets / Google Drive yang hemat biaya namun mampu menangani volume data tinggi.
+**POSO Helpdesk** adalah sistem layanan terpadu yang dirancang untuk mengelola seluruh siklus hidup laporan keluhan, permohonan fasilitas, gangguan jaringan, dan dukungan sistem informasi kampus/institusi. 
 
-### 4 Peran (Role) dalam POSO:
-1. **Pengguna Umum (Public User):** Pegawai/publik yang membuat laporan dan memantau tiket miliknya.
-2. **Operator Helpdesk:** Tim penanganan awal yang menyaring, memvalidasi, dan meneruskan tiket ke UPT terkait.
-3. **Pengguna UPT (Unit Pelaksana Teknis):** Tim teknisi spesialis (misal: UPT TI, UPT Sarpras) yang mengeksekusi perbaikan.
-4. **Administrator:** Pengelola sistem dengan akses penuh atas akun pengguna, matriks perizinan, dan database Google Drive.
+Aplikasi ini menggunakan teknologi modern berbasis web yang **100% responsif di perangkat ponsel, tablet, maupun komputer desktop**, sehingga pelapor maupun staf teknis dapat mengoperasikan sistem dari mana saja dengan mudah.
+
+### 4 Peran Pengguna (*Role*):
+1. **Pengguna Umum (Pelapor):** Mengajukan keluhan, melihat status penyelesaian, dan membalas pesan teknisi.
+2. **Operator Helpdesk:** Melakukan verifikasi awal (triase), menilai batas waktu SLA, dan mendelegasikan tiket ke unit UPT terkait.
+3. **Teknisi UPT (Unit Pelaksana Teknis):** Mengeksekusi penanganan teknis sesuai bidang (*TI & Jaringan, Sarana Prasarana, Sistem Informasi, dll.*).
+4. **Super Administrator:** Mengelola akun staf, otorisasi peran pengguna, dan memantau konektivitas basis data master.
 
 ---
 
-## 2. AKSES AWAL & MODE PENGOPERASIAN (LIVE VS SIMULASI)
+## 2. AKSES AWAL & MODE PENGOPERASIAN
 
-Aplikasi POSO memiliki 2 mode pengoperasian yang fleksibel:
+Aplikasi POSO dapat beroperasi dalam dua mode:
 
-### A. Mode Simulasi / Mock Engine (Cocok untuk Demo & Pelatihan)
-- Aktif secara default saat aplikasi dibuka tanpa koneksi server.
-- Data tersimpan aman di peramban (browser) Anda.
-- Tersedia **Dev Role Switcher** di bagian atas (Top Bar) untuk berpindah persona (Admin ⇄ Operator ⇄ UPT ⇄ Pengguna Umum) secara instan dengan 1 klik.
+### A. Mode Pengujian Lokal / Offline Mock
+- Aktif secara otomatis saat aplikasi dijalankan secara lokal tanpa konfigurasi backend.
+- Seluruh data tersimpan secara mandiri di penyimpanan lokal peramban (*LocalStorage*).
+- Sangat praktis untuk demo, simulasi alur kerja, dan pengujian fitur.
 
-### B. Mode Live (Terhubung ke Google Apps Script)
-1. Buka menu **Pengaturan** di sidebar kiri.
-2. Masukkan URL Web App Google Apps Script Anda (contoh: `https://script.google.com/macros/s/AKfycb.../exec`).
-3. Klik tombol **Simpan**, lalu klik tombol **Aktifkan Mode Live GAS**.
-4. Seluruh aktivitas pembuatan tiket, balasan, dan manajemen pengguna akan langsung tersimpan di Google Spreadsheet Anda.
+### B. Mode Produksi Terhubung (Google Apps Script Live)
+- Frontend terhubung langsung dengan endpoint Web App Google Apps Script (`.env` -> `VITE_GAS_API_URL`).
+- Berkas foto/dokumen otomatis terunggah ke folder Google Drive resmi, dan rekaman data tercatat rapi di Google Sheets Master Database.
 
 ---
 
 ## 3. PANDUAN UNTUK PENGGUNA UMUM (PELAPOR / PUBLIC USER)
 
-### 3.1 Registrasi Mandiri Akun Baru
-1. Buka halaman utama aplikasi POSO. Jika belum masuk, Anda akan diarahkan ke halaman login.
-2. Klik tab **Daftar Akun Baru**.
-3. Masukkan:
-   - **Nama Lengkap** Anda.
-   - **Alamat Email** aktif.
-   - **Password** (minimal 6 karakter).
-4. Klik tombol **Daftar sebagai Pengguna**.
-5. *Catatan Keamanan:* Form pendaftaran mandiri ini secara otomatis hanya menghasilkan akun dengan peran **Pengguna Umum** demi menjaga keamanan sistem internal.
+### 3.1 Beranda Publik & Katalog Layanan
+1. Buka halaman utama aplikasi POSO (`/`).
+2. Terdapat ringkasan metrik performa layanan dan filter kategori bidang bantuan:
+   - **Jaringan & Internet**: Masalah Wi-Fi, kabel LAN, VPN.
+   - **Sistem Informasi & Aplikasi**: Kendala portal akademik, presensi online, akun dinas.
+   - **Sarana & Prasarana**: AC ruangan, proyektor, kelistrikan gedung.
+   - **Hardware & Komputer**: Perbaikan PC lab, toner printer, scanner.
+   - **Layanan Akun & Portal**: Reset kata sandi terkunci, aktivasi SSO.
+   - **Layanan Umum & Konsultasi**: Konsultasi teknis dan peminjaman perangkat.
+3. Klik tombol **[Pilih Bidang Ini]** pada salah satu kategori untuk langsung membuka formulir laporan dengan panduan terkait.
 
-### 3.2 Masuk (Login)
-1. Pada tab **Masuk (Login)**, masukkan email dan password yang telah didaftarkan.
-2. Klik tombol **Masuk ke POSO**.
+### 3.2 Mengajukan Tiket Baru & Pratinjau Real-Time (*Live Preview*)
+1. Buka menu **[Ajukan Tiket Baru]** (`/submit`).
+2. Isi kolom formulir:
+   - **Nama Lengkap & Email Aktif**: Untuk identitas pelapor dan notifikasi penanganan.
+   - **Kategori Layanan**: Pilih bidang kendala yang sesuai.
+   - **Tingkat Urgensi / Prioritas**: Pilih *Low, Medium, High*, atau *Urgent*.
+   - **Subjek & Deskripsi Kendala**: Jelaskan lokasi ruangan, gedung, dan rincian masalah.
+   - **Lampiran Foto / Dokumen**: Seret (*drag & drop*) berkas foto bukti kendala atau klik kotak unggah. Thumbnail foto akan langsung tampil.
+3. **Pratinjau Real-Time (Live Preview Card)**: Di sisi kanan layar (atau di bawah form pada ponsel), Anda dapat melihat tampilan kartu tiket Anda secara langsung saat Anda mengetik.
+4. Klik **[Kirim Laporan Tiket]**.
+5. Setelah terkirim, modal konfirmasi akan menampilkan **Nomor ID Tiket** Anda (contoh: `#TICK-20260901-1001`). Klik tombol **[Salin ID]** untuk menyimpannya.
 
-### 3.3 Mengajukan Tiket Keluhan / Permintaan Baru
-1. Klik tombol **+ Buat Tiket** di sudut kanan atas Top Bar.
-2. Isi formulir pembuatan tiket:
-   - **Subjek / Judul Masalah:** Tuliskan ringkasan kendala (contoh: *Koneksi Internet Putus di Ruang Rapat Lt. 2*).
-   - **Kategori Permasalahan:** Pilih kategori yang sesuai (*Jaringan, Sarana Prasarana, Layanan Akun, Hardware, dll.*).
-   - **Tingkat Prioritas:** Pilih estimasi urgensi masalah (*Low, Medium, High, Urgent*).
-   - **Deskripsi Rinci:** Jelaskan lokasi spesifik, kronologi kendala, nomor ruangan, atau pesan error.
-   - **Lampiran (Opsional):** Klik *+ Tambah Lampiran* untuk menyertakan screenshot atau dokumen pendukung.
-3. Klik tombol **Kirim Tiket**.
-4. Sistem akan otomatis menerbitkan nomor tiket unik (contoh: `TICK-20260831-4821`) dan menentukan target batas waktu penanganan (SLA).
+### 3.3 Melacak Progres Tiket dengan Stepper Timeline Visual
+1. Buka menu **[Lacak Tiket]** (`/track`).
+2. Masukkan nomor ID Tiket Anda, lalu klik **[Lacak Status Tiket]**.
+3. Sistem akan menampilkan detail laporan lengkap dengan **Stepper Timeline 4 Tahap**:
+   - 🟢 **Langkah 1: Laporan Masuk** (Tercatat di sistem)
+   - 🟡 **Langkah 2: Triase & Disposisi** (Diverifikasi oleh operator helpdesk)
+   - 🟣 **Langkah 3: Pengerjaan UPT** (Teknisi sedang melakukan perbaikan)
+   - 🔵 **Langkah 4: Selesai** (Kendala tuntas diselesaikan)
+4. Anda dapat membaca riwayat balasan teknisi dan mengirimkan pesan tanggapan langsung melalui kotak input pesan di bagian bawah.
 
-### 3.4 Memantau Status & Mengirim Balasan
-1. Buka menu **Daftar Tiket** di sidebar kiri.
-2. Anda hanya akan melihat tiket-tiket yang pernah Anda ajukan sendiri.
-3. Klik pada salah satu kartu tiket untuk membuka jendela **Detail Tiket**.
-4. Pada panel percakapan sebelah kanan, ketik tanggapan Anda di kotak pesan, lalu klik **Kirim** untuk membalas tim Helpdesk.
+### 3.4 Mengelola Riwayat Tiket Pribadi (Portal Pengguna Terdaftar)
+1. Jika Anda memiliki akun, masuk melalui halaman **[Masuk]** (`/login`).
+2. Buka menu **[Tiket Saya]** (`/my-tickets`) untuk melihat seluruh daftar pengaduan yang pernah Anda ajukan.
+3. Gunakan filter tab status (*Semua, Open, In Progress, Waiting, Closed*) atau kolom pencarian untuk menemukan tiket lama dengan cepat.
 
 ---
 
 ## 4. PANDUAN UNTUK OPERATOR HELPDESK (GARDA TERDEPAN)
 
-### 4.1 Menavigasi Dashboard Triase
-1. Masuk menggunakan akun Operator (atau gunakan *Dev Role Switcher* > *Operator*).
-2. Di halaman **Dashboard**, perhatikan statistik KPI:
-   - **Tiket Aktif:** Jumlah tiket yang berstatus *Open* dan *In Progress*.
-   - **Menunggu Respon:** Tiket yang sedang menunggu tanggapan pelapor (*Waiting*).
-   - **SLA Warning:** Tiket yang sisa waktu penyelesaiannya kurang dari 4 jam.
-3. Gunakan filter triase cepat:
-   - Tab **Prioritas Tinggi**: Memfilter tiket *High* dan *Urgent*.
-   - Tab **Belum Di-assign**: Menampilkan tiket masuk baru yang belum diteruskan ke UPT.
-   - Tab **Mendekati SLA**: Menampilkan tiket rawan terlewat.
+### 4.1 Navigasi Workstation & Drawer Responsif
+- **Di Layar Komputer / Laptop**: Sidebar di sisi kiri bersifat permanen dan dilengkapi tombol *collapse / expand* (ikon panah) untuk memperkecil bilah menu menjadi mode ikon ramping saat Anda membutuhkan ruang kerja yang lebih luas.
+- **Di Layar Ponsel / Smartphone**: Menu navigasi tersembunyi rapi dan dapat dibuka kapan saja melalui tombol **Hamburger (☰)** di bagian atas.
 
-### 4.2 Mengklasifikasi & Merouting Tiket ke UPT
-1. Klik tiket yang ingin ditriase.
-2. Pada jendela detail, lihat panel **Panel Triase & Status** di sebelah kiri:
-   - Pada dropdown **Tugaskan ke Unit UPT**, pilih unit teknis yang berwenang (misal: *UPT TI & Jaringan* atau *UPT Sarana & Prasarana*).
-   - Pada dropdown **Ubah Prioritas**, sesuaikan tingkat urgensi jika diperlukan.
-3. Klik tombol **Terapkan Triase**.
-4. Sistem akan otomatis mencatat riwayat perubahan ke log audit dan menyematkan catatan sistem di thread percakapan.
+### 4.2 Triase Tiket via Papan Kanban & Tampilan Tabel Adaptif
+1. Masuk ke halaman **Dashboard Workstation** (`/dashboard`).
+2. Anda dapat beralih antara dua mode tampilan utama:
+   - **Mode Papan (Kanban Board)**: Membagi tiket ke dalam 3 kolom aktif (*Tiket Masuk/Open*, *Sedang Dikerjakan UPT/In Progress*, dan *Menunggu Respon/Waiting*).
+     - *Di Ponsel*: Gunakan tombol pill di bagian atas (*Open, Dikerjakan, Waiting*) untuk berpindah kolom seketika.
+     - *Aksi Cepat 1-Klik*: Klik tombol **[Proses]** atau **[Selesai]** langsung pada kartu tiket untuk memindahkan status secara instan.
+   - **Mode Tabel (Table View)**: Menampilkan data dalam bentuk baris tabel di layar desktop dan kartu ringkas di layar ponsel. Anda dapat mengurutkan data berdasarkan ID, Prioritas, Tanggal Masuk, atau Status dengan mengklik judul kolom.
 
-### 4.3 Mengubah Status & Tingkat Prioritas (SLA)
-- **Open (Terbuka):** Tiket baru masuk dan belum mulai dikerjakan.
-- **In Progress (Sedang Dikerjakan):** Tiket sudah diterima oleh teknisi UPT dan perbaikan sedang berlangsung.
-- **Waiting (Menunggu Respon):** Tim teknis membutuhkan informasi tambahan dari pelapor.
-- **Closed (Selesai):** Kendala telah tuntas diperbaiki dan dikonfirmasi.
+### 4.3 Menggunakan Laci Detail Tiket Bertab (*Multi-Tab Drawer*)
+Klik pada salah satu kartu tiket untuk membuka panel detail di sisi kanan layar. Panel ini memiliki 3 tab terorganisir:
+1. 💬 **Tab Diskusi**: Menampilkan kronologi pesan lengkap dengan galeri lampiran foto yang dapat di-zoom.
+2. ⚙️ **Tab Triase & UPT**: Tempat operator mengubah status tiket dan memilih unit teknisi UPT penanggung jawab (*UPT TI, UPT Sarpras, dll.*).
+3. 📋 **Tab Info & SLA**: Memuat email pelapor, tanggal pembuatan, target batas waktu SLA, dan panduan standar pelayanan institusi.
 
-### 4.4 Berkomunikasi: Balasan Publik vs Catatan Internal 🔒
-Saat berada di dalam jendela detail tiket, Operator memiliki 2 mode pengiriman pesan:
-1. **Mode Balas Pelapor (Publik):**
-   - Klik tombol **Balas Pelapor (Publik)** di atas kotak input.
-   - Pesan yang dikirim dapat dibaca langsung oleh pembuat tiket.
-2. **Mode Catatan Internal (Privat UPT & Operator) 🔒:**
-   - Klik tombol **Catatan Internal (Privat)** (berlatar warna amber/kuning).
-   - Pesan yang dikirim **hanya dapat dilihat oleh Operator dan petugas UPT**. Pengguna Umum tidak akan pernah bisa membaca catatan internal ini (misal: diskusi teknis kerusakan kabel, biaya sparepart, atau pembagian teknisi).
+### 4.4 Berkomunikasi: Balasan Publik vs Catatan Internal Privat (🔒)
+Pada tab **Diskusi**:
+- **Balasan Publik**: Centang kotak tidak diaktifkan. Pesan yang Anda kirim akan dapat dibaca langsung oleh pelapor di halaman pelacak tiket miliknya.
+- **Catatan Internal (🔒)**: Centang pilihan **"🔒 Catatan Internal (Hanya Staf)"**. Kotak input akan berubah menjadi warna kuning amber. Pesan ini **hanya dapat dibaca oleh sesama staf operator dan teknisi UPT** (rahasia/koordinasi teknis internal).
+
+### 4.5 Pintasan Keyboard Cepat (*Keyboard Shortcuts*)
+- **`Ctrl + K`** (atau `Cmd + K` di Mac): Langsung memfokuskan kursor ke kotak pencarian tiket.
+- **`Escape (Esc)`**: Menutup drawer detail tiket atau menu drawer samping yang sedang aktif.
 
 ---
 
-## 5. PANDUAN UNTUK PENGGUNA UPT (UNIT PELAKSANA TEKNIS)
+## 5. PANDUAN UNTUK TIM UPT (UNIT PELAKSANA TEKNIS)
 
-### 5.1 Membuka Workstation Unit UPT
-1. Masuk menggunakan akun UPT (misal: *Ahmad Fauzi - UPT TI & Jaringan*).
-2. Klik menu **Panel UPT** di sidebar kiri.
-3. Halaman ini difilter secara khusus hanya menampilkan tiket-tiket yang **ditugaskan ke unit Anda**.
-
-### 5.2 Menjalankan & Memperbarui Progres Tiket
-1. Pilih tiket berstatus *Open* dari antrean unit.
-2. Klik tiket untuk membuka detail.
-3. Pada panel kiri, ubah status dari **Open** menjadi **Sedang Dikerjakan (In Progress)**.
-4. Klik **Terapkan Triase** agar Operator dan pelapor mengetahui bahwa tiket sedang ditindaklanjuti.
-
-### 5.3 Berkoordinasi via Catatan Internal Privat
-1. Gunakan mode **Catatan Internal** di kotak percakapan untuk berdiskusi dengan Helpdesk Operator mengenai kendala lapangan atau sparepart yang dibutuhkan.
-2. Jika ada informasi yang perlu disampaikan langsung ke pengguna umum (misal: jadwal kunjungan teknisi ke ruangan), ubah mode ke **Balas Pelapor (Publik)**.
-
-### 5.4 Menyelesaikan Tiket
-1. Setelah perbaikan fisik/sistem selesai diuji, buka kembali detail tiket.
-2. Ubah status menjadi **Selesai (Closed)**.
-3. Kirimkan balasan publik ringkas yang menjelaskan solusi perbaikan yang telah dilakukan.
-4. Klik **Terapkan Triase**.
+1. Masuk menggunakan akun teknisi UPT (misal: `upt.ti@poso.local` atau `upt.sarpras@poso.local`).
+2. Pada papan triase, perhatikan tiket-tiket yang memiliki badge nama unit Anda.
+3. Buka detail tiket, baca laporan kerusakan, dan lakukan pengecekan fisik/sistem.
+4. Tuliskan pembaruan penanganan di kolom balasan atau buat catatan internal teknis jika memerlukan koordinasi dengan logistik suku cadang.
+5. Setelah perbaikan selesai, ubah status tiket menjadi **Closed (Selesai)** melalui formulir triase atau klik tombol **[Selesai]** pada kartu tiket.
 
 ---
 
-## 6. PANDUAN UNTUK ADMINISTRATOR (SUPER ACCESS)
+## 6. PANDUAN UNTUK ADMINISTRATOR (SUPER ADMIN)
 
-### 6.1 Manajemen Pengguna & Peran (Role Switcher Instan)
-1. Buka menu **Pengguna & Role** di sidebar kiri.
-2. Tabel menampilkan seluruh akun yang terdaftar dalam sistem beserta status aktif dan role-nya.
-3. **Mengubah Role Akun:**
-   - Pada kolom *Ubah Role (Instan)*, pilih role baru dari dropdown (*Pengguna Umum*, *Pengguna UPT*, *Operator*, atau *Admin*). Perubahan langsung berlaku seketika tanpa perlu deploy ulang.
-4. **Menetapkan Unit UPT:**
-   - Jika pengguna memiliki role *UPT*, pilih unit kerja pada kolom *Unit UPT*.
-5. **Menonaktifkan / Mengaktifkan Akun:**
-   - Klik ikon tombol daya (Power) di kolom paling kanan. Akun yang dinonaktifkan tidak akan dapat login ke sistem.
-6. **Reset Password:**
-   - Klik ikon kunci di samping akun pengguna > masukkan password baru > klik **Simpan Password Baru**.
+### 6.1 Manajemen Staf, Operator, dan Delegasi UPT
+1. Buka menu **[Kelola Staf & UPT]** di sidebar kiri dashboard.
+2. Anda dapat:
+   - Menambahkan akun staf baru dengan menentukan perannya (*Operator, UPT TI, UPT Sarpras, Admin*).
+   - Mengaktifkan atau menonaktifkan akun staf dengan tombol saklar (*toggle switch*).
+   - Mereset kata sandi akun staf jika diperlukan.
 
-### 6.2 Menambah Akun Staff / Operator / UPT Baru
-1. Di halaman *Manajemen Pengguna*, klik tombol **+ Tambah Akun Staff / UPT**.
-2. Masukkan nama lengkap, email resmi, pilihan role (*Operator / UPT / Admin*), dan password awal.
-3. Klik **Buat Akun Sekarang**.
-
-### 6.3 Pengaturan Matriks Hak Akses Fitur (RBAC)
-1. Buka menu **Matriks Fitur (RBAC)** di sidebar kiri.
-2. Matriks ini menampilkan toggle interaktif (ON / OFF) untuk 12 fitur sistem terhadap 4 peran.
-3. Sesuaikan izin yang diinginkan (misal: apakah UPT boleh merouting tiket, apakah Operator boleh melihat audit log).
-4. Klik tombol **Simpan Perubahan Matriks** di kanan atas. Pengaturan ini langsung disimpan ke konfigurasi backend `PropertiesService`.
-
-### 6.4 Mengganti Sumber Data (Data Source Switcher Google Drive)
-Fitur unggulan untuk beralih database Google Sheet atau folder Google Drive tanpa mengubah kode program:
-1. Buka menu **Sumber Data (Drive)** di sidebar kiri.
-2. Di bagian form *Alihkan ke Google Drive / Spreadsheet Baru*:
-   - Masukkan **Google Spreadsheet ID Baru** (teks acak panjang di URL spreadsheet).
-   - Masukkan **Folder ID** (opsional).
-   - Tuliskan alasan perpindahan database (untuk riwayat audit).
-3. Klik tombol **Tes Koneksi** untuk memverifikasi apakah spreadsheet tersebut dapat diakses dan memiliki struktur kolom yang sesuai.
-4. Jika hasil tes berwarna hijau (*Koneksi Berhasil*), klik tombol **Jadikan Sumber Data Aktif**.
-5. **Opsi Rollback:** Jika ingin kembali ke database lama, lihat tabel *Riwayat Sumber Data* di bagian bawah, lalu klik tombol **Rollback ke Ini**.
-
-### 6.5 Membaca Log Audit / Jejak Keamanan
-1. Buka menu **Log Aktivitas / Audit** di sidebar kiri.
-2. Halaman ini mencatat kronologis seluruh tindakan sensitif:
-   - Siapa yang mengubah role pengguna dan kapan.
-   - Siapa yang mengganti sumber data Google Drive.
-   - Perubahan status tiket dan update konfigurasi sistem.
-3. Gunakan kolom pencarian untuk melacak aktivitas user atau tiket tertentu.
-
-### 6.6 Memantau Laporan & Ekspor Data Analitik
-1. Buka menu **Laporan & Analitik** di sidebar kiri.
-2. Tinjau grafik distribusi volume tiket per kategori, kepatuhan SLA, waktu rata-rata penyelesaian masalah, serta rasio tiket Web vs Email.
-3. Klik tombol **Ekspor Laporan (CSV)** di kanan atas untuk mengunduh rekapitulasi data tiket dalam format CSV/Excel.
+### 6.2 Konfigurasi Sumber Data Google Drive & Spreadsheet
+1. Buka menu **[Sumber Data Drive]** di sidebar kiri.
+2. Pantau status integrasi backend Google Apps Script, kuota kapasitas Google Drive, dan latensi sinkronisasi basis data master Google Sheets.
 
 ---
 
-## 7. FITUR MULTI-CHANNEL: EMAIL-TO-TICKET
+## 7. TANYA JAWAB & TIPS PRAKTIS (FAQ)
 
-Sistem POSO terintegrasi langsung dengan Gmail Google Workspace:
-1. Pelanggan/pengguna dapat mengirimkan email kendala ke alamat email helpdesk institusi Anda.
-2. Trigger terjadwal di Google Apps Script (`emailToTicketTrigger`) akan secara otomatis memindai inbox setiap 5–10 menit.
-3. Email baru akan dikonversi menjadi tiket POSO:
-   - **Subjek Email** menjadi **Judul Tiket**.
-   - **Isi Email** menjadi **Deskripsi Masalah**.
-   - **Pengirim Email** menjadi **Email Pelapor**.
-   - **Saluran (Channel)** otomatis bernilai `email`.
-4. Email yang telah diproses otomatis diberi label `POSO_PROCESSED` di Gmail agar tidak terjadi pencatatan ganda.
+**Q: Mengapa tiket saya berkedip merah dengan tanda "Over SLA"?**  
+A: Tanda *Over SLA* menandakan bahwa tiket tersebut telah melewati target waktu penanganan standar dan membutuhkan perhatian prioritas dari operator helpdesk.
 
----
+**Q: Bagaimana cara menyalin tautan pelacakan tiket untuk dibagikan ke pelapor?**  
+A: Buka detail tiket di drawer staf, lalu klik ikon **External Link (↗)** di sudut kanan atas header drawer. Tautan pelacakan publik akan otomatis disalin ke clipboard Anda.
 
-## 8. TANYA JAWAB & TIPS PENGGUNAAN (FAQ)
-
-**Q1: Apa yang harus dilakukan jika saya lupa password akun Admin?**  
-> Jalankan fungsi `setupInitialDatabase()` di editor Google Apps Script. Fungsi ini akan memastikan akun Super Admin awal `admin@poso.local` dengan password `Admin123!` selalu tersedia.
-
-**Q2: Mengapa Pengguna Umum tidak bisa melihat Catatan Internal?**  
-> Sesuai standar keamanan ISO/osTicket, catatan internal dilindungi di level backend Google Apps Script. Endpoint API secara otomatis menyaring dan menghapus entri bertanda `internal` sebelum data dikirim ke peramban pengguna umum.
-
-**Q3: Bagaimana cara mengganti logo atau nama institusi?**  
-> Anda dapat menyesuaikan teks nama dan warna di file `src/components/layout/Sidebar.tsx` dan `index.html`.
-
-**Q4: Apakah data tiket akan melambat jika mencapai ratusan ribu baris?**  
-> Tidak. POSO menggunakan strategi *append-only write* (menulis langsung di baris akhir tanpa memuat file) dan *bottom-to-top chunking* (hanya membaca rentang baris terbaru), sehingga penggunaan memori dan waktu eksekusi Google Apps Script tetap sangat ringan dan stabil.
+**Q: Apakah aplikasi dapat digunakan dengan lancar di layar handphone yang kecil?**  
+A: Ya, seluruh tata letak POSO v2.0 telah dioptimalkan secara mobile-first dengan drawer menu geser, tab switcher kolom, dan tombol aksi yang nyaman disentuh di smartphone.

@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
-## Aplikasi: POSO — Sistem Helpdesk & Manajemen Tiket Terpadu
+## Aplikasi: POSO — Sistem Helpdesk & Manajemen Tiket Terpadu (v2.0)
 
-**Versi:** 2.0 (Production Implemented)  
+**Versi:** 2.0 (Responsive & Interactive Architecture)  
 **Status:** Live & Implemented  
 **Tipe Dokumen:** Product Requirements & Technical Specification Document  
 
@@ -9,9 +9,9 @@
 
 ## 1. Ringkasan Produk
 
-**POSO Helpdesk** adalah aplikasi manajemen tiket dan layanan bantuan multi-channel terpadu yang terinspirasi oleh *osTicket*, dikemas dalam desain antarmuka modern bernuansa **Sage Green & Soft Cream Canvas**, didukung backend serverless **Google Apps Script REST API** dan penyimpanan berkas **Google Drive & Google Sheets**.
+**POSO Helpdesk** adalah sistem helpdesk dan manajemen tiket terpadu modern multi-channel berbasis **React 18 + TypeScript + Vite** dengan antarmuka **Ocean Cyan Glassmorphism**, didukung backend serverless **Google Apps Script REST API**, penyimpanan berkas **Google Drive**, serta basis data **Google Sheets**.
 
-Sistem ini melayani 4 peran pengguna (*Pengguna Umum, Operator Helpdesk, Teknisi UPT, dan Super Administrator*), mendukung pengunggahan foto bukti kerusakan, pemisahan percakapan publik dan catatan internal, serta papan triase interaktif (*Kanban Board*) dengan kontrol aksi cepat.
+Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk, Teknisi UPT, dan Super Administrator*), mendukung pengunggahan foto bukti kerusakan, pemisahan percakapan publik dan catatan internal, *Live Ticket Preview*, *Interactive Kanban Board*, notifikasi *Toast*, serta desain **100% responsif di perangkat mobile, tablet, dan desktop**.
 
 ---
 
@@ -19,34 +19,32 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum, Operator Helpdesk, Teknisi
 
 | Lapisan (*Layer*) | Teknologi yang Digunakan | Keterangan |
 |---|---|---|
-| **Frontend Framework** | React 18 + TypeScript + Vite | SPA dengan perutean berbasis `react-router-dom` v6 |
-| **Styling & Design System** | Tailwind CSS + CSS Custom Tokens | Tema *MealSpot-inspired Sage Green*, Soft Cream Canvas, Dot Pattern |
-| **Iconography** | Lucide React Icons | 100% Ikon vektor profesional, bebas karakter emoji generik |
-| **Penyimpanan Gambar** | Google Drive API (`DriveApp`) | File disimpan di Google Drive Folder (`1RqlknF3O-0gXcTeX0JfO9FzyBESq-hwR`) |
+| **Frontend Framework** | React 18 + TypeScript + Vite | SPA dengan perutean berbasis `react-router-dom` v7 |
+| **Styling & Design System** | Tailwind CSS + CSS Custom Tokens | Desain Glassmorphism modern, Apple-inspired spring physics, pulse glow |
+| **Micro-Interactions** | Framer Motion v11 | Animasi transisi layout, popup modal, slide drawer, toast alerts |
+| **Iconography** | Lucide React Icons | 100% Ikon vektor profesional |
+| **Penyimpanan Berkas** | Google Drive API (`DriveApp`) | File lampiran disimpan di Google Drive Folder resmi |
 | **Backend REST API** | Google Apps Script (`doGet` & `doPost`) | Penanganan request RESTful, JSON Payload, Selective LockService |
-| **Basis Data Master** | Google Sheets (`POSO Master Database`) | ID: `1IBoq8tUdVC1ki2omEqvgek6LEHhE6aVOSEfDuiO0byE` |
-| **Autentikasi** | Token Sesi & Hash Password | Penyimpanan sesi aman di `localStorage` & verifikasi backend |
+| **Basis Data Master** | Google Sheets (`POSO Master Database`) | Penyimpanan terstruktur: `Tickets`, `Users`, `Ticket_Threads` |
+| **Notifikasi Global** | Custom Floating Toast Context | Notifikasi mengapung responsif dengan progress timer dan auto-dismiss |
 
 ---
 
-## 3. Sistem Desain & Antarmuka Pengguna (UI/UX Design System)
+## 3. Sistem Desain & Antarmuka Responsif (UI/UX)
 
 ### 3.1 Token Warna & Nuansa Visual
-- **Canvas Background**: Soft Cream Mint (`#EBF2EE`) dengan aksen tekstur titik halus (`.bg-dot-pattern`).
-- **Floating App Shell**: Latar putih gading (`#F0F5F2`), sudut membulat lebar (`rounded-[32px] sm:rounded-[36px]`), bayangan halus (`shadow-app-shell`).
-- **Aksen Utama (Sage Green)**:
-  - Default: `#7EAA92`
-  - Hover: `#6B9780`
-  - Dark: `#55806A`
-  - Soft Light: `#E2ECE7`
-- **Aksen Sekunder (Coral Orange)**: `#F58A61` digunakan untuk tombol aksi mengambang (*Floating Action Button / FAB*) dan penanda status darurat (*Urgent*).
-- **Tipografi**: Bersih dan modern dengan hierarki bobot teks tegas (`font-extrabold` dan `font-black`).
-- **Bebas Karakter Emoji**: Seluruh elemen visual, indikator peran, tombol, dan kategori menggunakan ikon SVG resmi **Lucide React**.
+- **Canvas Background**: Light Ice Canvas (`#F4F7F9`).
+- **Primary Ocean**: `#0D5C75` (Darker: `#083342`).
+- **Accent Cyan**: `#199FB1` (Hover: `#148797`, Tint: `#EAF4F8`).
+- **Accent Coral**: `#F58A61` (Hover: `#E77448`).
+- **Glassmorphism**: `.apple-glass` dan `.apple-glass-card` dengan backdrop-blur 20px dan border semi-transparan.
 
-### 3.2 Fitur Ergonomi & Tata Letak
-- **Edge-to-Edge Full Width**: Tata letak mengisi penuh layar secara proporsional tanpa margin kosong abnormal di sisi kiri-kanan.
-- **Sticky Sage Sidebar**: Bilah samping kiri terkunci di posisinya (`sticky top-5 self-start`) saat halaman utama digulir ke bawah.
-- **Responsive Drawer**: Panel inspeksi detail tiket meluncur dari sisi kanan dengan pratinjau gambar, form triase UPT, dan formulir balasan.
+### 3.2 Fitur Ergonomi & Responsivitas Mobile
+- **Responsive Mobile Navigation**: Menu samping tersembunyi dengan tombol hamburger di ponsel, slide-over drawer dengan backdrop blur.
+- **Desktop Mini-Rail**: Sidebar desktop dapat diperkecil menjadi mode rail ikon ramping.
+- **Mobile Kanban Switcher**: Tombol pill pemilih kolom status instan pada layar ponsel.
+- **Adaptive Table View**: Tampilan tabel beralih ke format kartu responsif pada smartphone.
+- **Keyboard Shortcuts**: Pintasan keyboard `Ctrl+K` untuk fokus pencarian dan `Esc` untuk menutup drawer.
 
 ---
 
@@ -54,52 +52,40 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum, Operator Helpdesk, Teknisi
 
 ### 4.1 Portal Publik (Untuk Tamu & Pengguna Umum)
 1. **Beranda Institusional (`/`)**:
-   - Navbar melayang berbentuk kapsul (*pill*) dengan status sesi masuk.
-   - Banner hero dengan 2 kartu aksi utama: **[Ajukan Tiket Baru]** dan **[Lacak Status Tiket]**.
-   - Katalog 6 kategori permasalahan teknis (*Jaringan, Sarana Fisik, Akun & SSO, Hardware, SIM/Aplikasi, Konsultasi*).
-   - Alur SOP penanganan pengaduan (4 tahapan jelas).
-   - Informasi jam operasional dan kontak bantuan resmi.
+   - Banner hero interaktif dengan 2 kartu aksi utama: **[Ajukan Tiket Baru]** dan **[Lacak Status Tiket]**.
+   - Katalog 6 bidang layanan dengan filter chip interaktif.
+   - Metrik performa real-time & panduan kebijakan SLA modal.
 2. **Formulir Pengajuan Tiket (`/submit`)**:
-   - Pemilihan kategori permasalahan dan tingkat urgensi kendala.
-   - Pengunggahan foto/gambar pendukung dengan konversi otomatis ke Google Drive.
-   - Pembuatan nomor tiket unik otomatis (`#TICK-YYYYMMDD-XXXX`).
+   - Formulir 2-kolom: Input pengaduan di kiri + **Live Real-Time Ticket Preview Card** di kanan.
+   - Zona unggah berkas *Drag & Drop* dengan pratinjau thumbnail instan.
+   - Kotak tips cerdas berbasis kategori yang dipilih.
+   - Modal sukses pengajuan dengan tombol 1-klik salin nomor ID tiket.
 3. **Pelacak Status Tiket Mandiri (`/track`)**:
-   - Pencarian berdasarkan nomor ID tiket dan email pelapor.
-   - Badge status visual (*Open, In Progress, Waiting, Closed*) dan penugasan UPT.
-   - **Komponen Galeri Lampiran (`AttachmentGallery`)**: Menampilkan thumbnail foto asli dan fitur **Lightbox Zoom** saat diklik.
-   - Formulir tanggapan tambahan langsung dari pelapor.
+   - **Stepper Timeline 4 Tahap Visual** (*Laporan Masuk, Triase Helpdesk, Pengerjaan UPT, Selesai*) dengan node beranimasi status terkini.
+   - Galeri foto lampiran dengan zoom Lightbox.
+   - Formulir kirim tanggapan balasan langsung dari pelapor.
 4. **Halaman Tiket Saya (`/my-tickets`)**:
-   - Daftar seluruh tiket yang pernah diajukan oleh akun pelapor yang sedang login.
+   - Filter tab status (*Semua, Open, In Progress, Waiting, Closed*), pencarian cepat, dan kartu tiket dengan animasi mikro.
 5. **Autentikasi (`/login` & `/register`)**:
    - Form pendaftaran mandiri khusus pengguna umum.
    - Tombol 1-klik demo akun (*Super Admin, Operator, Pelapor*).
 
 ### 4.2 Workstation Operator & Staf UPT (`/dashboard`)
-1. **Sage Sidebar (Bilah Kiri)**:
-   - Panel atas hijau sage: Avatar inisial dengan status online, nama staf & peran, capaian target SLA (*94.8%*), dan 2 kotak metrik ringkas (*Tiket Aktif* & *Tiket Selesai*).
-   - Panel bawah putih: Menu navigasi bergaya pil (*Papan Triase Kanban, Daftar Tabel Tiket, Kelola Staf & UPT, Sumber Data Google Drive, Buka Portal Publik*).
+1. **Sage Sidebar Responsif**:
+   - Desktop rail mode + Mobile slide drawer.
+   - Indikator status sesi online, kartu user profil, dan penghitung tiket aktif/selesai.
 2. **Top Bar Header**:
-   - Dropdown filter kategori instan.
-   - Pengalih tampilan (*Kanban View* vs *Table View*).
-   - Tombol cepat `+ Tiket Baru` dan tombol sinkronisasi data dari Google Sheets.
-   - Kolom pencarian rounded-full putih bersih.
-3. **Papan Triase Multi-Kolom (Interactive Kanban Board)**:
-   - 4 Kolom Status: `Tiket Masuk (Open)`, `Sedang Dikerjakan UPT (In Progress)`, `Menunggu Respon (Waiting)`, dan `Selesai (Closed)`.
-   - **Tombol Aksi Cepat pada Kartu**:
-     - Tombol `[ Proses ]` untuk langsung mengubah tiket *Open* ke *In Progress*.
-     - Tombol `[ Selesai ]` untuk langsung menyelesaikan tiket ke kolom *Closed*.
-   - **Menu Titik Tiga (`...`) pada Header Kolom**:
-     - *Urut: Prioritas Tertinggi (Urgent First)*
-     - *Urut: Waktu Masuk Terbaru*
-     - *Salin Ringkasan Tiket (Clipboard Copy)*
-     - *Tandai Semua Selesai (Bulk Action)*
-   - Kartu tiket terapung (*Floating Cards*) dilengkapi pill SLA, indikator thumbnail gambar terlampir, dan email pelapor.
-4. **Laci Inspeksi Geser (`SageTicketDrawer`)**:
-   - Pengubahan status tiket dan penugasan unit UPT dengan tombol simpan ke Google Sheets.
-   - Pratinjau gambar dan dokumen lampiran beresolusi penuh.
-   - Riwayat percakapan balasan publik dan penambahan **Catatan Internal Staf**.
-5. **Tombol Coral FAB (`+`)**:
-   - Tombol mengambang di sudut kanan bawah untuk pembuatan tiket cepat dari halaman mana pun.
+   - Kolom pencarian instan (`Ctrl+K`), filter kategori, filter rentang tanggal, dan toggle papan Kanban vs Tabel.
+   - Tombol refresh data dengan feedback animasi.
+3. **Papan Triase Kanban**:
+   - Kolom status: `Tiket Masuk (Open)`, `Sedang Dikerjakan UPT (In Progress)`, `Menunggu Respon (Waiting)`, dan `Selesai (Closed)`.
+   - Tombol aksi 1-klik langsung pada kartu: `[ Proses ]` dan `[ Selesai ]`.
+4. **Laci Detail Tiket Bertab (`SageTicketDrawer`)**:
+   - **Tab Diskusi**: Percakapan publik dengan pelapor dan catatan internal staf (🔒).
+   - **Tab Triase & UPT**: Pengaturan status tiket dan penugasan teknisi UPT.
+   - **Tab Info & SLA**: Detail pelapor, tanggal, dan target waktu SLA.
+5. **Floating Action Button (FAB)**:
+   - Tombol mengambang di kanan bawah untuk pembuatan tiket cepat dari mana saja.
 
 ### 4.3 Modul Administrasi
 1. **Manajemen Pengguna & Staf (`UserManagement`)**:
@@ -115,7 +101,7 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum, Operator Helpdesk, Teknisi
 ### Sheet 1: `Tickets`
 | Kolom | Tipe | Deskripsi |
 |---|---|---|
-| `ticket_id` | String | ID Unik Tiket (contoh: `TICK-20260831-9421`) |
+| `ticket_id` | String | ID Unik Tiket (contoh: `TICK-20260901-1001`) |
 | `created_at` | ISO Date String | Waktu pembuatan tiket |
 | `updated_at` | ISO Date String | Waktu pembaruan terakhir |
 | `subject` | String | Judul keluhan atau laporan |
@@ -149,31 +135,6 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum, Operator Helpdesk, Teknisi
 | `ticket_id` | String | ID Tiket terkait |
 | `sender_id` | String | ID Pengirim pesan |
 | `sender_role` | String | Peran pengirim saat membalas |
-| `message` | Text | Isi pesan / balasan / catatan internal (bersih tanpa dump base64) |
+| `message` | Text | Isi pesan / balasan / catatan internal |
 | `visibility` | String | `public` (terlihat pelapor) \| `internal` (khusus staf) |
 | `created_at` | ISO Date String | Waktu pengiriman pesan |
-
----
-
-## 6. Kontrak API Google Apps Script
-
-| HTTP Method | Action Parameter | Deskripsi & Payload | Hak Akses |
-|---|---|---|---|
-| `POST` | `action=register` | Registrasi akun pelapor publik baru | Publik |
-| `POST` | `action=login` | Autentikasi email & password, mengembalikan token sesi | Publik |
-| `POST` | `action=createTicket` | Membuat tiket baru & otomatis upload attachment ke Google Drive | Publik & Staf |
-| `GET` | `action=getTickets` | Mengambil daftar tiket dengan filter kategori, status, dan kata kunci | Staf & Terautentikasi |
-| `GET` | `action=getTicketDetail` | Mengambil detail tiket beserta riwayat thread balasan | Pelapor & Staf |
-| `POST` | `action=updateTicketStatus` | Memperbarui status (*open/in_progress/waiting/closed*) & unit UPT | Operator, UPT, Admin |
-| `POST` | `action=addThreadMessage` | Menambahkan pesan balasan publik atau catatan internal staf | Pelapor & Staf |
-| `POST` | `action=createUser` | Menambahkan akun staf operator atau teknisi UPT baru | Super Admin |
-| `GET` | `action=getUsers` | Mengambil daftar pengguna dan staf terdaftar | Super Admin |
-| `GET` | `action=cleanThreads` | Pembersih otomatis data base64 kotor pada Sheet `Ticket_Threads` | Super Admin |
-
----
-
-## 7. Penanganan Kinerja & Ketahanan Data
-
-1. **Selective LockService**: Mencegah tabrakan tulis (*race conditions*) hanya pada request POST yang mengubah basis data (`lock.tryLock(8000)`), sementara request GET membaca data secara paralel tanpa hambatan antrean.
-2. **Drive Blob Streaming**: Mengunggah berkas gambar langsung ke folder Google Drive dan hanya mencatat URL publik ke Spreadsheet.
-3. **Data Sanitization**: Mencegah sel spreadsheet kehabisan kuota karakter (50.000 karakter per sel) dengan menyaring string base64 menjadi tautan resmi.
