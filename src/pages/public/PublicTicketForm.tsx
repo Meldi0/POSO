@@ -7,25 +7,24 @@ import { TicketPriority } from '../../types';
 import { 
   Send, 
   AlertCircle, 
-  CheckCircle2, 
+  CheckCircle, 
   ArrowLeft, 
   Paperclip, 
   Trash2, 
-  UploadCloud,
+  Upload,
   Copy,
-  ExternalLink,
-  Sparkles,
-  HelpCircle,
-  Eye,
-  User,
-  MapPin,
-  RotateCcw,
   Check,
   ChevronDown,
   File,
-  Image as ImageIcon
+  Lightbulb,
+  Headphones,
+  RotateCcw,
+  Sparkles,
+  Eye,
+  Clock
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { StatusBadge, PriorityBadge } from '../../components/ui/Badge';
 
 // =================================================================================================
 // DATASET CASCADING DROPDOWN (DEPARTMENT -> TOPIK KENDALA)
@@ -39,6 +38,7 @@ export interface DepartmentConfig {
     id: string;
     label: string;
   }[];
+  tip: string;
 }
 
 export const CASCADING_DEPARTMENTS: DepartmentConfig[] = [
@@ -48,11 +48,12 @@ export const CASCADING_DEPARTMENTS: DepartmentConfig[] = [
     code: 'OPS',
     uptUnit: 'UPT Pengendalian Operasi & Transportasi',
     topics: [
-      { id: 'first_mile', label: 'First Mile' },
-      { id: 'mid_mile', label: 'Mid Mile' },
-      { id: 'last_mile', label: 'Last Mile' },
-      { id: 'armada_logistik', label: 'Armada & Transportasi' },
-    ]
+      { id: 'first_mile', label: 'First Mile (Pick-up & Loket)' },
+      { id: 'mid_mile', label: 'Mid Mile (Sortir & Hub Sentral)' },
+      { id: 'last_mile', label: 'Last Mile (Antaran Kurir)' },
+      { id: 'armada_logistik', label: 'Armada & Kendaraan Operasional' },
+    ],
+    tip: 'Sertakan nomor kantong/resi paket, barcode manifesto, atau nomor polisi kendaraan yang mengalami kendala operasional.'
   },
   {
     id: 'cgs',
@@ -60,11 +61,12 @@ export const CASCADING_DEPARTMENTS: DepartmentConfig[] = [
     code: 'CGS',
     uptUnit: 'UPT Sarana & Prasarana (CGS)',
     topics: [
-      { id: 'sarana_gedung', label: 'Sarana & Gedung Kantor' },
-      { id: 'listrik_genset_ac', label: 'Listrik, Genset, & AC' },
+      { id: 'sarana_gedung', label: 'Sarana & Fisik Gedung Kantor' },
+      { id: 'listrik_genset_ac', label: 'Listrik, Genset, & AC Ruangan' },
       { id: 'atk_perlengkapan', label: 'ATK & Perlengkapan Operasional' },
-      { id: 'kebersihan_sanitasi', label: 'Kebersihan & Sanitasi' },
-    ]
+      { id: 'kebersihan_sanitasi', label: 'Kebersihan & Sanitasi Kantor' },
+    ],
+    tip: 'Cantumkan nomor lantai/ruangan spesifik dan foto kondisi fasilitas fisik yang membutuhkan perbaikan.'
   },
   {
     id: 'postal_security',
@@ -72,11 +74,12 @@ export const CASCADING_DEPARTMENTS: DepartmentConfig[] = [
     code: 'SEC',
     uptUnit: 'UPT Postal Security & Keamanan',
     topics: [
-      { id: 'investigasi_paket', label: 'Investigasi Paket' },
-      { id: 'cctv_akses_gedung', label: 'CCTV & Akses Gedung' },
+      { id: 'investigasi_paket', label: 'Investigasi Paket Rusak / Hilang' },
+      { id: 'cctv_akses_gedung', label: 'CCTV & Akses Pintu Masuk Gedung' },
       { id: 'pelanggaran_sop', label: 'Pelanggaran SOP & Integritas' },
       { id: 'insiden_keamanan', label: 'Laporan Insiden Keamanan' },
-    ]
+    ],
+    tip: 'Laporan insiden keamanan akan ditangani secara rahasia dan langsung diteruskan ke tim investigasi Postal Security.'
   },
   {
     id: 'quality_control',
@@ -84,24 +87,33 @@ export const CASCADING_DEPARTMENTS: DepartmentConfig[] = [
     code: 'QC',
     uptUnit: 'UPT Quality Control & Audit SLA',
     topics: [
-      { id: 'audit_sla', label: 'Audit Kepatuhan SLA' },
-      { id: 'volumetrik_berat', label: 'Volumetrik & Berat Paket' },
-      { id: 'cacat_layanan', label: 'Cacat Layanan & Komplain' },
-    ]
+      { id: 'audit_sla', label: 'Audit Kepatuhan SLA Layanan' },
+      { id: 'volumetrik_berat', label: 'Volumetrik & Ketepatan Berat Paket' },
+      { id: 'cacat_layanan', label: 'Cacat Layanan & Komplain Pelanggan' },
+    ],
+    tip: 'Sertakan data perbandingan waktu manifesto atau nota selisih timbangan untuk mempercepat proses audit QC.'
   },
   {
     id: 'it_sistem_informasi',
-    name: 'IT & Sistem Informasi',
+    name: 'TI & Sistem Informasi',
     code: 'IT',
     uptUnit: 'UPT TI & Sistem Informasi',
     topics: [
-      { id: 'jaringan_vpn_internet', label: 'Jaringan & Internet' },
+      { id: 'jaringan_vpn_internet', label: 'Jaringan Wi-Fi, LAN, & VPN' },
       { id: 'error_aplikasi_poso', label: 'Aplikasi POSO & Core System' },
-      { id: 'kendala_hardware', label: 'Hardware & Komputer' },
-      { id: 'reset_password_akses', label: 'Akun & Akses SSO' },
-    ]
+      { id: 'kendala_hardware', label: 'Hardware, Komputer, & Printer Barcode' },
+      { id: 'reset_password_akses', label: 'Akun Email Dinas & Akses SSO' },
+    ],
+    tip: 'Sertakan screenshot pesan error yang muncul, URL/layanan yang terdampak, atau nomor aset stiker perangkat.'
   }
 ];
+
+const priorityConfig: Record<TicketPriority, { label: string; desc: string; color: string; bg: string; border: string }> = {
+  Low: { label: 'Rendah', desc: 'Tidak mengganggu aktivitas utama, pemeliharaan rutin', color: '#64748B', bg: '#F8FAFC', border: '#E2E8F0' },
+  Medium: { label: 'Sedang', desc: 'Mengganggu sebagian aktivitas, diselesaikan sesuai SOP', color: '#0284C7', bg: '#EFF6FF', border: '#BAE6FD' },
+  High: { label: 'Tinggi', desc: 'Mengganggu aktivitas penting, berdampak ke banyak unit', color: '#F58A61', bg: '#FFF7ED', border: '#FFEDD5' },
+  Urgent: { label: 'Urgent', desc: 'Sistem/operasional kritis lumpuh, butuh penanganan segera', color: '#EF4444', bg: '#FEF2F2', border: '#FECACA' },
+};
 
 interface AttachedFile {
   id: string;
@@ -125,7 +137,7 @@ export const PublicTicketForm: React.FC = () => {
     ? 'Kembali ke Tiket Saya' 
     : 'Kembali ke Beranda';
 
-  // Form Fields
+  // Form State
   const [requesterName, setRequesterName] = useState(user?.name || '');
   const [requesterEmail, setRequesterEmail] = useState(user?.email || '');
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>(CASCADING_DEPARTMENTS[0].id);
@@ -135,15 +147,15 @@ export const PublicTicketForm: React.FC = () => {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [attachments, setAttachments] = useState<AttachedFile[]>([]);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
-  // Process & Response State
+  // Submit states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [copiedId, setCopiedId] = useState(false);
 
-  // Sync authenticated user info
+  // Pre-fill user data
   useEffect(() => {
     if (user) {
       setRequesterName(user.name);
@@ -151,7 +163,7 @@ export const PublicTicketForm: React.FC = () => {
     }
   }, [user]);
 
-  // Initial category check from query params
+  // Query parameter pre-selection
   useEffect(() => {
     const catParam = searchParams.get('category');
     if (catParam) {
@@ -168,7 +180,6 @@ export const PublicTicketForm: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Current active department
   const currentDepartment = CASCADING_DEPARTMENTS.find(d => d.id === selectedDepartmentId) || CASCADING_DEPARTMENTS[0];
 
   const handleDepartmentChange = (newDeptId: string) => {
@@ -193,7 +204,7 @@ export const PublicTicketForm: React.FC = () => {
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
       if (file.size > 10 * 1024 * 1024) {
-        error(`Berkas "${file.name}" melebihi batas ukuran 10MB.`);
+        error(`Berkas "${file.name}" melebihi batas 10MB.`);
         continue;
       }
 
@@ -222,36 +233,8 @@ export const PublicTicketForm: React.FC = () => {
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    processFiles(e.dataTransfer.files);
-  };
-
   const handleRemoveAttachment = (id: string) => {
     setAttachments(prev => prev.filter(a => a.id !== id));
-  };
-
-  const handleResetForm = () => {
-    if (window.confirm('Apakah Anda yakin ingin mengosongkan formulir?')) {
-      setSubject('');
-      setDescription('');
-      setWorkLocation('');
-      setAttachments([]);
-      setSelectedDepartmentId(CASCADING_DEPARTMENTS[0].id);
-      setSelectedTopic(CASCADING_DEPARTMENTS[0].topics[0].label);
-      setPriority('Medium');
-      setErrorMsg('');
-    }
   };
 
   const handleCopyTicketId = () => {
@@ -306,56 +289,57 @@ export const PublicTicketForm: React.FC = () => {
     }
   };
 
-  // SUCCESS SUBMIT STATE
+  // SUCCESS VIEW MATCHING FIGMA
   if (createdTicketId) {
     return (
-      <div className="relative min-h-screen bg-[#F4F7FB] flex items-center justify-center p-4 sm:p-6 font-sans text-slate-800 selection:bg-[#0D5C75] selection:text-white overflow-hidden">
-        <motion.div 
+      <div className="min-h-screen bg-[#F4F7F9] flex items-center justify-center p-4">
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative z-10 w-full max-w-lg bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xl text-center space-y-6"
+          className="bg-white rounded-[24px] shadow-xl border border-[#E2E8F0] p-8 max-w-md w-full text-center"
         >
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-xs">
-            <CheckCircle2 className="w-8 h-8" />
+          <div className="w-20 h-20 rounded-full bg-[#ECFDF5] flex items-center justify-center mx-auto mb-5">
+            <CheckCircle className="text-[#10B981]" size={40} />
           </div>
+          <h2 className="text-[24px] font-bold text-[#0F172A] mb-2">Tiket Berhasil Diajukan!</h2>
+          <p className="text-[14px] text-[#64748B] mb-6">
+            Laporan kendala Anda telah tercatat dan masuk ke antrean triase unit teknis terkait sesuai kebijakan SLA.
+          </p>
 
-          <div className="space-y-1">
-            <h2 className="text-2xl font-black text-slate-900">Tiket Berhasil Diajukan</h2>
-            <p className="text-xs sm:text-sm text-slate-500">Laporan kendala Anda telah tercatat dan masuk ke antrean triase unit terkait.</p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-slate-200 space-y-2">
-            <span className="text-xs uppercase font-bold text-slate-400 tracking-wider block">Nomor ID Tiket:</span>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl font-mono font-extrabold text-[#0D5C75]">
-                #{createdTicketId}
-              </span>
+          <div className="bg-[#F8FAFC] rounded-[12px] border border-[#E2E8F0] p-4 mb-6">
+            <p className="text-[12px] text-[#64748B] mb-1">ID Tiket Anda</p>
+            <div className="flex items-center justify-center gap-3">
+              <span className="font-mono text-[18px] font-bold text-[#0D5C75]">#{createdTicketId}</span>
               <button
-                type="button"
                 onClick={handleCopyTicketId}
-                title="Salin ID Tiket"
-                className="p-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 transition-colors cursor-pointer"
+                className="p-1.5 rounded-[6px] text-[#94A3B8] hover:text-[#0D5C75] hover:bg-[#EAF4F8] transition-all cursor-pointer"
+                title="Salin ID"
               >
-                {copiedId ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                {copiedId ? <Check size={16} className="text-[#10B981]" /> : <Copy size={16} />}
               </button>
             </div>
-            <p className="text-xs text-slate-500 font-medium">Disposisi Unit: <strong className="text-slate-800">{currentDepartment.uptUnit}</strong></p>
+            <p className="text-[11px] text-[#64748B] mt-1">Disposisi: <strong className="text-slate-800">{currentDepartment.uptUnit}</strong></p>
           </div>
 
-          <div className="space-y-3 pt-2">
+          <div className="flex flex-col gap-3">
             <Link
               to={`/track?id=${createdTicketId}`}
-              className="w-full py-3.5 bg-[#0D5C75] hover:bg-[#083342] text-white text-xs sm:text-sm font-bold rounded-xl block transition-all shadow-md shadow-[#0D5C75]/20 text-center"
+              className="flex items-center justify-center gap-2 h-11 rounded-[10px] bg-[#0D5C75] text-white text-[14px] font-semibold hover:bg-[#083342] transition-colors"
             >
               Pantau Status Tiket Sekarang
             </Link>
-
-            <Link
-              to={backDestination}
-              className="w-full py-3 bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-slate-200 text-slate-600 hover:text-slate-900 text-xs sm:text-sm font-semibold rounded-xl block transition-all text-center"
+            <button
+              onClick={() => {
+                setCreatedTicketId(null);
+                setSubject('');
+                setDescription('');
+                setWorkLocation('');
+                setAttachments([]);
+              }}
+              className="flex items-center justify-center gap-2 h-11 rounded-[10px] border border-[#E2E8F0] text-[#64748B] text-[14px] font-semibold hover:bg-[#F8FAFC] transition-colors cursor-pointer"
             >
-              {backLabel}
-            </Link>
+              Ajukan Tiket Lain
+            </button>
           </div>
         </motion.div>
       </div>
@@ -363,7 +347,7 @@ export const PublicTicketForm: React.FC = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#F4F7FB] text-[#0F172A] font-sans pb-20 selection:bg-[#0D5C75] selection:text-white">
+    <div className="min-h-screen bg-[#F4F7F9] text-[#0F172A] font-sans pb-20 selection:bg-[#0D5C75] selection:text-white">
       <input
         type="file"
         ref={fileInputRef}
@@ -373,64 +357,58 @@ export const PublicTicketForm: React.FC = () => {
         className="hidden"
       />
 
-      {/* Top Navbar */}
-      <header className="bg-white/95 backdrop-blur-xl border-b border-[#E2E8F0] sticky top-0 z-40 py-3.5 px-4 sm:px-8 mb-6 shadow-xs">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link to={backDestination} className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#0D5C75] transition-colors">
-            <ArrowLeft className="w-4 h-4" />
+      {/* Header */}
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 border-b border-[#E2E8F0]/80">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <Link to={backDestination} className="flex items-center gap-2 text-xs font-semibold text-[#64748B] hover:text-[#0D5C75] transition-colors">
+            <ArrowLeft size={15} />
             <span>{backLabel}</span>
           </Link>
-          <span className="text-xs font-black text-[#0D5C75] bg-[#EAF4F8] px-3 py-1 rounded-full border border-[#A5D1E1]/40">
+          <span className="text-xs font-bold text-[#0D5C75] bg-[#EAF4F8] px-3 py-1 rounded-full border border-[#A5D1E1]/40">
             Formulir Pengaduan Online
           </span>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900">Buat Tiket Pengaduan Baru</h1>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
-            Lengkapi formulir di bawah ini agar operator dan tim teknisi UPT dapat segera menindaklanjuti kendala Anda.
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        <div>
+          <h1 className="text-[24px] sm:text-[28px] font-bold text-[#0F172A]">Ajukan Tiket Pengaduan Baru</h1>
+          <p className="text-[14px] text-[#64748B] mt-1">
+            Lengkapi formulir di bawah ini agar operator dan teknisi UPT dapat segera menindaklanjuti kendala Anda
           </p>
         </div>
 
         {errorMsg && (
-          <motion.div 
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2.5 shadow-xs"
-          >
-            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+          <div className="p-3.5 rounded-[12px] bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2.5">
+            <AlertCircle size={18} className="text-rose-600 flex-shrink-0" />
             <span>{errorMsg}</span>
-          </motion.div>
+          </div>
         )}
 
-        {/* 2-Column Responsive Layout: Form on Left + Live Preview on Right */}
+        {/* 2-Column Grid: Form on Left + Live Preview & Tip on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Main Form Column (2 Cols on lg) */}
-          <form onSubmit={handleSubmit} className="lg:col-span-2 bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm space-y-5">
+          {/* Main Form (2 cols) */}
+          <form onSubmit={handleSubmit} className="lg:col-span-2 bg-white rounded-[16px] border border-[#E2E8F0]/80 shadow-[0_2px_8px_rgba(15,23,42,0.06)] p-6 space-y-5">
+            
             {/* Requester Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Nama Lengkap Pelapor <span className="text-rose-500">*</span>
+                <label className="block text-[13px] font-semibold text-[#0F172A] mb-1.5">
+                  Nama Lengkap Pelapor <span className="text-[#EF4444]">*</span>
                 </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Nama pelapor"
-                    value={requesterName}
-                    onChange={(e) => setRequesterName(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] transition-all"
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="Nama pelapor"
+                  value={requesterName}
+                  onChange={(e) => setRequesterName(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-[10px] border border-[#E2E8F0] text-[14px] text-[#0F172A] placeholder-[#CBD5E1] focus:outline-none focus:ring-2 focus:ring-[#199FB1]/30 focus:border-[#199FB1] transition-all"
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Alamat Email Resmi <span className="text-rose-500">*</span>
+                <label className="block text-[13px] font-semibold text-[#0F172A] mb-1.5">
+                  Email Resmi <span className="text-[#EF4444]">*</span>
                 </label>
                 <input
                   type="email"
@@ -438,93 +416,104 @@ export const PublicTicketForm: React.FC = () => {
                   placeholder="nama@posindonesia.co.id"
                   value={requesterEmail}
                   onChange={(e) => setRequesterEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] transition-all"
+                  className="w-full h-11 px-3.5 rounded-[10px] border border-[#E2E8F0] text-[14px] text-[#0F172A] placeholder-[#CBD5E1] focus:outline-none focus:ring-2 focus:ring-[#199FB1]/30 focus:border-[#199FB1] transition-all"
                 />
               </div>
             </div>
 
             {/* Department & Topic Cascading */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Pilih Department / Bidang <span className="text-rose-500">*</span>
+                <label className="block text-[13px] font-semibold text-[#0F172A] mb-1.5">
+                  Bidang Layanan / Department <span className="text-[#EF4444]">*</span>
                 </label>
                 <div className="relative">
                   <select
                     value={selectedDepartmentId}
                     onChange={(e) => handleDepartmentChange(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] appearance-none transition-all cursor-pointer"
+                    className="w-full h-11 px-3.5 pr-8 rounded-[10px] border border-[#E2E8F0] text-[13px] font-medium text-[#0F172A] bg-white focus:outline-none focus:ring-2 focus:ring-[#199FB1]/30 focus:border-[#199FB1] appearance-none transition-all cursor-pointer"
                   >
                     {CASCADING_DEPARTMENTS.map(d => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown size={16} className="text-[#94A3B8] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Topik Kendala <span className="text-rose-500">*</span>
+                <label className="block text-[13px] font-semibold text-[#0F172A] mb-1.5">
+                  Topik Spesifik Kendala <span className="text-[#EF4444]">*</span>
                 </label>
                 <div className="relative">
                   <select
                     value={selectedTopic}
                     onChange={(e) => setSelectedTopic(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] appearance-none transition-all cursor-pointer"
+                    className="w-full h-11 px-3.5 pr-8 rounded-[10px] border border-[#E2E8F0] text-[13px] font-medium text-[#0F172A] bg-white focus:outline-none focus:ring-2 focus:ring-[#199FB1]/30 focus:border-[#199FB1] appearance-none transition-all cursor-pointer"
                   >
                     {currentDepartment.topics.map(t => (
                       <option key={t.id} value={t.label}>{t.label}</option>
                     ))}
                   </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown size={16} className="text-[#94A3B8] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
 
-            {/* Priority & Work Location */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Tingkat Urgensi <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as TicketPriority)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] appearance-none transition-all cursor-pointer"
-                  >
-                    <option value="Low">Low (Rendah / Tidak Menghambat)</option>
-                    <option value="Medium">Medium (Sedang / Standar SOP)</option>
-                    <option value="High">High (Tinggi / Menghambat Aktivitas)</option>
-                    <option value="Urgent">Urgent (Darurat / Gangguan Total)</option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
+            {/* Visual Priority Selector (4 Colored Buttons from Figma) */}
+            <div>
+              <label className="block text-[13px] font-semibold text-[#0F172A] mb-2">
+                Tingkat Urgensi / Prioritas <span className="text-[#EF4444]">*</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {(['Low', 'Medium', 'High', 'Urgent'] as TicketPriority[]).map((lvl) => {
+                  const cfg = priorityConfig[lvl];
+                  const isSelected = priority === lvl;
+                  return (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setPriority(lvl)}
+                      className={`p-3 rounded-[12px] border text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? 'ring-2 ring-[#0D5C75] shadow-sm'
+                          : 'hover:border-[#94A3B8]'
+                      }`}
+                      style={{
+                        backgroundColor: cfg.bg,
+                        borderColor: isSelected ? '#0D5C75' : cfg.border
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.color }} />
+                        <span className="text-[13px] font-bold" style={{ color: cfg.color }}>{cfg.label}</span>
+                      </div>
+                      <p className="text-[11px] text-[#64748B] leading-snug">{cfg.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Lokasi Kerja / Ruangan <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Gedung Pos Lt. 2, Ruang Sortir"
-                    value={workLocation}
-                    onChange={(e) => setWorkLocation(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] transition-all"
-                  />
-                </div>
-              </div>
+            {/* Work Location */}
+            <div>
+              <label className="block text-[13px] font-semibold text-[#0F172A] mb-1.5">
+                Lokasi Kerja / Ruangan / Unit Kantor <span className="text-[#EF4444]">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Contoh: Gedung Kantor Pos Pusat Lt. 2, Ruang Sortir"
+                value={workLocation}
+                onChange={(e) => setWorkLocation(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-[10px] border border-[#E2E8F0] text-[14px] text-[#0F172A] placeholder-[#CBD5E1] focus:outline-none focus:ring-2 focus:ring-[#199FB1]/30 focus:border-[#199FB1] transition-all"
+              />
             </div>
 
             {/* Subject */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Subjek / Judul Permasalahan <span className="text-rose-500">*</span>
+              <label className="block text-[13px] font-semibold text-[#0F172A] mb-1.5">
+                Subjek / Judul Kendala <span className="text-[#EF4444]">*</span>
               </label>
               <input
                 type="text"
@@ -532,76 +521,80 @@ export const PublicTicketForm: React.FC = () => {
                 placeholder="Contoh: Kendala Gagal Dispatching Paket Mid Mile"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] transition-all"
+                className="w-full h-11 px-3.5 rounded-[10px] border border-[#E2E8F0] text-[14px] text-[#0F172A] placeholder-[#CBD5E1] focus:outline-none focus:ring-2 focus:ring-[#199FB1]/30 focus:border-[#199FB1] transition-all"
               />
             </div>
 
             {/* Description */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700">
-                  Rincian Deskripsi Kendala <span className="text-rose-500">*</span>
+                <label className="block text-[13px] font-semibold text-[#0F172A]">
+                  Rincian Deskripsi Masalah <span className="text-[#EF4444]">*</span>
                 </label>
-                <span className="text-[10px] text-slate-400 font-semibold">{description.length} karakter</span>
+                <span className="text-[11px] text-[#94A3B8] font-mono">{description.length} karakter</span>
               </div>
               <textarea
                 required
                 rows={4}
-                placeholder="Jelaskan kronologi, lokasi spesifik gedung/ruangan, kode error, atau detail resi jika ada..."
+                placeholder="Jelaskan kronologi kendala, nomor resi terkait, kode error, atau detail ruangan..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] transition-all resize-y leading-relaxed"
+                className="w-full p-3.5 rounded-[10px] border border-[#E2E8F0] text-[14px] text-[#0F172A] placeholder-[#CBD5E1] focus:outline-none focus:ring-2 focus:ring-[#199FB1]/30 focus:border-[#199FB1] transition-all resize-y leading-relaxed"
               />
             </div>
 
-            {/* Drag & Drop Attachments */}
-            <div className="space-y-2.5">
+            {/* Drag & Drop File Upload */}
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-slate-700">Lampiran Bukti Foto / Dokumen</label>
-                <span className="text-[10px] text-slate-400 font-medium">Maks 10MB per berkas</span>
+                <label className="block text-[13px] font-semibold text-[#0F172A]">Lampiran Bukti (Opsional)</label>
+                <span className="text-[11px] text-[#94A3B8]">Maks 5 berkas (≤10MB)</span>
               </div>
 
               <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
+                onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragActive(false);
+                  processFiles(e.dataTransfer.files);
+                }}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all ${
-                  isDragOver
-                    ? 'border-[#0D5C75] bg-[#EAF4F8]/60 scale-[1.01]'
-                    : 'border-slate-300 hover:border-[#199FB1] bg-slate-50/60 hover:bg-slate-50'
+                className={`border-2 border-dashed rounded-[12px] p-6 text-center cursor-pointer transition-all ${
+                  dragActive
+                    ? 'border-[#0D5C75] bg-[#EAF4F8]/60'
+                    : 'border-[#CBD5E1] hover:border-[#199FB1] bg-[#F8FAFC]'
                 }`}
               >
-                <UploadCloud className={`w-8 h-8 mx-auto mb-1.5 transition-transform ${isDragOver ? 'scale-110 text-[#0D5C75]' : 'text-slate-400'}`} />
-                <p className="text-xs text-slate-700 font-bold">
-                  {isDragOver ? 'Lepaskan berkas untuk mengunggah' : 'Klik atau seret foto/dokumen ke sini'}
+                <Upload size={24} className="text-[#94A3B8] mx-auto mb-2" />
+                <p className="text-[13px] font-semibold text-[#0F172A]">
+                  Tarik berkas ke sini, atau <span className="text-[#199FB1] underline">pilih berkas</span>
                 </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Mendukung file PNG, JPG, JPEG, PDF</p>
+                <p className="text-[11px] text-[#94A3B8] mt-0.5">PNG, JPG, PDF hingga 10MB</p>
               </div>
 
-              {/* Uploaded Files Preview List */}
+              {/* Uploaded File Chips */}
               {attachments.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                  {attachments.map(file => (
-                    <div key={file.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#F4F7F9] border border-slate-200 text-xs">
+                  {attachments.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between p-2.5 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0] text-xs">
                       <div className="flex items-center gap-2 min-w-0">
                         {file.dataUrl ? (
-                          <img src={file.dataUrl} alt={file.name} className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0" />
+                          <img src={file.dataUrl} alt={file.name} className="w-8 h-8 rounded-[6px] object-cover border border-[#E2E8F0] flex-shrink-0" />
                         ) : (
-                          <File className="w-6 h-6 text-slate-400 shrink-0" />
+                          <File size={20} className="text-[#94A3B8] flex-shrink-0" />
                         )}
                         <div className="min-w-0">
-                          <span className="truncate block font-bold text-slate-800 text-[11px]">{file.name}</span>
-                          <span className="text-[10px] text-slate-400">{file.size}</span>
+                          <p className="font-semibold text-[#0F172A] truncate">{file.name}</p>
+                          <p className="text-[10px] text-[#64748B]">{file.size}</p>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleRemoveAttachment(file.id); }}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-white transition-colors cursor-pointer"
-                        title="Hapus Berkas"
+                        className="p-1 rounded text-[#94A3B8] hover:text-[#DC2626] transition-colors cursor-pointer"
+                        title="Hapus berkas"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   ))}
@@ -609,78 +602,87 @@ export const PublicTicketForm: React.FC = () => {
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+            {/* Bottom Actions */}
+            <div className="pt-4 border-t border-[#F1F5F9] flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={handleResetForm}
-                className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                onClick={() => {
+                  setSubject('');
+                  setDescription('');
+                  setWorkLocation('');
+                  setAttachments([]);
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 text-[13px] font-semibold text-[#64748B] hover:text-[#0F172A] hover:bg-slate-100 rounded-[10px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset Formulir</span>
+                <RotateCcw size={14} /> Reset
               </button>
 
-              <motion.button
-                whileHover={{ scale: 1.02, y: -1 }}
-                whileTap={{ scale: 0.96 }}
+              <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0D5C75] to-[#199FB1] hover:from-[#083342] hover:to-[#0D5C75] text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto h-11 px-6 rounded-[10px] bg-[#0D5C75] hover:bg-[#083342] text-white text-[14px] font-semibold transition-all shadow-md shadow-[#0D5C75]/20 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
               >
-                <Send className="w-4 h-4" />
-                <span>{isSubmitting ? 'Mengirimkan Tiket...' : 'Kirim Laporan Tiket'}</span>
-              </motion.button>
+                <Send size={15} />
+                <span>{isSubmitting ? 'Mengirimkan...' : 'Kirim Laporan Tiket'}</span>
+              </button>
             </div>
           </form>
 
-          {/* Right Column: Live Interactive Ticket Card Preview */}
+          {/* Right Column: Live Real-Time Ticket Preview + Contextual Tip */}
           <div className="space-y-4">
-            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3.5">
-              <div className="flex items-center gap-2 text-xs font-black text-[#0D5C75]">
-                <Eye className="w-4 h-4" />
+            {/* Live Preview Card */}
+            <div className="bg-white rounded-[16px] border border-[#E2E8F0]/80 shadow-[0_2px_8px_rgba(15,23,42,0.06)] p-5 space-y-3">
+              <div className="flex items-center gap-2 text-[13px] font-bold text-[#0D5C75]">
+                <Eye size={16} />
                 <span>Pratinjau Tiket Real-Time</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-[#EAF4F8]/50 border border-slate-200/80 space-y-2.5">
-                <div className="flex items-center justify-between text-[10px] font-bold">
-                  <span className="font-mono text-[#0D5C75] bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs">
+              <div className="p-4 rounded-[12px] bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] font-bold text-[#0D5C75] bg-white px-2 py-0.5 rounded border border-[#E2E8F0]">
                     #TICK-PREVIEW
                   </span>
-                  <span className={`px-2 py-0.5 rounded-full ${
-                    priority === 'Urgent' ? 'bg-rose-100 text-rose-800' : priority === 'High' ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700'
-                  }`}>
-                    {priority}
-                  </span>
+                  <PriorityBadge priority={priority} />
                 </div>
 
-                <h4 className="text-xs font-extrabold text-slate-900 leading-snug">
+                <h4 className="text-[14px] font-bold text-[#0F172A] leading-snug">
                   {subject.trim() || '(Judul kendala akan muncul di sini...)'}
                 </h4>
 
-                <p className="text-[11px] text-slate-500 line-clamp-3 leading-relaxed">
-                  {description.trim() || '(Rincian deskripsi permasalahan Anda...)'}
+                <p className="text-[12px] text-[#64748B] line-clamp-3 leading-relaxed">
+                  {description.trim() || '(Rincian deskripsi masalah yang Anda ketikkan...)'}
                 </p>
 
-                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px] text-slate-400 font-semibold">
-                  <span className="truncate max-w-[150px]">{currentDepartment.name}: {selectedTopic}</span>
-                  <span>{attachments.length} Lampiran</span>
+                <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between text-[11px] text-[#64748B]">
+                  <span className="truncate max-w-[140px] font-semibold">{currentDepartment.name}</span>
+                  <span>{attachments.length} Berkas</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#0D5C75]">
-                <Sparkles className="w-4 h-4 text-[#199FB1]" />
-                <span>Unit Disposisi Otomatis:</span>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                <p className="font-bold text-slate-800">{currentDepartment.uptUnit}</p>
-                <p className="text-[11px] text-slate-500">Laporan akan diteruskan ke teknisi spesialis unit terkait sesuai SLA resmi.</p>
+            {/* Contextual Tip Card */}
+            <div className="bg-[#FFFBEB] rounded-[16px] border border-[#FDE68A] p-4 flex gap-3">
+              <Lightbulb size={18} className="text-[#D97706] flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[12px] font-bold text-[#92400E]">Tips Pengaduan {currentDepartment.name}</p>
+                <p className="text-[12px] text-[#B45309] leading-relaxed mt-1">{currentDepartment.tip}</p>
               </div>
             </div>
+
+            {/* UPT Disposisi Badge */}
+            <div className="bg-white rounded-[16px] border border-[#E2E8F0]/80 p-4 space-y-1">
+              <div className="flex items-center gap-1.5 text-[12px] font-bold text-[#0D5C75]">
+                <Sparkles size={14} className="text-[#199FB1]" />
+                <span>Unit Disposisi Otomatis</span>
+              </div>
+              <p className="text-[12px] font-semibold text-slate-800">{currentDepartment.uptUnit}</p>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
   );
 };
+
+export default PublicTicketForm;

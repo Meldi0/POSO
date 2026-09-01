@@ -1,238 +1,328 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { 
+  User, 
   Lock, 
-  Mail, 
-  ArrowRight, 
-  AlertCircle, 
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  UserCheck,
-  Headphones,
-  Sparkles,
-  Zap
+  ArrowLeft, 
+  Headphones, 
+  AlertCircle,
+  Shield,
+  Layers,
+  Wrench
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
 export const Login: React.FC = () => {
-  const { login, isLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { success, error, info } = useToast();
-
-  const fromPath = (location.state as any)?.from?.pathname || '';
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
-  const [selectedDemoRole, setSelectedDemoRole] = useState<'admin' | 'operator' | 'pelapor' | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { success, error: toastError } = useToast();
+
+  const from = (location.state as any)?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setErrorMsg('Email dan kata sandi wajib diisi.');
-      return;
-    }
-
     setErrorMsg('');
-    const res = await login(email.trim(), password);
-    if (res.success) {
-      success(`Selamat datang kembali, ${res.role}!`);
-      if (res.role === 'operator' || res.role === 'upt' || res.role === 'admin') {
-        navigate('/dashboard', { replace: true });
+    setLoading(true);
+
+    try {
+      const res = await login(email.trim(), password);
+      if (res.success) {
+        success('Selamat datang kembali!');
+        if (res.role === 'pengguna_umum') {
+          navigate('/my-tickets', { replace: true });
+        } else {
+          navigate(from === '/login' ? '/dashboard' : from, { replace: true });
+        }
       } else {
-        navigate(fromPath || '/my-tickets', { replace: true });
+        const msg = res.message || 'Kombinasi email atau password salah.';
+        setErrorMsg(msg);
+        toastError(msg);
       }
-    } else {
-      setErrorMsg(res.message || 'Email atau kata sandi salah.');
-      error('Autentikasi gagal. Periksa kembali email dan kata sandi Anda.');
+    } catch (err: any) {
+      const msg = err.message || 'Terjadi kesalahan saat masuk ke sistem.';
+      setErrorMsg(msg);
+      toastError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleQuickFill = (demoEmail: string, demoPass: string, role: 'admin' | 'operator' | 'pelapor') => {
+  const handleDemoAccount = (demoEmail: string, demoPass: string) => {
     setEmail(demoEmail);
     setPassword(demoPass);
-    setSelectedDemoRole(role);
-    setErrorMsg('');
-    info(`Akun demo ${role.toUpperCase()} dipilih.`);
   };
 
   return (
-    <div className="relative min-h-screen bg-[#F4F7FB] flex items-center justify-center p-4 sm:p-6 font-sans text-slate-800 selection:bg-[#0D5C75] selection:text-white overflow-hidden">
+    <div className="relative min-h-screen bg-[#F4F7F9] text-[#0F172A] font-sans flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-hidden selection:bg-[#0D5C75] selection:text-white">
       
-      {/* Ambient Fluid Background */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#FAFBFD] via-[#F0F5FA] to-[#E9F0F8]" />
+      {/* Top Left Navigation Link */}
+      <Link 
+        to="/" 
+        className="absolute top-5 left-6 z-30 flex items-center gap-2 text-xs font-bold text-[#0D5C75] hover:text-[#083342] bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-[#E2E8F0] shadow-xs transition-all"
+      >
+        <ArrowLeft size={14} />
+        <span>Kembali ke Beranda</span>
+      </Link>
+
+      {/* Decorative Bottom-Right 3D Cyan Sphere (matching image layout) */}
+      <motion.div
+        animate={{
+          scale: [1, 1.06, 1],
+          y: [0, -8, 0]
+        }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        className="fixed -bottom-16 -right-16 w-56 h-56 sm:w-72 sm:h-72 rounded-full bg-gradient-to-br from-[#199FB1] via-[#0D5C75] to-[#083342] shadow-[0_20px_50px_rgba(13,92,117,0.3)] pointer-events-none z-0 opacity-90"
+        style={{
+          boxShadow: 'inset -12px -12px 28px rgba(0,0,0,0.35), inset 12px 12px 28px rgba(255,255,255,0.4), 0 24px 60px rgba(13,92,117,0.25)'
+        }}
+      />
+
+      {/* Main Container Split Box */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="relative z-10 w-full max-w-5xl bg-white rounded-[28px] sm:rounded-[36px] shadow-[0_24px_64px_rgba(15,23,42,0.12)] border border-[#E2E8F0] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[580px]"
+      >
         
-        <motion.div 
-          animate={{
-            x: [-20, 30, -20],
-            y: [-15, 25, -15],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-24 -left-20 w-[650px] h-[650px] rounded-full bg-gradient-to-br from-[#0D5C75]/20 via-[#0284C7]/15 to-transparent blur-[90px]"
-        />
+        {/* =========================================================================
+            LEFT COLUMN: 3D ORGANIC CURVES & WELCOME HERO (OCEAN & CYAN PALETTE)
+        ========================================================================= */}
+        <div className="lg:col-span-6 relative bg-gradient-to-br from-[#083342] via-[#0D5C75] to-[#199FB1] p-8 sm:p-12 text-white flex flex-col justify-between overflow-hidden">
+          
+          {/* Background Ambient Glow & Spheres */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Top Large Curved Blob */}
+            <div className="absolute -top-24 -left-20 w-96 h-96 rounded-full bg-gradient-to-br from-[#199FB1]/50 to-[#0D5C75]/20 blur-2xl" />
 
-        <motion.div 
-          animate={{
-            x: [25, -25, 25],
-            y: [20, -20, 20],
-            scale: [1.1, 0.95, 1.1],
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -bottom-24 -right-20 w-[600px] h-[600px] rounded-full bg-gradient-to-tl from-[#F58A61]/20 via-[#FB923C]/12 to-transparent blur-[90px]"
-        />
-      </div>
-
-      {/* Main Container */}
-      <div className="relative z-10 w-full max-w-md space-y-5">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#0D5C75] transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Beranda</span>
-        </Link>
-
-        {/* Login Card */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="bg-white/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-2xl shadow-slate-900/10 space-y-5"
-        >
-          <div className="text-center space-y-2">
+            {/* Main Central 3D Sphere */}
             <motion.div 
-              whileHover={{ rotate: 8, scale: 1.08 }}
-              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#083342] via-[#0D5C75] to-[#199FB1] text-white flex items-center justify-center mx-auto mb-2 shadow-lg shadow-[#0D5C75]/25 cursor-pointer"
-            >
-              <Zap className="w-7 h-7" />
-            </motion.div>
-            <h1 className="text-2xl font-black text-slate-900">Masuk ke POSO</h1>
-            <p className="text-xs text-slate-500 font-medium">Portal Helpdesk & Layanan Terpadu Pegawai</p>
+              animate={{
+                y: [-6, 6, -6],
+                rotate: [0, 4, 0]
+              }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -bottom-20 -left-12 w-80 h-80 sm:w-96 sm:h-96 rounded-full bg-gradient-to-br from-[#38BDF8] via-[#199FB1] to-[#083342]"
+              style={{
+                boxShadow: 'inset -20px -20px 50px rgba(8,51,66,0.8), inset 16px 16px 40px rgba(255,255,255,0.45), 0 30px 80px rgba(0,0,0,0.35)'
+              }}
+            />
+
+            {/* Second Smaller Overlapping 3D Sphere */}
+            <motion.div 
+              animate={{
+                y: [8, -8, 8],
+                x: [-4, 4, -4]
+              }}
+              transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute bottom-4 -right-12 w-52 h-52 sm:w-64 sm:h-64 rounded-full bg-gradient-to-br from-[#199FB1] via-[#0D5C75] to-[#083342]"
+              style={{
+                boxShadow: 'inset -14px -14px 35px rgba(0,0,0,0.6), inset 12px 12px 30px rgba(255,255,255,0.35), 0 20px 50px rgba(0,0,0,0.3)'
+              }}
+            />
           </div>
 
+          {/* Top Brand Tag */}
+          <div className="relative z-10 flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center shadow-sm">
+              <Headphones size={18} color="white" />
+            </div>
+            <div>
+              <span className="text-[15px] font-black tracking-tight text-white block leading-none">POSO</span>
+              <span className="text-[10px] font-bold text-[#A5D1E1] tracking-wider uppercase">Helpdesk Terpadu</span>
+            </div>
+          </div>
+
+          {/* Welcome Text Content */}
+          <div className="relative z-10 my-auto py-10 sm:py-14 space-y-3">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              WELCOME
+            </h2>
+            <p className="text-sm sm:text-base font-bold text-[#BAE6FC] uppercase tracking-wider">
+              POS INDONESIA HELPDESK SYSTEM
+            </p>
+            <p className="text-xs sm:text-sm text-white/80 leading-relaxed max-w-sm pt-1">
+              Sistem Manajemen Pengaduan & Layanan Terpadu POS Indonesia. Laporkan kendala, pantau progres penanganan, dan tingkatkan efisiensi operasional dengan standar SLA terukur.
+            </p>
+          </div>
+
+          {/* Bottom Security Note */}
+          <div className="relative z-10 flex items-center gap-2 text-[11px] text-[#BAE6FC]/80 font-medium">
+            <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+            <span>Koneksi Sistem Terenkripsi & Terverifikasi SSO</span>
+          </div>
+
+        </div>
+
+
+        {/* =========================================================================
+            RIGHT COLUMN: SIGN IN FORM (CLEAN WHITE CARD)
+        ========================================================================= */}
+        <div className="lg:col-span-6 p-8 sm:p-12 flex flex-col justify-center bg-white space-y-6">
+          
+          {/* Header */}
+          <div className="space-y-1.5">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
+              Sign In
+            </h1>
+            <p className="text-xs sm:text-sm text-[#64748B]">
+              Silakan masukkan email dan kata sandi akun dinas Anda
+            </p>
+          </div>
+
+          {/* Error Message */}
           {errorMsg && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2"
+              className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2"
             >
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <AlertCircle size={16} className="text-rose-600 flex-shrink-0" />
               <span>{errorMsg}</span>
             </motion.div>
           )}
 
-          {/* Quick 1-Click Demo Credentials */}
-          <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
-            <span className="text-[10px] font-black text-slate-400 uppercase block tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-[#0D5C75]" />
-              Pilihan Akun Uji Coba:
-            </span>
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin@poso.local', 'Admin123!', 'admin')}
-                className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border flex flex-col items-center gap-1 cursor-pointer ${
-                  selectedDemoRole === 'admin' 
-                    ? 'bg-[#083342] text-white border-[#083342] shadow-xs' 
-                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Admin</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('operator@poso.local', 'Operator123!', 'operator')}
-                className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border flex flex-col items-center gap-1 cursor-pointer ${
-                  selectedDemoRole === 'operator' 
-                    ? 'bg-[#0D5C75] text-white border-[#0D5C75] shadow-xs' 
-                    : 'bg-white hover:bg-slate-100 text-[#0D5C75] border-slate-200'
-                }`}
-              >
-                <Headphones className="w-4 h-4" />
-                <span>Operator</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('dewi@gmail.com', 'User123!', 'pelapor')}
-                className={`py-2 px-2 rounded-xl text-xs font-bold transition-all border flex flex-col items-center gap-1 cursor-pointer ${
-                  selectedDemoRole === 'pelapor' 
-                    ? 'bg-slate-800 text-white border-slate-800 shadow-xs' 
-                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <UserCheck className="w-4 h-4" />
-                <span>Pelapor</span>
-              </button>
-            </div>
-          </div>
-
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            
+            {/* Field 1: User Name / Email */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Alamat Email</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
+                  <User size={18} />
+                </div>
                 <input
                   type="email"
                   required
-                  placeholder="nama@poso.local"
+                  placeholder="Email Dinas / User Name"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] transition-all"
+                  className="w-full h-12 pl-11 pr-4 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0]/60 focus:bg-white border border-transparent focus:border-[#0D5C75] text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                 />
               </div>
             </div>
 
+            {/* Field 2: Password with SHOW/HIDE Button */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Kata Sandi</label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
+                  <Lock size={18} />
+                </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="••••••••"
+                  placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] transition-all"
+                  className="w-full h-12 pl-11 pr-16 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0]/60 focus:bg-white border border-transparent focus:border-[#0D5C75] text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="p-1 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  onClick={() => setShowPassword(p => !p)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-extrabold text-[#0D5C75] hover:text-[#199FB1] uppercase tracking-wider transition-colors cursor-pointer"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? 'HIDE' : 'SHOW'}
                 </button>
               </div>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.96 }}
+            {/* Options Row: Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 text-xs font-semibold text-[#64748B] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded text-[#0D5C75] focus:ring-[#0D5C75] border-[#CBD5E1]"
+                />
+                <span>Remember me</span>
+              </label>
+
+              <span 
+                onClick={() => alert('Silakan hubungi Administrator atau IT Support untuk reset password dinas Anda.')}
+                className="text-xs font-semibold text-[#0D5C75] hover:text-[#199FB1] hover:underline cursor-pointer"
+              >
+                Forgot Password?
+              </span>
+            </div>
+
+            {/* Primary Sign In Button (Ocean Teal) */}
+            <button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#0D5C75] to-[#199FB1] hover:from-[#083342] hover:to-[#0D5C75] text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              disabled={loading}
+              className="w-full h-12 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-[0.99] mt-2"
             >
-              <span>{isLoading ? 'Memvalidasi...' : 'Masuk ke Sistem'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </motion.button>
+              <span>{loading ? 'Signing In...' : 'Sign In'}</span>
+            </button>
           </form>
 
-          <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
-            Belum memiliki akun terdaftar?{' '}
-            <Link to="/register" className="font-extrabold text-[#0D5C75] hover:underline">
-              Daftar akun di sini
-            </Link>
+          {/* 1-Click Demo Accounts (Fast Testing Helper) */}
+          <div className="pt-4 border-t border-[#F1F5F9] space-y-2">
+            <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider block text-center">
+              Pilih Akun Demo 1-Klik:
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleDemoAccount('admin@poso.local', 'Admin123!')}
+                className="p-2 rounded-xl bg-[#FDF4FF] border border-[#F5D0FE] text-left hover:bg-[#FAE8FF] transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#9333EA]">
+                  <Shield size={12} />
+                  <span>Admin Sistem</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDemoAccount('operator@poso.local', 'Operator123!')}
+                className="p-2 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] text-left hover:bg-[#DBEAFE] transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#1D4ED8]">
+                  <Layers size={12} />
+                  <span>Operator Front</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDemoAccount('upt.ti@poso.local', 'Upt123!')}
+                className="p-2 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] text-left hover:bg-[#DCFCE7] transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#15803D]">
+                  <Wrench size={12} />
+                  <span>Teknisi UPT</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDemoAccount('dewi@gmail.com', 'User123!')}
+                className="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-left hover:bg-[#F1F5F9] transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#475569]">
+                  <User size={12} />
+                  <span>Pelapor Dinas</span>
+                </div>
+              </button>
+            </div>
           </div>
-        </motion.div>
-      </div>
+
+        </div>
+
+      </motion.div>
     </div>
   );
 };
+
+export default Login;

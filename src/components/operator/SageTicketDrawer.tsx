@@ -1,471 +1,489 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Ticket, ThreadMessage } from '../../types';
-import { apiService } from '../../services/api';
+import React, { useState, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { 
   X, 
-  Send, 
-  ShieldCheck, 
-  Clock, 
-  User, 
+  Copy, 
+  Check, 
   MessageSquare, 
-  Lock,
-  CheckCircle2,
-  Copy,
-  Check,
-  ExternalLink,
-  Info,
-  Layers,
-  Sparkles,
-  MapPin,
+  GitBranch, 
+  Info, 
+  Lock, 
+  Send, 
+  Paperclip, 
+  ChevronDown, 
+  User, 
+  MapPin, 
+  Clock, 
+  AlertCircle,
   Building2,
-  Calendar
+  CheckCircle2,
+  Trash2
 } from 'lucide-react';
+import { Ticket, ThreadMessage, TicketStatus, TicketPriority } from '../../types';
+import { StatusBadge, PriorityBadge } from '../ui/Badge';
+import { SlaCountdown } from '../features/SlaCountdown';
 import { parseTicketDetails, parseThreadMessage } from '../../utils/ticketFormatter';
 import { AttachmentGallery } from '../common/AttachmentGallery';
+import { apiService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
-export interface SageTicketDrawerProps {
+interface SageTicketDrawerProps {
   ticket: Ticket | null;
   onClose: () => void;
-  onUpdateStatus: (ticketId: string, status: string, assignedUpt?: string) => Promise<void>;
-  isUpdating: boolean;
+  onStatusChange: (ticket: Ticket, newStatus: TicketStatus) => void;
+  onTicketUpdated?: () => void;
 }
+
+const validTransitions: Record<TicketStatus, TicketStatus[]> = {
+  open: ['in_progress', 'closed'],
+  in_progress: ['waiting', 'closed'],
+  waiting: ['in_progress', 'closed'],
+  closed: ['open'],
+};
+
+const statusLabels: Record<TicketStatus, string> = {
+  open: 'Open',
+  in_progress: 'In Progress',
+  waiting: 'Menunggu',
+  closed: 'Selesai',
+};
 
 export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
   ticket,
   onClose,
-  onUpdateStatus,
-  isUpdating
+  onStatusChange,
+  onTicketUpdated
 }) => {
-  if (!ticket) return null;
-
-  const { success, info } = useToast();
-  const [activeTab, setActiveTab] = useState<'chat' | 'triage' | 'info'>('chat');
-  const [currentTicket, setCurrentTicket] = useState<Ticket>(ticket);
-  const [status, setStatus] = useState(ticket.status);
-  const [assignedUpt, setAssignedUpt] = useState(ticket.assigned_upt || '');
-  const [threads, setThreads] = useState<ThreadMessage[]>([]);
-  const [isLoadingThreads, setIsLoadingThreads] = useState(false);
+  const { user } = useAuth();
+  const { success, error: toastError, info } = useToast();
+  
+  const [activeTab, setActiveTab] = useState<'diskusi' | 'triase' | 'info'>('diskusi');
+  const [isInternal, setIsInternal] = useState(false);
   const [replyText, setReplyText] = useState('');
-  const [isInternalNote, setIsInternalNote] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [copiedId, setCopiedId] = useState(false);
+  const [threads, setThreads] = useState<ThreadMessage[]>([]);
+  const [loadingThreads, setLoadingThreads] = useState(false);
+
+  // Triage state
+  const [selectedUpt, setSelectedUpt] = useState(ticket?.assigned_upt || '');
+  const [selectedPriority, setSelectedPriority] = useState<TicketPriority>(ticket?.priority || 'Medium');
+  const [isSavingTriage, setIsSavingTriage] = useState(false);
 
   useEffect(() => {
-    setCurrentTicket(ticket);
-    setStatus(ticket.status);
-    setAssignedUpt(ticket.assigned_upt || '');
-    loadDetailsAndThreads(ticket.ticket_id);
-  }, [ticket.ticket_id]);
+    if (ticket) {
+      setActiveTab('diskusi');
+      setSelectedUpt(ticket.assigned_upt || '');
+      setSelectedPriority(ticket.priority || 'Medium');
+      fetchThreads(ticket.ticket_id);
+    }
+  }, [ticket]);
 
-  const loadDetailsAndThreads = async (id: string) => {
-    setIsLoadingThreads(true);
+  // ESC keyboard handler
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  const fetchThreads = async (ticketId: string) => {
+    setLoadingThreads(true);
     try {
-      const res = await apiService.getTicketDetail(id);
+      const res = await apiService.getTicketDetail(ticketId);
       if (res.status === 'success' && res.data) {
-        if (res.data.ticket) {
-          setCurrentTicket(res.data.ticket);
-          setStatus(res.data.ticket.status);
-          setAssignedUpt(res.data.ticket.assigned_upt || '');
-        }
         setThreads(res.data.threads || []);
       }
+    } catch (err) {
+      console.warn('Failed to load threads:', err);
     } finally {
-      setIsLoadingThreads(false);
+      setLoadingThreads(false);
     }
   };
 
-  const handleCopyId = () => {
-    navigator.clipboard.writeText(currentTicket.ticket_id);
-    setCopiedId(true);
-    info(`Nomor ID tiket #${currentTicket.ticket_id} disalin.`);
-    setTimeout(() => setCopiedId(false), 2000);
-  };
-
-  const copyTrackingUrl = () => {
-    const url = `${window.location.origin}/track?id=${currentTicket.ticket_id}`;
-    navigator.clipboard.writeText(url);
-    info('Tautan pelacakan publik tiket berhasil disalin!');
-  };
-
-  const handleSaveTriage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await onUpdateStatus(currentTicket.ticket_id, status, assignedUpt);
-    success(`Status tiket #${currentTicket.ticket_id} berhasil diperbarui!`);
+  const handleCopy = () => {
+    if (!ticket) return;
+    navigator.clipboard.writeText(ticket.ticket_id);
+    setCopied(true);
+    info(`ID Tiket #${ticket.ticket_id} disalin.`);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim()) return;
+    if (!ticket || !replyText.trim()) return;
 
     setIsSending(true);
     try {
       const res = await apiService.addThreadMessage({
-        ticket_id: currentTicket.ticket_id,
+        ticket_id: ticket.ticket_id,
         message: replyText.trim(),
-        visibility: isInternalNote ? 'internal' : 'public'
+        visibility: isInternal ? 'internal' : 'public'
       });
 
       if (res.status === 'success') {
         setReplyText('');
-        success(isInternalNote ? 'Catatan internal tersimpan.' : 'Balasan terkirim ke pelapor.');
-        await loadDetailsAndThreads(currentTicket.ticket_id);
+        success(isInternal ? 'Catatan internal berhasil disimpan.' : 'Tanggapan berhasil dikirimkan ke pelapor.');
+        await fetchThreads(ticket.ticket_id);
       }
+    } catch (err: any) {
+      toastError(err.message || 'Gagal mengirim pesan');
     } finally {
       setIsSending(false);
     }
   };
 
-  const uptList = [
-    'UPT Pengendalian Operasi & Transportasi',
-    'UPT Sarana & Prasarana (CGS)',
-    'UPT Postal Security & Keamanan',
-    'UPT Quality Control & Audit SLA',
-    'UPT TI & Sistem Informasi',
-    'Helpdesk Pusat & Layanan Terpadu'
-  ];
+  const handleSaveTriage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ticket) return;
 
-  // Parse clean ticket description & metadata
-  const parsedDetails = parseTicketDetails(currentTicket.description, currentTicket.category);
-  const requesterDisplay = currentTicket.requester_email || ticket.requester_email || 'Pelapor Umum';
+    setIsSavingTriage(true);
+    try {
+      const res = await apiService.updateTicketStatus({
+        ticket_id: ticket.ticket_id,
+        status: ticket.status,
+        assigned_upt: selectedUpt,
+        priority: selectedPriority
+      });
 
-  // Filter out redundant initial submission from threads
-  const followUpThreads = threads.filter((th, index) => {
-    if (index === 0 && (th.message.includes(parsedDetails.cleanDescription) || th.sender_role === 'pengguna_umum')) {
-      return false;
+      if (res.status === 'success') {
+        success('Disposisi UPT dan prioritas berhasil diperbarui!');
+        if (onTicketUpdated) onTicketUpdated();
+      } else {
+        toastError(res.message || 'Gagal memperbarui disposisi');
+      }
+    } catch (err: any) {
+      toastError(err.message || 'Terjadi gangguan saat menyimpan triase');
+    } finally {
+      setIsSavingTriage(false);
     }
-    return true;
-  });
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'OP';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  const parsedTicket = ticket 
+    ? parseTicketDetails(ticket.description, ticket.category) 
+    : { cleanDescription: '', location: '', departmentAndTopic: '', attachments: [] };
+
+  const nextStatuses = ticket ? validTransitions[ticket.status] || [] : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs"
-      />
+    <AnimatePresence>
+      {ticket && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-[2px] z-40"
+            onClick={onClose}
+          />
 
-      {/* Drawer Panel */}
-      <motion.div
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: "spring", stiffness: 350, damping: 32 }}
-        className="relative w-full sm:max-w-xl md:max-w-2xl bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col justify-between overflow-hidden z-10 font-sans"
-      >
-        {/* 1. Header */}
-        <div className="p-4 sm:p-5 bg-slate-50/95 border-b border-slate-200 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <button
-                type="button"
-                onClick={handleCopyId}
-                title="Salin ID Tiket"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono text-xs font-bold text-[#0D5C75] hover:border-[#0D5C75] transition-all shadow-2xs cursor-pointer"
-              >
-                <span>#{currentTicket.ticket_id}</span>
-                {copiedId ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
-              </button>
-
-              <span className="text-xs font-semibold text-slate-600 bg-white px-2.5 py-0.5 rounded-md border border-slate-200">
-                {currentTicket.category}
-              </span>
-
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                currentTicket.status === 'closed' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
-              }`}>
-                {currentTicket.status}
-              </span>
-            </div>
-
-            <h2 className="text-sm sm:text-base font-extrabold text-slate-900 leading-snug line-clamp-2">
-              {currentTicket.subject}
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={copyTrackingUrl}
-              title="Salin Tautan Lacak"
-              className="p-2 rounded-xl text-slate-400 hover:text-[#0D5C75] hover:bg-slate-200 transition-colors cursor-pointer"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* 2. Interactive Navigation Tabs */}
-        <div className="px-4 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('chat')}
-            className={`py-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'chat'
-                ? 'border-[#0D5C75] text-[#0D5C75]'
-                : 'border-transparent text-slate-500 hover:text-slate-900'
-            }`}
+          {/* Drawer Panel */}
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+            className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[500px] bg-white shadow-[0_20px_48px_rgba(15,23,42,0.18)] flex flex-col"
           >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Diskusi ({followUpThreads.length})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('triage')}
-            className={`py-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'triage'
-                ? 'border-[#0D5C75] text-[#0D5C75]'
-                : 'border-transparent text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Triase & UPT</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('info')}
-            className={`py-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'info'
-                ? 'border-[#0D5C75] text-[#0D5C75]'
-                : 'border-transparent text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <Info className="w-3.5 h-3.5" />
-            <span>Metadata & SLA</span>
-          </button>
-        </div>
-
-        {/* 3. Drawer Body */}
-        <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-4 custom-scrollbar">
-          {/* TAB 1: DISKUSI / THREADS */}
-          {activeTab === 'chat' && (
-            <div className="space-y-4">
-              {/* Original Complaint Box */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
-                <div className="flex items-center justify-between text-[11px] text-slate-500">
-                  <span className="font-bold text-slate-700 flex items-center gap-1">
-                    <User className="w-3 h-3 text-slate-400" />
-                    <span>Laporan Utama ({requesterDisplay})</span>
-                  </span>
-                  <span>{currentTicket.created_at ? new Date(currentTicket.created_at).toLocaleString('id-ID') : '-'}</span>
-                </div>
-                <p className="text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">
-                  {parsedDetails.cleanDescription || currentTicket.description || '(Tidak ada deskripsi tambahan)'}
-                </p>
-                {parsedDetails.attachments.length > 0 && (
-                  <div className="pt-2 border-t border-slate-200/60">
-                    <AttachmentGallery attachments={parsedDetails.attachments} />
-                  </div>
-                )}
-              </div>
-
-              {/* Thread History */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-[#0D5C75]" />
-                  <span>Riwayat Tanggapan:</span>
-                </h4>
-
-                {isLoadingThreads ? (
-                  <div className="p-6 text-center text-slate-400 text-xs font-medium">Memuat pesan...</div>
-                ) : followUpThreads.length === 0 ? (
-                  <div className="p-6 text-center text-slate-400 text-xs font-medium bg-slate-50 rounded-xl border border-slate-200/60">
-                    Belum ada tanggapan lanjutan untuk tiket ini. Kirim balasan di bawah.
-                  </div>
-                ) : (
-                  followUpThreads.map(th => {
-                    const isInternal = th.visibility === 'internal';
-                    const isPelapor = th.sender_role === 'pengguna_umum';
-                    const parsedTh = parseThreadMessage(th.message);
-
-                    return (
-                      <motion.div
-                        key={th.thread_id}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`p-3.5 rounded-2xl border text-xs leading-relaxed space-y-2 ${
-                          isInternal
-                            ? 'bg-amber-50/90 border-amber-200 text-amber-950'
-                            : isPelapor
-                            ? 'bg-slate-50 border-slate-200'
-                            : 'bg-white border-slate-200 shadow-xs text-slate-800'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-[11px] font-bold">
-                          <div className="flex items-center gap-1.5">
-                            {isInternal ? (
-                              <span className="inline-flex items-center gap-1 text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-md">
-                                <Lock className="w-3 h-3" />
-                                <span>Catatan Internal Staf</span>
-                              </span>
-                            ) : (
-                              <span className="text-[#0D5C75] bg-[#EAF4F8] px-2 py-0.5 rounded-md">
-                                {isPelapor ? 'Tanggapan Pelapor' : (th.sender_name || 'Tim Petugas POSO')}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-slate-400 font-normal text-[10px]">
-                            {new Date(th.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • {new Date(th.created_at).toLocaleDateString('id-ID')}
-                          </span>
-                        </div>
-
-                        {parsedTh.cleanText && <p className="whitespace-pre-wrap">{parsedTh.cleanText}</p>}
-                        {parsedTh.attachments.length > 0 && <AttachmentGallery attachments={parsedTh.attachments} />}
-                      </motion.div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: TRIAGE & UPT SETTINGS */}
-          {activeTab === 'triage' && (
-            <div className="space-y-4">
-              <form onSubmit={handleSaveTriage} className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-[#0D5C75]" />
-                  <span>Perbarui Status & Delegasi Tim</span>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0] flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="font-mono text-[13px] font-bold text-[#0D5C75] bg-[#F8FAFC] px-2 py-0.5 rounded border border-[#E2E8F0]">
+                  #{ticket.ticket_id}
                 </span>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Status Pengerjaan Tiket</label>
-                    <select
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value as any)}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#0D5C75]/20 focus:outline-none"
-                    >
-                      <option value="open">Open (Baru / Belum Ditindaklanjuti)</option>
-                      <option value="in_progress">In Progress (Sedang Dikerjakan UPT)</option>
-                      <option value="waiting">Waiting (Menunggu Konfirmasi Pelapor)</option>
-                      <option value="closed">Closed (Telah Selesai & Ditutup)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Delegasikan ke Unit Pelaksana Teknis (UPT)</label>
-                    <select
-                      value={assignedUpt}
-                      onChange={(e) => setAssignedUpt(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#0D5C75]/20 focus:outline-none"
-                    >
-                      <option value="">-- Pilih Unit UPT --</option>
-                      {uptList.map(u => (
-                        <option key={u} value={u}>{u}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
                 <button
-                  type="submit"
-                  disabled={isUpdating}
-                  className="w-full py-2.5 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-xs font-bold transition-all shadow-md shadow-[#0D5C75]/20 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                  onClick={handleCopy}
+                  className="p-1 rounded text-[#94A3B8] hover:text-[#0D5C75] hover:bg-[#EAF4F8] transition-all cursor-pointer"
+                  title="Salin ID Tiket"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{isUpdating ? 'Menyimpan Perubahan...' : 'Simpan Status & Delegasi'}</span>
+                  {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
                 </button>
-              </form>
-            </div>
-          )}
+                <StatusBadge status={ticket.status} />
+                <PriorityBadge priority={ticket.priority} />
+              </div>
 
-          {/* TAB 3: INFO & SLA DETAILS */}
-          {activeTab === 'info' && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Pelapor</span>
-                  <p className="font-bold text-slate-800 truncate">{requesterDisplay}</p>
-                </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Lokasi Kantor / Gedung</span>
-                  <p className="font-bold text-slate-800 truncate">{parsedDetails.location || 'Seluruh Kantor'}</p>
-                </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Departemen & Topik</span>
-                  <p className="font-bold text-slate-800 truncate">{parsedDetails.departmentAndTopic || currentTicket.category}</p>
-                </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Target SLA Selesai</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[#0D5C75]">24 Jam</span>
-                    {currentTicket.sla_due_at && new Date(currentTicket.sla_due_at).getTime() < Date.now() && currentTicket.status !== 'closed' && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-600 text-white animate-pulse">
-                        Over SLA
-                      </span>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-[8px] text-[#94A3B8] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Quick Status Bar */}
+            <div className="px-5 py-2.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-[#64748B]">Ubah Status:</span>
+                {nextStatuses.map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => onStatusChange(ticket, st)}
+                    className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-white border border-[#E2E8F0] text-[#0D5C75] hover:bg-[#0D5C75] hover:text-white transition-all cursor-pointer"
+                  >
+                    → {statusLabels[st]}
+                  </button>
+                ))}
+              </div>
+
+              <SlaCountdown
+                slaTarget={ticket.sla_due_at || ticket.created_at}
+                isClosed={ticket.status === 'closed'}
+                compact
+              />
+            </div>
+
+            {/* Tab Switcher */}
+            <div className="flex border-b border-[#E2E8F0] px-5 flex-shrink-0 bg-white">
+              {[
+                { id: 'diskusi', label: 'Diskusi & Balasan', icon: MessageSquare },
+                { id: 'triase', label: 'Triase & Delegasi', icon: GitBranch },
+                { id: 'info', label: 'Info & SLA', icon: Info },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as any)}
+                  className={`flex items-center gap-1.5 py-3 px-3 text-[13px] font-semibold border-b-2 transition-all cursor-pointer ${
+                    activeTab === id
+                      ? 'border-[#0D5C75] text-[#0D5C75]'
+                      : 'border-transparent text-[#64748B] hover:text-[#0F172A]'
+                  }`}
+                >
+                  <Icon size={14} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Content Body */}
+            <div className="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-4">
+              
+              {/* TAB 1: DISKUSI & BALASAN */}
+              {activeTab === 'diskusi' && (
+                <div className="space-y-4">
+                  {/* Initial Problem Statement Box */}
+                  <div className="p-3.5 rounded-[12px] bg-[#F8FAFC] border border-[#E2E8F0] space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-[#64748B]">
+                      <span>Laporan Awal: {ticket.requester_name || 'Pelapor'}</span>
+                      <span>{new Date(ticket.created_at).toLocaleDateString('id-ID')}</span>
+                    </div>
+                    <h4 className="text-[13px] font-bold text-[#0F172A]">{ticket.subject}</h4>
+                    <p className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed">
+                      {parsedTicket.cleanDescription || ticket.description}
+                    </p>
+                    {parsedTicket.attachments.length > 0 && (
+                      <div className="pt-2">
+                        <AttachmentGallery attachments={parsedTicket.attachments} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thread messages */}
+                  <div className="space-y-3 pt-2">
+                    {threads.length === 0 ? (
+                      <p className="text-xs text-[#94A3B8] text-center py-4">Belum ada riwayat tanggapan tambahan</p>
+                    ) : (
+                      threads.map((msg) => {
+                        const isInternalMsg = msg.visibility === 'internal';
+                        const parsedTh = parseThreadMessage(msg.message);
+
+                        return (
+                          <div
+                            key={msg.thread_id}
+                            className={`flex gap-3 ${isInternalMsg ? 'pl-2 border-l-2 border-[#D97706]' : ''}`}
+                          >
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-2xs"
+                              style={{ backgroundColor: isInternalMsg ? '#D97706' : '#0D5C75' }}
+                            >
+                              {getInitials(msg.sender_name)}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[13px] font-semibold text-[#0F172A]">{msg.sender_name || 'Petugas'}</span>
+                                <span className="text-[11px] text-[#94A3B8]">{msg.sender_role}</span>
+                                {isInternalMsg && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FEF3C7] text-[#D97706]">
+                                    <Lock size={9} /> Internal
+                                  </span>
+                                )}
+                                <span className="text-[11px] text-[#94A3B8] ml-auto flex-shrink-0">
+                                  {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+
+                              <div
+                                className={`text-[13px] leading-relaxed p-3 rounded-[10px] whitespace-pre-wrap ${
+                                  isInternalMsg ? 'bg-[#FEF3C7] text-[#92400E]' : 'bg-[#F8FAFC] text-[#0F172A]'
+                                }`}
+                              >
+                                {parsedTh.cleanText}
+                                {parsedTh.attachments.length > 0 && (
+                                  <div className="pt-2">
+                                    <AttachmentGallery attachments={parsedTh.attachments} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>
-              </div>
+              )}
 
-              <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-blue-900 space-y-1">
-                <h5 className="font-bold flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-[#0D5C75]" />
-                  <span>SOP Layanan POSO</span>
-                </h5>
-                <p className="text-[11px] leading-relaxed opacity-90">
-                  Pastikan memberikan pembaruan status atau balasan kepada pelapor dalam kurun waktu 1x24 jam kerja sesuai panduan layanan institusi.
-                </p>
-              </div>
+              {/* TAB 2: TRIASE & DELEGASI */}
+              {activeTab === 'triase' && (
+                <form onSubmit={handleSaveTriage} className="space-y-4">
+                  <div className="p-4 rounded-[12px] bg-[#F8FAFC] border border-[#E2E8F0] space-y-3">
+                    <h4 className="text-[13px] font-bold text-[#0F172A]">Delegasikan Unit Penanggung Jawab</h4>
+                    
+                    <div>
+                      <label className="block text-[12px] font-semibold text-[#64748B] mb-1">Pilih Unit UPT</label>
+                      <select
+                        value={selectedUpt}
+                        onChange={(e) => setSelectedUpt(e.target.value)}
+                        className="w-full h-10 px-3 rounded-[8px] border border-[#E2E8F0] text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[#199FB1]/30"
+                      >
+                        <option value="">-- Pilih Unit Terkait --</option>
+                        <option value="UPT Pengendalian Operasi & Transportasi">UPT Pengendalian Operasi & Transportasi</option>
+                        <option value="UPT Sarana & Prasarana (CGS)">UPT Sarana & Prasarana (CGS)</option>
+                        <option value="UPT Postal Security & Keamanan">UPT Postal Security & Keamanan</option>
+                        <option value="UPT Quality Control & Audit SLA">UPT Quality Control & Audit SLA</option>
+                        <option value="UPT TI & Sistem Informasi">UPT TI & Sistem Informasi</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[12px] font-semibold text-[#64748B] mb-1">Tingkat Prioritas</label>
+                      <select
+                        value={selectedPriority}
+                        onChange={(e) => setSelectedPriority(e.target.value as TicketPriority)}
+                        className="w-full h-10 px-3 rounded-[8px] border border-[#E2E8F0] text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[#199FB1]/30"
+                      >
+                        <option value="Low">Low (Rendah)</option>
+                        <option value="Medium">Medium (Sedang)</option>
+                        <option value="High">High (Tinggi)</option>
+                        <option value="Urgent">Urgent (Darurat)</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSavingTriage}
+                      className="w-full h-10 rounded-[8px] bg-[#0D5C75] hover:bg-[#083342] text-white text-[13px] font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+                    >
+                      {isSavingTriage ? 'Menyimpan...' : 'Perbarui Disposisi Tiket'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* TAB 3: INFO & SLA */}
+              {activeTab === 'info' && (
+                <div className="space-y-3 text-[13px]">
+                  <div className="p-4 rounded-[12px] bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5">
+                    <h4 className="text-[13px] font-bold text-[#0F172A] mb-2">Informasi Detail Tiket</h4>
+                    
+                    <div className="flex justify-between py-1 border-b border-[#E2E8F0]">
+                      <span className="text-[#64748B]">Pelapor:</span>
+                      <span className="font-semibold text-[#0F172A]">{ticket.requester_name || 'Pelapor'}</span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-[#E2E8F0]">
+                      <span className="text-[#64748B]">Email:</span>
+                      <span className="font-mono text-[#0D5C75]">{ticket.requester_email}</span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-[#E2E8F0]">
+                      <span className="text-[#64748B]">Kategori:</span>
+                      <span className="font-semibold text-[#0F172A]">{ticket.category}</span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-[#E2E8F0]">
+                      <span className="text-[#64748B]">Lokasi Penempatan:</span>
+                      <span className="font-semibold text-[#0F172A]">{parsedTicket.location || 'Semua Cabang'}</span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-[#E2E8F0]">
+                      <span className="text-[#64748B]">Unit Bertugas:</span>
+                      <span className="font-semibold text-[#0F172A]">{ticket.assigned_upt || 'Menunggu Penugasan'}</span>
+                    </div>
+
+                    <div className="flex justify-between py-1">
+                      <span className="text-[#64748B]">Dibuat Pada:</span>
+                      <span className="text-[#0F172A]">{new Date(ticket.created_at).toLocaleString('id-ID')}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
-          )}
-        </div>
 
-        {/* 4. Reply Footer Form (Always visible when in 'chat' tab) */}
-        {activeTab === 'chat' && (
-          <form onSubmit={handleSendReply} className="p-3.5 sm:p-4 bg-slate-50/95 border-t border-slate-200 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={isInternalNote}
-                  onChange={(e) => setIsInternalNote(e.target.checked)}
-                  className="rounded text-[#0D5C75] focus:ring-[#0D5C75] w-3.5 h-3.5"
-                />
-                <span className={isInternalNote ? 'text-amber-800 font-bold' : ''}>
-                  {isInternalNote ? '🔒 Catatan Internal (Hanya Staf)' : 'Balasan Publik (Dapat Dilihat Pelapor)'}
-                </span>
-              </label>
-            </div>
+            {/* Bottom Reply Box (Always Available on Discussion Tab) */}
+            {activeTab === 'diskusi' && (
+              <form onSubmit={handleSendReply} className="p-4 border-t border-[#E2E8F0] bg-white flex-shrink-0 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  {/* Internal Note Toggle */}
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isInternal}
+                      onChange={(e) => setIsInternal(e.target.checked)}
+                      className="rounded text-[#D97706] focus:ring-[#D97706]"
+                    />
+                    <span className={`text-[12px] font-bold ${isInternal ? 'text-[#D97706]' : 'text-[#64748B]'}`}>
+                      🔒 Catatan Internal (Hanya Staf/UPT)
+                    </span>
+                  </label>
 
-            <div className="flex items-end gap-2">
-              <textarea
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder={isInternalNote ? "Tulis catatan internal untuk tim teknis..." : "Ketik pesan balasan untuk pelapor..."}
-                rows={2}
-                className="flex-1 p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] resize-none"
-              />
+                  <span className="text-[10px] text-[#94A3B8]">Tekan Kirim</span>
+                </div>
 
-              <motion.button
-                whileTap={{ scale: 0.94 }}
-                type="submit"
-                disabled={isSending || !replyText.trim()}
-                className={`p-3 rounded-xl text-white font-bold transition-all shadow-md shrink-0 disabled:opacity-50 cursor-pointer ${
-                  isInternalNote
-                    ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
-                    : 'bg-[#0D5C75] hover:bg-[#083342] shadow-[#0D5C75]/20'
-                }`}
-                title="Kirim Balasan"
-              >
-                <Send className="w-4 h-4" />
-              </motion.button>
-            </div>
-          </form>
-        )}
-      </motion.div>
-    </div>
+                <div className="flex gap-2">
+                  <textarea
+                    rows={2}
+                    required
+                    placeholder={isInternal ? "Ketik catatan internal investigasi/teknisi..." : "Ketik balasan untuk pelapor..."}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    className={`flex-1 p-2.5 rounded-[10px] border text-[13px] focus:outline-none transition-all resize-none ${
+                      isInternal 
+                        ? 'bg-[#FEF3C7]/40 border-[#D97706] text-[#92400E] placeholder-[#B45309]' 
+                        : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A] placeholder-[#94A3B8] focus:bg-white focus:ring-2 focus:ring-[#199FB1]/30'
+                    }`}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSending || !replyText.trim()}
+                    className={`px-4 rounded-[10px] text-white text-[13px] font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer flex-shrink-0 ${
+                      isInternal ? 'bg-[#D97706] hover:bg-[#B45309]' : 'bg-[#0D5C75] hover:bg-[#083342]'
+                    }`}
+                  >
+                    <Send size={15} />
+                    <span className="hidden sm:inline">Kirim</span>
+                  </button>
+                </div>
+              </form>
+            )}
+
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
+
+export default SageTicketDrawer;

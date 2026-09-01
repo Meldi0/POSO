@@ -1,325 +1,237 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { 
-  Inbox, 
-  Archive, 
-  ShieldAlert, 
+  LayoutDashboard, 
+  ListFilter, 
+  BarChart3, 
+  Users, 
+  Settings, 
+  ChevronLeft, 
+  ChevronRight, 
+  Database, 
   LogOut, 
-  ExternalLink,
-  HardDrive,
-  X,
-  ChevronLeft,
-  ChevronRight,
+  Headphones, 
+  Search,
   Compass,
-  Plus
+  FileSpreadsheet,
+  X
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export type DashboardViewType = 'tickets' | 'archive' | 'users' | 'datasource' | 'track';
+export type DashboardViewType = 'kanban' | 'table' | 'track' | 'users' | 'datasource' | 'settings' | 'reports';
 
-export interface SageSidebarProps {
+interface SageSidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
   activeView: DashboardViewType;
   onViewChange: (view: DashboardViewType) => void;
-  openTicketsCount: number;
-  closedTicketsCount: number;
-  isMobileOpen?: boolean;
-  onCloseMobile?: () => void;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
+  ticketCounts?: {
+    total: number;
+    open: number;
+    in_progress: number;
+    waiting: number;
+    closed: number;
+  };
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 export const SageSidebar: React.FC<SageSidebarProps> = ({
+  collapsed,
+  onToggle,
   activeView,
   onViewChange,
-  openTicketsCount,
-  closedTicketsCount,
-  isMobileOpen = false,
-  onCloseMobile = () => {},
-  isCollapsed = false,
-  onToggleCollapse
+  ticketCounts,
+  mobileOpen = false,
+  onMobileClose
 }) => {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const navItems = [
-    {
-      id: 'tickets' as const,
-      label: 'Triase Tiket Aktif',
-      shortLabel: 'Aktif',
-      icon: Inbox,
-      count: openTicketsCount,
-      activeBg: 'bg-[#0D5C75]',
-      activeText: 'text-white'
-    },
-    {
-      id: 'archive' as const,
-      label: 'Arsip Tiket Selesai',
-      shortLabel: 'Arsip',
-      icon: Archive,
-      count: closedTicketsCount,
-      activeBg: 'bg-[#199FB1]',
-      activeText: 'text-white'
-    },
-    {
-      id: 'track' as const,
-      label: 'Lacak Status Tiket',
-      shortLabel: 'Lacak',
-      icon: Compass,
-      activeBg: 'bg-[#0D5C75]',
-      activeText: 'text-white'
-    },
-    ...(isAdmin ? [
-      {
-        id: 'users' as const,
-        label: 'Kelola Staf & UPT',
-        shortLabel: 'Staf',
-        icon: ShieldAlert,
-        activeBg: 'bg-[#0D5C75]',
-        activeText: 'text-white'
-      },
-      {
-        id: 'datasource' as const,
-        label: 'Sumber Data Drive',
-        shortLabel: 'Drive',
-        icon: HardDrive,
-        activeBg: 'bg-[#0D5C75]',
-        activeText: 'text-white'
-      }
-    ] : [])
-  ];
-
-  const handleSelectTab = (id: DashboardViewType) => {
-    onViewChange(id);
-    onCloseMobile();
+  const getInitials = (name?: string) => {
+    if (!name) return 'OP';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
   };
 
-  const renderSidebarContent = (isMobile = false) => (
-    <div className="flex flex-col justify-between h-full p-4 sm:p-5">
-      <div className="space-y-4">
-        {/* Brand Header with POSO Emblem & Close button for mobile */}
-        <div className="pt-1 px-1 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => handleSelectTab('tickets')}
-            className="flex items-center gap-3 text-left cursor-pointer"
-          >
-            <motion.div 
-              whileHover={{ rotate: 8, scale: 1.08 }}
-              whileTap={{ scale: 0.94 }}
-              className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#083342] via-[#0D5C75] to-[#199FB1] p-0.5 shadow-lg shadow-[#0D5C75]/25 flex items-center justify-center cursor-pointer shrink-0"
-            >
-              <div className="w-full h-full rounded-[14px] bg-gradient-to-br from-[#0D5C75] to-[#083342] flex items-center justify-center">
-                <svg viewBox="0 0 32 32" fill="none" className="w-5 h-5">
-                  <defs>
-                    <linearGradient id="posoWingSide" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#38BDF8" />
-                      <stop offset="100%" stopColor="#0EA5E9" />
-                    </linearGradient>
-                    <linearGradient id="posoCoreSide" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#F58A61" />
-                      <stop offset="100%" stopColor="#E77448" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M16 2.5L27 8.5V17C27 23.8 22.2 28.3 16 30C9.8 28.3 5 23.8 5 17V8.5L16 2.5Z" fill="url(#posoWingSide)" fillOpacity="0.25" stroke="url(#posoWingSide)" strokeWidth="1.2" />
-                  <path d="M10 12.5L16 9.5L22 12.5L16 18.5L10 12.5Z" fill="#FFFFFF" />
-                  <path d="M12 18L16 15.5L20 18L16 23L12 18Z" fill="#FFFFFF" fillOpacity="0.75" />
-                  <circle cx="16" cy="15.5" r="2.2" fill="url(#posoCoreSide)" />
-                </svg>
-              </div>
-            </motion.div>
-            {(!isCollapsed || isMobile) && (
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-black text-lg text-[#0D5C75] tracking-tight block leading-none">POSO</span>
-                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-[#F58A61]/15 text-[#E77448] border border-[#F58A61]/30">v2.0</span>
-                </div>
-                <span className="text-[11px] font-semibold text-slate-400 mt-0.5 block truncate">Helpdesk Workstation</span>
-              </div>
-            )}
-          </button>
+  const navItems = [
+    { 
+      id: 'kanban' as DashboardViewType, 
+      icon: LayoutDashboard, 
+      label: 'Triase & Kanban',
+      badge: ticketCounts ? ticketCounts.open + ticketCounts.in_progress : undefined 
+    },
+    { 
+      id: 'table' as DashboardViewType, 
+      icon: ListFilter, 
+      label: 'Semua Tiket',
+      badge: ticketCounts?.total
+    },
+    { 
+      id: 'track' as DashboardViewType, 
+      icon: Compass, 
+      label: 'Lacak Tiket' 
+    },
+    { 
+      id: 'reports' as DashboardViewType, 
+      icon: BarChart3, 
+      label: 'Laporan & SLA' 
+    },
+    ...(isAdmin ? [
+      { 
+        id: 'users' as DashboardViewType, 
+        icon: Users, 
+        label: 'Manajemen Staf' 
+      },
+      { 
+        id: 'datasource' as DashboardViewType, 
+        icon: Database, 
+        label: 'Integrasi Data' 
+      },
+    ] : []),
+  ];
 
-          {isMobile ? (
-            <button
-              type="button"
-              onClick={onCloseMobile}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          ) : onToggleCollapse ? (
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              title={isCollapsed ? "Perluas Sidebar" : "Perkecil Sidebar"}
-              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-            >
-              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-            </button>
-          ) : null}
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-[#083342] text-white select-none overflow-hidden">
+      {/* Logo Header */}
+      <div className="flex items-center justify-between h-16 px-4 border-b border-white/10 flex-shrink-0">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="w-8 h-8 rounded-[10px] bg-[#199FB1] flex items-center justify-center flex-shrink-0 shadow-sm">
+            <Headphones size={16} color="white" strokeWidth={2} />
+          </div>
+          {!collapsed && (
+            <div className="overflow-hidden">
+              <p className="text-[15px] font-bold text-white leading-tight whitespace-nowrap">POSO</p>
+              <p className="text-[10px] text-[#199FB1] font-semibold uppercase tracking-wider whitespace-nowrap">Helpdesk System</p>
+            </div>
+          )}
         </div>
 
-        {/* User Card */}
-        {(!isCollapsed || isMobile) && (
-          <div className="p-3 apple-glass-card rounded-2xl flex items-center justify-between border border-slate-200/90 shadow-xs">
-            <div className="min-w-0 pr-2">
-              <h3 className="font-extrabold text-xs text-slate-900 truncate">
-                {user?.name || 'Operator Helpdesk'}
-              </h3>
-              <p className="text-[10px] text-[#0D5C75] font-bold capitalize truncate mt-0.5">
-                {user?.role === 'admin' ? 'Super Admin' : user?.role === 'upt' ? `UPT ${user.upt_unit}` : 'Staff Operator'}
+        {/* Mobile Close */}
+        {mobileOpen && onMobileClose && (
+          <button onClick={onMobileClose} className="p-1 rounded-lg text-white/60 hover:text-white lg:hidden">
+            <X size={18} />
+          </button>
+        )}
+      </div>
+
+      {/* Navigation Items */}
+      <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto custom-scrollbar">
+        {navItems.map(({ id, icon: Icon, label, badge }) => {
+          const isActive = activeView === id;
+          return (
+            <button
+              key={id}
+              onClick={() => {
+                onViewChange(id);
+                if (mobileOpen && onMobileClose) onMobileClose();
+              }}
+              title={collapsed ? label : undefined}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] transition-all duration-150 group relative cursor-pointer ${
+                isActive
+                  ? 'bg-[#199FB1] text-white shadow-sm'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Icon size={18} strokeWidth={isActive ? 2.2 : 1.75} className="flex-shrink-0" />
+              
+              {!collapsed && (
+                <div className="flex-1 flex items-center justify-between min-w-0">
+                  <span className="text-[13px] font-semibold truncate text-left">{label}</span>
+                  {badge !== undefined && badge > 0 && (
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      isActive ? 'bg-white text-[#0D5C75]' : 'bg-white/20 text-white'
+                    }`}>
+                      {badge}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Tooltip on Mini-rail collapse */}
+              {collapsed && (
+                <div className="absolute left-full ml-2.5 px-2.5 py-1 bg-[#0D5C75] text-white text-[12px] font-medium rounded-[6px] whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-md z-50">
+                  {label}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* User Profile Footer */}
+      <div className="border-t border-white/10 p-3 flex-shrink-0">
+        <div className={`flex items-center gap-3 px-2 py-2 rounded-[10px] hover:bg-white/10 transition-colors cursor-pointer ${collapsed ? 'justify-center' : ''}`}>
+          <div className="w-8 h-8 rounded-full bg-[#199FB1] flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0 shadow-xs">
+            {getInitials(user?.name)}
+          </div>
+          
+          {!collapsed && (
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <p className="text-[13px] font-semibold text-white truncate">{user?.name || 'Ahmad Operator'}</p>
+              <p className="text-[11px] text-[#199FB1] truncate capitalize">
+                {user?.role === 'admin' ? 'Administrator' : user?.role === 'upt' ? 'Teknisi UPT' : 'Operator Dinas'}
               </p>
             </div>
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-          </div>
-        )}
+          )}
 
-        {/* Quick Stats Cards */}
-        {(!isCollapsed || isMobile) && (
-          <div className="grid grid-cols-2 gap-2 text-center text-xs">
-            <motion.button
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.96 }}
-              type="button"
-              onClick={() => handleSelectTab('tickets')}
-              className={`p-2.5 rounded-xl transition-all text-left border ${
-                activeView === 'tickets' 
-                  ? 'bg-gradient-to-br from-[#0D5C75] to-[#148797] text-white border-transparent shadow-md shadow-[#0D5C75]/20' 
-                  : 'bg-white/70 hover:bg-white text-[#0D5C75] border-slate-200/80 shadow-xs'
-              }`}
+          {!collapsed && (
+            <button
+              onClick={logout}
+              className="p-1 rounded text-white/40 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              title="Keluar"
             >
-              <span className="text-[10px] block font-semibold opacity-85">Tiket Aktif</span>
-              <span className="font-black text-base">{openTicketsCount}</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.96 }}
-              type="button"
-              onClick={() => handleSelectTab('archive')}
-              className={`p-2.5 rounded-xl transition-all text-left border ${
-                activeView === 'archive' 
-                  ? 'bg-gradient-to-br from-[#199FB1] to-[#0D5C75] text-white border-transparent shadow-md shadow-[#199FB1]/20' 
-                  : 'bg-white/70 hover:bg-white text-slate-700 border-slate-200/80 shadow-xs'
-              }`}
-            >
-              <span className="text-[10px] block font-semibold opacity-85">Arsip Selesai</span>
-              <span className="font-black text-base">{closedTicketsCount}</span>
-            </motion.button>
-          </div>
-        )}
-
-        {/* Navigation Menu */}
-        <nav className="space-y-1.5">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeView === item.id;
-
-            return (
-              <motion.button
-                key={item.id}
-                whileHover={{ x: isCollapsed && !isMobile ? 0 : 3 }}
-                whileTap={{ scale: 0.97 }}
-                type="button"
-                onClick={() => handleSelectTab(item.id)}
-                title={item.label}
-                className={`relative w-full flex items-center ${isCollapsed && !isMobile ? 'justify-center px-2 py-3' : 'justify-between px-3.5 py-2.5'} rounded-xl text-xs font-bold transition-all ${
-                  isActive
-                    ? `${item.activeBg} ${item.activeText} shadow-md shadow-[#0D5C75]/15`
-                    : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                  {(!isCollapsed || isMobile) && <span className="truncate">{item.label}</span>}
-                </div>
-                {(!isCollapsed || isMobile) && item.count !== undefined && item.count > 0 && (
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-slate-200/70 text-slate-700'
-                  }`}>
-                    {item.count}
-                  </span>
-                )}
-              </motion.button>
-            );
-          })}
-        </nav>
-
-        {/* Quick Nav Shortcut to Submit Ticket */}
-        {(!isCollapsed || isMobile) && (
-          <div className="pt-2 border-t border-slate-200/60">
-            <Link
-              to="/submit"
-              className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors"
-            >
-              <Plus className="w-4 h-4 text-[#0D5C75]" />
-              <span>Formulir Tiket Baru</span>
-            </Link>
-          </div>
-        )}
+              <LogOut size={15} />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Footer Navigation */}
-      <div className="pt-4 border-t border-slate-200/60 space-y-1.5">
-        <Link
-          to="/"
-          className={`w-full flex items-center ${isCollapsed && !isMobile ? 'justify-center p-2' : 'gap-2 px-3 py-2'} rounded-xl text-xs font-semibold text-slate-600 hover:bg-white hover:text-slate-900 transition-colors`}
-          title="Beranda Utama POSO"
-        >
-          <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          {(!isCollapsed || isMobile) && <span>Beranda Utama</span>}
-        </Link>
-
-        <button
-          type="button"
-          onClick={logout}
-          className={`w-full flex items-center ${isCollapsed && !isMobile ? 'justify-center p-2' : 'gap-2 px-3 py-2'} rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50/80 transition-colors`}
-          title="Keluar Sesi"
-        >
-          <LogOut className="w-3.5 h-3.5 shrink-0" />
-          {(!isCollapsed || isMobile) && <span>Keluar Sesi</span>}
-        </button>
-      </div>
+      {/* Desktop Collapse Toggle Button */}
+      <button
+        onClick={onToggle}
+        className="hidden lg:flex absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-[#083342] border border-white/20 items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition-all shadow-sm z-30 cursor-pointer"
+        title={collapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
+      >
+        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+      </button>
     </div>
   );
 
   return (
     <>
-      {/* 1. Desktop Sticky Sidebar */}
-      <aside className={`hidden md:flex flex-col justify-between shrink-0 sticky top-0 h-screen overflow-y-auto z-20 bg-white/85 backdrop-blur-2xl border-r border-slate-200/80 shadow-[4px_0_30px_rgba(0,0,0,0.03)] transition-all duration-300 ${
-        isCollapsed ? 'w-20' : 'w-72'
-      }`}>
-        {renderSidebarContent(false)}
-      </aside>
-
-      {/* 2. Mobile Slide-Over Drawer with Backdrop */}
+      {/* Mobile Drawer Backdrop */}
       <AnimatePresence>
-        {isMobileOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onCloseMobile}
-              className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 md:hidden"
-            />
-
-            {/* Slide Drawer */}
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 left-0 w-4/5 max-w-xs bg-white z-50 md:hidden shadow-2xl overflow-y-auto"
-            >
-              {renderSidebarContent(true)}
-            </motion.div>
-          </>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onMobileClose}
+            className="fixed inset-0 bg-[#0F172A]/50 backdrop-blur-sm z-40 lg:hidden"
+          />
         )}
       </AnimatePresence>
+
+      {/* Mobile Slide-out Drawer */}
+      <div
+        className={`fixed left-0 top-0 bottom-0 z-50 w-64 lg:hidden transition-transform duration-200 ease-in-out ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {sidebarContent}
+      </div>
+
+      {/* Desktop Persistent Sidebar */}
+      <aside
+        className="hidden lg:flex flex-col transition-all duration-200 ease-in-out flex-shrink-0 relative z-30"
+        style={{ width: collapsed ? 72 : 240 }}
+      >
+        {sidebarContent}
+      </aside>
     </>
   );
 };
+
+export default SageSidebar;

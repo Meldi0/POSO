@@ -1,255 +1,152 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { 
   Search, 
-  Plus, 
-  Columns3, 
-  Table2, 
+  Menu, 
+  RefreshCw, 
+  Download, 
+  LayoutGrid, 
+  TableIcon, 
   Filter, 
-  RefreshCw,
-  Calendar,
-  Menu,
-  X,
-  Compass
+  Compass, 
+  SlidersHorizontal,
+  Plus
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { DashboardViewType } from './SageSidebar';
 
-export interface SageTopBarProps {
+interface SageTopBarProps {
+  onMobileMenuToggle?: () => void;
+  onOpenCommandPalette?: () => void;
+  activeView: DashboardViewType;
+  onViewChange: (view: DashboardViewType) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   selectedCategory: string;
   onCategoryChange: (cat: string) => void;
-  dateFilter: string;
-  onDateFilterChange: (df: string) => void;
-  viewMode: 'kanban' | 'table';
-  onViewModeChange: (vm: 'kanban' | 'table') => void;
+  selectedStatus: string;
+  onStatusChange: (st: string) => void;
   onRefresh: () => void;
-  isLoading: boolean;
-  onOpenCreateTicket: () => void;
-  onToggleMobileMenu?: () => void;
-  onTrackClick?: () => void;
+  onExport: () => void;
+  onNewTicketClick?: () => void;
+  isSyncing?: boolean;
 }
 
 export const SageTopBar: React.FC<SageTopBarProps> = ({
+  onMobileMenuToggle,
+  onOpenCommandPalette,
+  activeView,
+  onViewChange,
   searchQuery,
   onSearchChange,
   selectedCategory,
   onCategoryChange,
-  dateFilter,
-  onDateFilterChange,
-  viewMode,
-  onViewModeChange,
+  selectedStatus,
+  onStatusChange,
   onRefresh,
-  isLoading,
-  onOpenCreateTicket,
-  onToggleMobileMenu,
-  onTrackClick
+  onExport,
+  onNewTicketClick,
+  isSyncing = false
 }) => {
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const categories = [
-    'Semua Kategori',
-    'Pengendalian Operasi',
-    'Corporate General Services (CGS)',
-    'Postal Security',
-    'Quality Control',
-    'IT & Sistem Informasi',
-    'Jaringan & Internet',
-    'Sarana & Prasarana',
-    'Layanan Akun & Portal',
-    'Hardware & Komputer'
-  ];
-
-  const dateFilterOptions = [
-    { label: 'Semua Waktu', value: 'all' },
-    { label: 'Hari Ini', value: 'today' },
-    { label: '7 Hari Terakhir', value: '7days' },
-    { label: 'Bulan Ini', value: 'month' }
-  ];
-
-  // Shortcut Ctrl+K or Cmd+K to focus search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   return (
-    <div className="apple-glass p-3 rounded-2xl flex flex-col gap-3 shadow-xs">
-      {/* Top Row: Mobile Hamburger, Search Bar & Main Action Buttons */}
-      <div className="flex items-center justify-between gap-2.5">
-        {/* Mobile Hamburger Menu Toggle */}
-        <button
-          type="button"
-          onClick={onToggleMobileMenu}
-          className="md:hidden p-2 rounded-xl bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 shadow-xs shrink-0"
-          title="Buka Menu"
-        >
-          <Menu className="w-5 h-5 text-[#0D5C75]" />
-        </button>
-
-        {/* Global Search Input */}
-        <div className="relative flex-1">
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Cari ID, subjek, pelapor... (Ctrl+K)"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 rounded-xl bg-white/75 hover:bg-white border border-slate-200/80 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] transition-all shadow-xs"
-          />
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => onSearchChange('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* 1-Click Lacak Status Tiket Nav Button */}
-        {onTrackClick && (
+    <header className="h-16 px-4 lg:px-6 bg-white border-b border-[#E2E8F0] flex items-center justify-between gap-3 sticky top-0 z-20 flex-shrink-0">
+      
+      {/* Left: Mobile Toggle & Command Palette Trigger */}
+      <div className="flex items-center gap-2.5 flex-1 max-w-lg">
+        {onMobileMenuToggle && (
           <button
-            type="button"
-            onClick={onTrackClick}
-            title="Buka Pelacak Tiket Terpadu"
-            className="hidden sm:flex px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-[#0D5C75] text-xs font-bold transition-all items-center gap-1.5 shadow-2xs shrink-0 cursor-pointer"
+            onClick={onMobileMenuToggle}
+            className="lg:hidden p-2 rounded-[8px] text-[#64748B] hover:bg-[#F1F5F9] transition-colors"
+            title="Buka Menu"
           >
-            <Compass className="w-3.5 h-3.5 text-[#0D5C75]" />
-            <span>Lacak Tiket</span>
+            <Menu size={20} />
           </button>
         )}
 
-        {/* View Mode Toggle for Desktop */}
-        <div className="hidden sm:flex items-center bg-slate-200/50 p-1 rounded-xl border border-slate-200/60 shrink-0">
-          <button
-            type="button"
-            onClick={() => onViewModeChange('kanban')}
-            className={`relative z-10 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
-              viewMode === 'kanban' ? 'text-[#0D5C75]' : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <Columns3 className="w-3.5 h-3.5" />
-            <span>Papan</span>
-            {viewMode === 'kanban' && (
-              <motion.div
-                layoutId="activeViewTab"
-                className="absolute inset-0 bg-white rounded-lg shadow-xs -z-10"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => onViewModeChange('table')}
-            className={`relative z-10 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 ${
-              viewMode === 'table' ? 'text-[#0D5C75]' : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <Table2 className="w-3.5 h-3.5" />
-            <span>Tabel</span>
-            {viewMode === 'table' && (
-              <motion.div
-                layoutId="activeViewTab"
-                className="absolute inset-0 bg-white rounded-lg shadow-xs -z-10"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
-          </button>
-        </div>
-
-        {/* Create Ticket Button */}
-        <motion.button
-          whileHover={{ scale: 1.02, y: -1 }}
-          whileTap={{ scale: 0.96 }}
+        {/* Command Palette Trigger Button */}
+        <button
           type="button"
-          onClick={onOpenCreateTicket}
-          className="px-3.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#0D5C75] to-[#199FB1] hover:from-[#083342] hover:to-[#0D5C75] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_4px_12px_rgba(13,92,117,0.25)] shrink-0"
+          onClick={onOpenCommandPalette}
+          className="w-full flex items-center gap-2.5 h-9.5 px-3 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0] text-left hover:border-[#199FB1]/60 hover:bg-[#EAF4F8]/40 transition-all group cursor-pointer"
         >
-          <Plus className="w-3.5 h-3.5" />
-          <span className="hidden xs:inline sm:inline">Tiket Baru</span>
-        </motion.button>
+          <Search size={15} className="text-[#94A3B8] group-hover:text-[#199FB1] flex-shrink-0 transition-colors" />
+          <span className="flex-1 text-[13px] text-[#94A3B8] truncate">
+            Cari tiket, ID, atau aksi cepat...
+          </span>
+          <div className="hidden sm:flex items-center gap-1">
+            <kbd className="px-1.5 py-0.5 rounded-[4px] bg-white border border-[#CBD5E1] text-[10px] font-bold text-[#64748B] shadow-2xs font-mono">Ctrl</kbd>
+            <kbd className="px-1.5 py-0.5 rounded-[4px] bg-white border border-[#CBD5E1] text-[10px] font-bold text-[#64748B] shadow-2xs font-mono">K</kbd>
+          </div>
+        </button>
       </div>
 
-      {/* Bottom Row: Filters (Category, Date Range, Mobile Segmented Control, Refresh) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100/80">
-        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-          {/* Category Dropdown Filter */}
-          <div className="relative flex-1 sm:flex-initial">
-            <select
-              value={selectedCategory}
-              onChange={(e) => onCategoryChange(e.target.value)}
-              className="w-full sm:w-auto appearance-none pl-8 pr-7 py-1.5 rounded-xl bg-white/80 hover:bg-white border border-slate-200/80 text-slate-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] cursor-pointer transition-all shadow-xs"
-            >
-              {categories.map(c => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <Filter className="w-3.5 h-3.5 text-[#0D5C75] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-
-          {/* Date Filter */}
-          <div className="relative flex-1 sm:flex-initial">
-            <select
-              value={dateFilter}
-              onChange={(e) => onDateFilterChange(e.target.value)}
-              className="w-full sm:w-auto appearance-none pl-8 pr-7 py-1.5 rounded-xl bg-white/80 hover:bg-white border border-slate-200/80 text-slate-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 focus:border-[#0D5C75] cursor-pointer transition-all shadow-xs"
-            >
-              {dateFilterOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <Calendar className="w-3.5 h-3.5 text-[#0D5C75] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-
-          {/* Refresh Button */}
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            type="button"
-            onClick={onRefresh}
-            disabled={isLoading}
-            title="Segarkan Data"
-            className="p-2 rounded-xl bg-white/80 hover:bg-white border border-slate-200/80 text-slate-600 transition-all shadow-xs disabled:opacity-50 shrink-0"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-[#0D5C75]' : ''}`} />
-          </motion.button>
-        </div>
-
-        {/* View Mode Toggle for Mobile */}
-        <div className="sm:hidden flex items-center bg-slate-200/50 p-0.5 rounded-xl border border-slate-200/60 shrink-0">
+      {/* Right: View Switcher (Kanban vs Table) & Actions */}
+      <div className="flex items-center gap-2">
+        {/* Segmented View Switcher */}
+        <div className="hidden sm:flex items-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] p-1 gap-1">
           <button
             type="button"
-            onClick={() => onViewModeChange('kanban')}
-            className={`p-1.5 rounded-lg text-xs font-bold transition-colors ${
-              viewMode === 'kanban' ? 'bg-white text-[#0D5C75] shadow-xs' : 'text-slate-500'
+            onClick={() => onViewChange('kanban')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer ${
+              activeView === 'kanban'
+                ? 'bg-[#0D5C75] text-white shadow-xs'
+                : 'text-[#64748B] hover:text-[#0F172A]'
             }`}
-            title="Tampilan Papan"
           >
-            <Columns3 className="w-3.5 h-3.5" />
+            <LayoutGrid size={13} />
+            <span>Kanban</span>
           </button>
+
           <button
             type="button"
-            onClick={() => onViewModeChange('table')}
-            className={`p-1.5 rounded-lg text-xs font-bold transition-colors ${
-              viewMode === 'table' ? 'bg-white text-[#0D5C75] shadow-xs' : 'text-slate-500'
+            onClick={() => onViewChange('table')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer ${
+              activeView === 'table'
+                ? 'bg-[#0D5C75] text-white shadow-xs'
+                : 'text-[#64748B] hover:text-[#0F172A]'
             }`}
-            title="Tampilan Tabel"
           >
-            <Table2 className="w-3.5 h-3.5" />
+            <TableIcon size={13} />
+            <span>Tabel</span>
           </button>
         </div>
+
+        {/* Sync Button */}
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={isSyncing}
+          className="flex items-center gap-1.5 h-9.5 px-3 rounded-[10px] border border-[#E2E8F0] text-[12px] font-semibold text-[#64748B] bg-white hover:bg-[#F1F5F9] transition-colors cursor-pointer disabled:opacity-50"
+          title="Sinkronkan database Google Sheets"
+        >
+          <RefreshCw size={14} className={isSyncing ? 'animate-spin text-[#0D5C75]' : ''} />
+          <span className="hidden md:inline">Sinkronkan</span>
+        </button>
+
+        {/* Export Button */}
+        <button
+          type="button"
+          onClick={onExport}
+          className="hidden sm:flex items-center gap-1.5 h-9.5 px-3 rounded-[10px] border border-[#E2E8F0] text-[12px] font-semibold text-[#64748B] bg-white hover:bg-[#F1F5F9] transition-colors cursor-pointer"
+          title="Ekspor CSV"
+        >
+          <Download size={14} />
+          <span className="hidden md:inline">Export</span>
+        </button>
+
+        {/* New Ticket Quick Button */}
+        {onNewTicketClick && (
+          <button
+            type="button"
+            onClick={onNewTicketClick}
+            className="flex items-center gap-1.5 h-9.5 px-3.5 rounded-[10px] bg-[#0D5C75] hover:bg-[#083342] text-white text-[12px] font-bold transition-all shadow-sm shadow-[#0D5C75]/20 cursor-pointer"
+          >
+            <Plus size={15} />
+            <span className="hidden sm:inline">Buat Tiket</span>
+          </button>
+        )}
       </div>
-    </div>
+
+    </header>
   );
 };
+
+export default SageTopBar;
