@@ -74,18 +74,7 @@ export const Login: React.FC = () => {
         <span>Kembali ke Beranda</span>
       </Link>
 
-      {/* Decorative Bottom-Right 3D Cyan Sphere (matching image layout) */}
-      <motion.div
-        animate={{
-          scale: [1, 1.06, 1],
-          y: [0, -8, 0]
-        }}
-        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-        className="fixed -bottom-16 -right-16 w-56 h-56 sm:w-72 sm:h-72 rounded-full bg-gradient-to-br from-[#199FB1] via-[#0D5C75] to-[#083342] shadow-[0_20px_50px_rgba(13,92,117,0.3)] pointer-events-none z-0 opacity-90"
-        style={{
-          boxShadow: 'inset -12px -12px 28px rgba(0,0,0,0.35), inset 12px 12px 28px rgba(255,255,255,0.4), 0 24px 60px rgba(13,92,117,0.25)'
-        }}
-      />
+
 
       {/* Main Container Split Box */}
       <motion.div 
