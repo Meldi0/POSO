@@ -16,6 +16,21 @@ export interface User {
   created_by?: string;
   created_at: string;
   password_plain?: string;
+
+  // Profil Dinas Lengkap Pos Indonesia (Field Database Terpisah)
+  nip?: string;
+  department?: string;
+  role_title?: string;
+  avatar_url?: string;
+  jabatan_fungsional?: string;
+  kantor_penempatan?: string;
+  phone_number?: string;
+  nopen_kc?: string;
+  nama_kc?: string;
+  nopen_kcu?: string;
+  nama_kcu?: string;
+  regional_code?: string;
+  regional_name?: string;
 }
 
 export interface Ticket {
@@ -24,10 +39,17 @@ export interface Ticket {
   updated_at: string;
   subject: string;
   category: string;
+  
+  // Field Database Terpisah (Clean Architecture)
+  department?: string;
+  topic?: string;
+  location?: string;
+  
   description: string;
   status: TicketStatus;
   priority: TicketPriority;
   channel: TicketChannel;
+  requester_name?: string;
   requester_email: string;
   assigned_upt?: string;
   assigned_operator?: string;

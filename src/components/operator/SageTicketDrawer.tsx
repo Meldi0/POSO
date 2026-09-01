@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Ticket, ThreadMessage } from '../../types';
 import { apiService } from '../../services/api';
 import { 
@@ -11,13 +12,17 @@ import {
   Lock,
   CheckCircle2,
   Copy,
+  Check,
   ExternalLink,
   Info,
   Layers,
-  Sparkles
+  Sparkles,
+  MapPin,
+  Building2,
+  Calendar
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { parseMessageAttachments, AttachmentGallery } from '../common/AttachmentGallery';
+import { parseTicketDetails, parseThreadMessage } from '../../utils/ticketFormatter';
+import { AttachmentGallery } from '../common/AttachmentGallery';
 import { useToast } from '../../context/ToastContext';
 
 export interface SageTicketDrawerProps {
@@ -45,6 +50,7 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
   const [replyText, setReplyText] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
 
   useEffect(() => {
     setCurrentTicket(ticket);
@@ -61,17 +67,26 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
         if (res.data.ticket) {
           setCurrentTicket(res.data.ticket);
           setStatus(res.data.ticket.status);
-          if (res.data.ticket.assigned_upt) {
-            setAssignedUpt(res.data.ticket.assigned_upt);
-          }
+          setAssignedUpt(res.data.ticket.assigned_upt || '');
         }
         setThreads(res.data.threads || []);
       }
-    } catch (e) {
-      console.warn('Gagal memuat detail thread:', e);
     } finally {
       setIsLoadingThreads(false);
     }
+  };
+
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(currentTicket.ticket_id);
+    setCopiedId(true);
+    info(`Nomor ID tiket #${currentTicket.ticket_id} disalin.`);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
+
+  const copyTrackingUrl = () => {
+    const url = `${window.location.origin}/track?id=${currentTicket.ticket_id}`;
+    navigator.clipboard.writeText(url);
+    info('Tautan pelacakan publik tiket berhasil disalin!');
   };
 
   const handleSaveTriage = async (e: React.FormEvent) => {
@@ -102,29 +117,26 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
     }
   };
 
-  const copyTicketId = () => {
-    navigator.clipboard.writeText(currentTicket.ticket_id);
-    info(`Nomor ID tiket #${currentTicket.ticket_id} disalin ke clipboard.`);
-  };
-
-  const copyTrackingUrl = () => {
-    const url = `${window.location.origin}/track?id=${currentTicket.ticket_id}`;
-    navigator.clipboard.writeText(url);
-    info('Tautan pelacakan publik tiket berhasil disalin!');
-  };
-
   const uptList = [
-    'UPT TI & Jaringan',
-    'UPT Sarana & Pemeliharaan',
-    'UPT Sistem Informasi Akademik',
-    'UPT Hardware & Workshop',
+    'UPT Pengendalian Operasi & Transportasi',
+    'UPT Sarana & Prasarana (CGS)',
+    'UPT Postal Security & Keamanan',
+    'UPT Quality Control & Audit SLA',
+    'UPT TI & Sistem Informasi',
     'Helpdesk Pusat & Layanan Terpadu'
   ];
 
-  const rawDescription = currentTicket.description || ticket.description || (threads.length > 0 ? threads[0].message : '');
-  const mainDescParsed = parseMessageAttachments(rawDescription);
-  const finalDescriptionText = mainDescParsed.cleanText || rawDescription || '(Tidak ada deskripsi tambahan)';
-  const requesterDisplay = currentTicket.requester_email || ticket.requester_email || (threads.length > 0 ? (threads[0].sender_name || threads[0].sender_id) : 'Pelapor Umum');
+  // Parse clean ticket description & metadata
+  const parsedDetails = parseTicketDetails(currentTicket.description, currentTicket.category);
+  const requesterDisplay = currentTicket.requester_email || ticket.requester_email || 'Pelapor Umum';
+
+  // Filter out redundant initial submission from threads
+  const followUpThreads = threads.filter((th, index) => {
+    if (index === 0 && (th.message.includes(parsedDetails.cleanDescription) || th.sender_role === 'pengguna_umum')) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -143,30 +155,33 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: "spring", stiffness: 350, damping: 32 }}
-        className="relative w-full sm:max-w-xl md:max-w-2xl bg-white h-full shadow-2xl border-l border-slate-200/90 flex flex-col justify-between overflow-hidden z-10"
+        className="relative w-full sm:max-w-xl md:max-w-2xl bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col justify-between overflow-hidden z-10 font-sans"
       >
         {/* 1. Header */}
-        <div className="p-4 sm:p-5 bg-slate-50/90 border-b border-slate-200/90 flex items-start justify-between gap-3">
+        <div className="p-4 sm:p-5 bg-slate-50/95 border-b border-slate-200 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <button
                 type="button"
-                onClick={copyTicketId}
-                title="Klik untuk salin ID"
-                className="font-mono text-xs font-black text-[#0D5C75] bg-[#EAF4F8] hover:bg-[#A5D1E1]/50 px-2.5 py-0.5 rounded-lg border border-[#A5D1E1]/50 flex items-center gap-1 transition-colors"
+                onClick={handleCopyId}
+                title="Salin ID Tiket"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono text-xs font-bold text-[#0D5C75] hover:border-[#0D5C75] transition-all shadow-2xs cursor-pointer"
               >
                 <span>#{currentTicket.ticket_id}</span>
-                <Copy className="w-3 h-3 text-[#0D5C75]" />
+                {copiedId ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
               </button>
-              <span className="text-xs font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+
+              <span className="text-xs font-semibold text-slate-600 bg-white px-2.5 py-0.5 rounded-md border border-slate-200">
                 {currentTicket.category}
               </span>
+
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
                 currentTicket.status === 'closed' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
               }`}>
                 {currentTicket.status}
               </span>
             </div>
+
             <h2 className="text-sm sm:text-base font-extrabold text-slate-900 leading-snug line-clamp-2">
               {currentTicket.subject}
             </h2>
@@ -177,14 +192,14 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
               type="button"
               onClick={copyTrackingUrl}
               title="Salin Tautan Lacak"
-              className="p-2 rounded-xl text-slate-400 hover:text-[#0D5C75] hover:bg-slate-200 transition-colors"
+              className="p-2 rounded-xl text-slate-400 hover:text-[#0D5C75] hover:bg-slate-200 transition-colors cursor-pointer"
             >
               <ExternalLink className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -196,19 +211,19 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('chat')}
-            className={`py-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+            className={`py-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'chat'
                 ? 'border-[#0D5C75] text-[#0D5C75]'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span>Diskusi ({threads.length})</span>
+            <span>Diskusi ({followUpThreads.length})</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('triage')}
-            className={`py-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+            className={`py-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'triage'
                 ? 'border-[#0D5C75] text-[#0D5C75]'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
@@ -220,14 +235,14 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('info')}
-            className={`py-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+            className={`py-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'info'
                 ? 'border-[#0D5C75] text-[#0D5C75]'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             <Info className="w-3.5 h-3.5" />
-            <span>Info & SLA</span>
+            <span>Metadata & SLA</span>
           </button>
         </div>
 
@@ -237,7 +252,7 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
           {activeTab === 'chat' && (
             <div className="space-y-4">
               {/* Original Complaint Box */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
                 <div className="flex items-center justify-between text-[11px] text-slate-500">
                   <span className="font-bold text-slate-700 flex items-center gap-1">
                     <User className="w-3 h-3 text-slate-400" />
@@ -246,11 +261,11 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
                   <span>{currentTicket.created_at ? new Date(currentTicket.created_at).toLocaleString('id-ID') : '-'}</span>
                 </div>
                 <p className="text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">
-                  {finalDescriptionText}
+                  {parsedDetails.cleanDescription || currentTicket.description || '(Tidak ada deskripsi tambahan)'}
                 </p>
-                {mainDescParsed.attachments.length > 0 && (
+                {parsedDetails.attachments.length > 0 && (
                   <div className="pt-2 border-t border-slate-200/60">
-                    <AttachmentGallery attachments={mainDescParsed.attachments} />
+                    <AttachmentGallery attachments={parsedDetails.attachments} />
                   </div>
                 )}
               </div>
@@ -264,14 +279,15 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
 
                 {isLoadingThreads ? (
                   <div className="p-6 text-center text-slate-400 text-xs font-medium">Memuat pesan...</div>
-                ) : threads.length === 0 ? (
+                ) : followUpThreads.length === 0 ? (
                   <div className="p-6 text-center text-slate-400 text-xs font-medium bg-slate-50 rounded-xl border border-slate-200/60">
-                    Belum ada tanggapan untuk tiket ini. Kirim balasan pertama di bawah.
+                    Belum ada tanggapan lanjutan untuk tiket ini. Kirim balasan di bawah.
                   </div>
                 ) : (
-                  threads.map(th => {
+                  followUpThreads.map(th => {
                     const isInternal = th.visibility === 'internal';
-                    const parsed = parseMessageAttachments(th.message);
+                    const isPelapor = th.sender_role === 'pengguna_umum';
+                    const parsedTh = parseThreadMessage(th.message);
 
                     return (
                       <motion.div
@@ -280,7 +296,9 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
                         animate={{ opacity: 1, y: 0 }}
                         className={`p-3.5 rounded-2xl border text-xs leading-relaxed space-y-2 ${
                           isInternal
-                            ? 'bg-amber-50/80 border-amber-200 text-amber-950'
+                            ? 'bg-amber-50/90 border-amber-200 text-amber-950'
+                            : isPelapor
+                            ? 'bg-slate-50 border-slate-200'
                             : 'bg-white border-slate-200 shadow-xs text-slate-800'
                         }`}
                       >
@@ -293,17 +311,17 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
                               </span>
                             ) : (
                               <span className="text-[#0D5C75] bg-[#EAF4F8] px-2 py-0.5 rounded-md">
-                                {th.sender_name || th.sender_role.toUpperCase()}
+                                {isPelapor ? 'Tanggapan Pelapor' : (th.sender_name || 'Tim Petugas POSO')}
                               </span>
                             )}
                           </div>
                           <span className="text-slate-400 font-normal text-[10px]">
-                            {new Date(th.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(th.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • {new Date(th.created_at).toLocaleDateString('id-ID')}
                           </span>
                         </div>
 
-                        {parsed.cleanText && <p className="whitespace-pre-wrap">{parsed.cleanText}</p>}
-                        {parsed.attachments.length > 0 && <AttachmentGallery attachments={parsed.attachments} />}
+                        {parsedTh.cleanText && <p className="whitespace-pre-wrap">{parsedTh.cleanText}</p>}
+                        {parsedTh.attachments.length > 0 && <AttachmentGallery attachments={parsedTh.attachments} />}
                       </motion.div>
                     );
                   })
@@ -315,7 +333,7 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
           {/* TAB 2: TRIAGE & UPT SETTINGS */}
           {activeTab === 'triage' && (
             <div className="space-y-4">
-              <form onSubmit={handleSaveTriage} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-4">
+              <form onSubmit={handleSaveTriage} className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
                 <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-[#0D5C75]" />
                   <span>Perbarui Status & Delegasi Tim</span>
@@ -329,9 +347,9 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
                       onChange={(e) => setStatus(e.target.value as any)}
                       className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#0D5C75]/20 focus:outline-none"
                     >
-                      <option value="open">Open (Menunggu Tindakan)</option>
+                      <option value="open">Open (Baru / Belum Ditindaklanjuti)</option>
                       <option value="in_progress">In Progress (Sedang Dikerjakan UPT)</option>
-                      <option value="waiting">Waiting (Menunggu Konfirmasi/Info)</option>
+                      <option value="waiting">Waiting (Menunggu Konfirmasi Pelapor)</option>
                       <option value="closed">Closed (Telah Selesai & Ditutup)</option>
                     </select>
                   </div>
@@ -343,7 +361,7 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
                       onChange={(e) => setAssignedUpt(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#0D5C75]/20 focus:outline-none"
                     >
-                      <option value="">-- Belum Ditugaskan / Helpdesk Pusat --</option>
+                      <option value="">-- Pilih Unit UPT --</option>
                       {uptList.map(u => (
                         <option key={u} value={u}>{u}</option>
                       ))}
@@ -354,7 +372,7 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="w-full py-2.5 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-xs font-bold transition-all shadow-md shadow-[#0D5C75]/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-xs font-bold transition-all shadow-md shadow-[#0D5C75]/20 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{isUpdating ? 'Menyimpan Perubahan...' : 'Simpan Status & Delegasi'}</span>
@@ -367,25 +385,28 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
           {activeTab === 'info' && (
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Pelapor</span>
-                  <p className="font-bold text-slate-800">{requesterDisplay}</p>
+                  <p className="font-bold text-slate-800 truncate">{requesterDisplay}</p>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Tingkat Prioritas</span>
-                  <p className="font-bold text-[#0D5C75]">{currentTicket.priority || 'Medium'}</p>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Lokasi Kantor / Gedung</span>
+                  <p className="font-bold text-slate-800 truncate">{parsedDetails.location || 'Seluruh Kantor'}</p>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Waktu Dibuat</span>
-                  <p className="font-semibold text-slate-700">
-                    {currentTicket.created_at ? new Date(currentTicket.created_at).toLocaleString('id-ID') : '-'}
-                  </p>
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Departemen & Topik</span>
+                  <p className="font-bold text-slate-800 truncate">{parsedDetails.departmentAndTopic || currentTicket.category}</p>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Target SLA Selesai</span>
-                  <p className="font-semibold text-slate-700">
-                    {currentTicket.sla_due_at ? new Date(currentTicket.sla_due_at).toLocaleString('id-ID') : 'Sesuai Standar SOP'}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#0D5C75]">24 Jam</span>
+                    {currentTicket.sla_due_at && new Date(currentTicket.sla_due_at).getTime() < Date.now() && currentTicket.status !== 'closed' && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-600 text-white animate-pulse">
+                        Over SLA
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -432,7 +453,7 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
                 whileTap={{ scale: 0.94 }}
                 type="submit"
                 disabled={isSending || !replyText.trim()}
-                className={`p-3 rounded-xl text-white font-bold transition-all shadow-md shrink-0 disabled:opacity-50 ${
+                className={`p-3 rounded-xl text-white font-bold transition-all shadow-md shrink-0 disabled:opacity-50 cursor-pointer ${
                   isInternalNote
                     ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
                     : 'bg-[#0D5C75] hover:bg-[#083342] shadow-[#0D5C75]/20'

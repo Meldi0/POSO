@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Inbox, 
   Archive, 
@@ -9,14 +10,17 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  UserCheck
+  Compass,
+  Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 
+export type DashboardViewType = 'tickets' | 'archive' | 'users' | 'datasource' | 'track';
+
 export interface SageSidebarProps {
-  activeView: 'tickets' | 'archive' | 'users' | 'datasource';
-  onViewChange: (view: 'tickets' | 'archive' | 'users' | 'datasource') => void;
+  activeView: DashboardViewType;
+  onViewChange: (view: DashboardViewType) => void;
   openTicketsCount: number;
   closedTicketsCount: number;
   isMobileOpen?: boolean;
@@ -46,8 +50,7 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
       icon: Inbox,
       count: openTicketsCount,
       activeBg: 'bg-[#0D5C75]',
-      activeText: 'text-white',
-      badgeColor: 'bg-[#199FB1] text-white'
+      activeText: 'text-white'
     },
     {
       id: 'archive' as const,
@@ -56,8 +59,15 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
       icon: Archive,
       count: closedTicketsCount,
       activeBg: 'bg-[#199FB1]',
-      activeText: 'text-white',
-      badgeColor: 'bg-emerald-500 text-white'
+      activeText: 'text-white'
+    },
+    {
+      id: 'track' as const,
+      label: 'Lacak Status Tiket',
+      shortLabel: 'Lacak',
+      icon: Compass,
+      activeBg: 'bg-[#0D5C75]',
+      activeText: 'text-white'
     },
     ...(isAdmin ? [
       {
@@ -66,8 +76,7 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
         shortLabel: 'Staf',
         icon: ShieldAlert,
         activeBg: 'bg-[#0D5C75]',
-        activeText: 'text-white',
-        badgeColor: 'bg-slate-700 text-white'
+        activeText: 'text-white'
       },
       {
         id: 'datasource' as const,
@@ -75,13 +84,12 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
         shortLabel: 'Drive',
         icon: HardDrive,
         activeBg: 'bg-[#0D5C75]',
-        activeText: 'text-white',
-        badgeColor: 'bg-slate-700 text-white'
+        activeText: 'text-white'
       }
     ] : [])
   ];
 
-  const handleSelectTab = (id: 'tickets' | 'archive' | 'users' | 'datasource') => {
+  const handleSelectTab = (id: DashboardViewType) => {
     onViewChange(id);
     onCloseMobile();
   };
@@ -91,7 +99,11 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
       <div className="space-y-4">
         {/* Brand Header with POSO Emblem & Close button for mobile */}
         <div className="pt-1 px-1 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => handleSelectTab('tickets')}
+            className="flex items-center gap-3 text-left cursor-pointer"
+          >
             <motion.div 
               whileHover={{ rotate: 8, scale: 1.08 }}
               whileTap={{ scale: 0.94 }}
@@ -125,7 +137,7 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
                 <span className="text-[11px] font-semibold text-slate-400 mt-0.5 block truncate">Helpdesk Workstation</span>
               </div>
             )}
-          </div>
+          </button>
 
           {isMobile ? (
             <button
@@ -234,20 +246,31 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
             );
           })}
         </nav>
+
+        {/* Quick Nav Shortcut to Submit Ticket */}
+        {(!isCollapsed || isMobile) && (
+          <div className="pt-2 border-t border-slate-200/60">
+            <Link
+              to="/submit"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <Plus className="w-4 h-4 text-[#0D5C75]" />
+              <span>Formulir Tiket Baru</span>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Footer Navigation */}
       <div className="pt-4 border-t border-slate-200/60 space-y-1.5">
-        <a
-          href="/"
-          target="_blank"
-          rel="noreferrer"
+        <Link
+          to="/"
           className={`w-full flex items-center ${isCollapsed && !isMobile ? 'justify-center p-2' : 'gap-2 px-3 py-2'} rounded-xl text-xs font-semibold text-slate-600 hover:bg-white hover:text-slate-900 transition-colors`}
-          title="Portal Publik Pelapor"
+          title="Beranda Utama POSO"
         >
           <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          {(!isCollapsed || isMobile) && <span>Portal Publik</span>}
-        </a>
+          {(!isCollapsed || isMobile) && <span>Beranda Utama</span>}
+        </Link>
 
         <button
           type="button"

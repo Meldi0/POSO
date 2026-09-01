@@ -135,7 +135,7 @@ function handleRequest(e, method) {
 
   try {
     // Hanya kunci untuk operasi tulis kritis agar tidak memblokir pembacaan GET
-    const isWrite = ['createTicket', 'updateTicketStatus', 'addThreadMessage', 'register', 'createUser', 'updateUserRole'].indexOf(action) !== -1;
+    const isWrite = ['createTicket', 'updateTicketStatus', 'addThreadMessage', 'register', 'createUser', 'updateUserRole', 'deleteUser'].indexOf(action) !== -1;
     if (isWrite) {
       try {
         hasAcquiredLock = lock.tryLock(8000);
@@ -192,6 +192,10 @@ function handleRequest(e, method) {
 
       case 'createUser':
         responseData = apiCreateUser(body, cleanToken);
+        break;
+
+      case 'deleteUser':
+        responseData = apiDeleteUser(body, cleanToken);
         break;
 
       // --- Admin: Feature Flags ---
@@ -1301,6 +1305,63 @@ function apiCreateUser(body, token) {
       role: role,
       upt_unit: uptUnit
     }
+  };
+}
+
+/**
+ * Hapus akun pengguna secara permanen dari database Google Sheets (Khusus Admin).
+ */
+function apiDeleteUser(body, token) {
+  const adminUser = authenticateUser(token, body.user_email);
+  if (!adminUser || adminUser.role !== 'admin') {
+    return { status: 'error', code: 403, message: 'Hanya Admin yang berwenang menghapus akun pengguna.' };
+  }
+
+  const targetUserId = body.target_user_id || body.user_id;
+  if (!targetUserId) {
+    return { status: 'error', code: 400, message: 'target_user_id wajib diisi.' };
+  }
+
+  const sheet = getSheet(SHEET_NAMES.USERS);
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    return { status: 'error', code: 404, message: 'Pengguna tidak ditemukan.' };
+  }
+
+  const data = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
+  let targetRowIndex = -1;
+  let targetEmail = '';
+  let targetName = '';
+
+  for (let i = 0; i < data.length; i++) {
+    if (String(data[i][0]) === String(targetUserId)) {
+      targetRowIndex = i + 2;
+      targetName = data[i][1];
+      targetEmail = String(data[i][2]).toLowerCase();
+      break;
+    }
+  }
+
+  if (targetRowIndex === -1) {
+    return { status: 'error', code: 404, message: 'Pengguna tidak ditemukan di database.' };
+  }
+
+  // Proteksi Super Admin Utama
+  if (targetEmail === 'admin@poso.local' || targetUserId === 'USR-ADMIN01') {
+    return { status: 'error', code: 403, message: 'Akun Super Administrator Utama dilindungi dan tidak dapat dihapus.' };
+  }
+
+  // Hapus baris dari Google Sheets
+  sheet.deleteRow(targetRowIndex);
+
+  if (typeof logAudit === 'function') {
+    logAudit(adminUser.user_id, 'DELETE_USER', targetUserId, 'Admin menghapus akun ' + targetName + ' (' + targetEmail + ')');
+  }
+
+  return {
+    status: 'success',
+    code: 200,
+    message: 'Akun ' + targetName + ' (' + targetEmail + ') berhasil dihapus permanen dari database.'
   };
 }
 

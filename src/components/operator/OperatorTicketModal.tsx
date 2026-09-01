@@ -44,10 +44,12 @@ export const OperatorTicketModal: React.FC<OperatorTicketModalProps> = ({
   const [isSendingReply, setIsSendingReply] = useState(false);
 
   const uptUnits = [
-    'UPT TI & Jaringan',
-    'UPT Sarana & Prasarana',
-    'UPT Pelayanan & Sistem Informasi',
-    'UPT Keuangan & Logistik'
+    'UPT Pengendalian Operasi & Transportasi',
+    'UPT Sarana & Prasarana (CGS)',
+    'UPT Postal Security & Keamanan',
+    'UPT Quality Control & Audit SLA',
+    'UPT TI & Sistem Informasi',
+    'Helpdesk Pusat & Layanan Terpadu'
   ];
 
   const loadDetail = async (id: string) => {

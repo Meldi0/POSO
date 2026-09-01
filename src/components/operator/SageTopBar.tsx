@@ -9,7 +9,7 @@ import {
   Calendar,
   Menu,
   X,
-  SlidersHorizontal
+  Compass
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -26,6 +26,7 @@ export interface SageTopBarProps {
   isLoading: boolean;
   onOpenCreateTicket: () => void;
   onToggleMobileMenu?: () => void;
+  onTrackClick?: () => void;
 }
 
 export const SageTopBar: React.FC<SageTopBarProps> = ({
@@ -40,24 +41,28 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
   onRefresh,
   isLoading,
   onOpenCreateTicket,
-  onToggleMobileMenu
+  onToggleMobileMenu,
+  onTrackClick
 }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const categories = [
     'Semua Kategori',
+    'Pengendalian Operasi',
+    'Corporate General Services (CGS)',
+    'Postal Security',
+    'Quality Control',
+    'IT & Sistem Informasi',
     'Jaringan & Internet',
     'Sarana & Prasarana',
     'Layanan Akun & Portal',
-    'Hardware & Komputer',
-    'Sistem Informasi & Aplikasi',
-    'Layanan Umum & Konsultasi'
+    'Hardware & Komputer'
   ];
 
   const dateFilterOptions = [
     { label: 'Semua Waktu', value: 'all' },
     { label: 'Hari Ini', value: 'today' },
-    { label: '7 Hari', value: '7days' },
+    { label: '7 Hari Terakhir', value: '7days' },
     { label: 'Bulan Ini', value: 'month' }
   ];
 
@@ -108,6 +113,19 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
             </button>
           )}
         </div>
+
+        {/* 1-Click Lacak Status Tiket Nav Button */}
+        {onTrackClick && (
+          <button
+            type="button"
+            onClick={onTrackClick}
+            title="Buka Pelacak Tiket Terpadu"
+            className="hidden sm:flex px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-[#0D5C75] text-xs font-bold transition-all items-center gap-1.5 shadow-2xs shrink-0 cursor-pointer"
+          >
+            <Compass className="w-3.5 h-3.5 text-[#0D5C75]" />
+            <span>Lacak Tiket</span>
+          </button>
+        )}
 
         {/* View Mode Toggle for Desktop */}
         <div className="hidden sm:flex items-center bg-slate-200/50 p-1 rounded-xl border border-slate-200/60 shrink-0">
