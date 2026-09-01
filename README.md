@@ -108,15 +108,16 @@ Hasil build produksi yang optimal akan berada di folder `dist/`.
 
 ---
 
-## 4. ROLE-BASED ACCESS CONTROL & AKUN DEMO
+## 4. STRUKTUR PERAN (*ROLE-BASED ACCESS CONTROL*)
 
-Tersedia tombol **1-Klik Demo Akun** pada halaman Login (`/login`) untuk memudahkan pengujian peran:
+Sistem POSO mendukung manajemen hak akses berbasis peran (*RBAC*):
 
-| Peran (*Role*) | Email Demo | Kata Sandi Demo | Akses & Wewenang |
-|---|---|---|---|
-| **Super Admin** | `admin@poso.local` | `Admin123!` | Akses penuh: manajemen staf operator & UPT, konfigurasi Google Drive, dan log audit. |
-| **Operator Helpdesk** | `operator@poso.local` | `Operator123!` | Papan triase Kanban, routing UPT, ubah status tiket, balasan publik & catatan internal. |
-| **Pelapor (Pengguna)** | `dewi@gmail.com` | `User123!` | Buat tiket baru, pantau riwayat tiket saya, lacak tiket via ID. |
+| Peran (*Role*) | Deskripsi & Hak Akses |
+|---|---|
+| **Super Admin** | Akses penuh: manajemen staf operator & teknisi UPT, konfigurasi sumber data, dan audit sistem. |
+| **Operator Helpdesk** | Papan triase Kanban, routing ke unit teknisi UPT, pembaruan status, balasan publik & catatan internal. |
+| **Teknisi UPT** | Eksekusi tiket teknis sesuai unit penugasan (*TI, Sarpras, Sistem Informasi*). |
+| **Pelapor (Pengguna)** | Pembuatan tiket keluhan baru, pemantauan riwayat tiket saya, dan pelacakan tiket via ID. |
 
 ---
 
