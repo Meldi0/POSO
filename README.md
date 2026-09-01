@@ -59,14 +59,14 @@ POSO/
 
 ## 2. INTEGRASI GOOGLE WORKSPACE & APPS SCRIPT
 
-### Informasi Konfigurasi Aktif:
+### Informasi Konfigurasi:
 * **Folder Google Drive (Penyimpanan Foto)**:
-  `1RqlknF3O-0gXcTeX0JfO9FzyBESq-hwR`
+  `YOUR_GOOGLE_DRIVE_FOLDER_ID`
 * **Google Spreadsheet Master Database**:
-  `1IBoq8tUdVC1ki2omEqvgek6LEHhE6aVOSEfDuiO0byE`
+  `YOUR_GOOGLE_SPREADSHEET_ID`
 * **Deployment Apps Script URL** (`.env`):
   ```env
-  VITE_GAS_API_URL=https://script.google.com/macros/s/AKfycbyMOPENtykzm_vLW_mj3DqDAGnndoLMukUSDh8gLO4AHHRsNDto04a7M_Pg3LfIqUt_/exec
+  VITE_GAS_API_URL=https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec
   ```
 
 ### Panduan Memperbarui / Deploy Apps Script:
@@ -89,9 +89,9 @@ npm install
 ```
 
 ### Langkah 2: Menyiapkan File `.env`
-Buat file `.env` di root direktori dengan isi:
+Salin template `.env.example` menjadi `.env` di root direktori:
 ```env
-VITE_GAS_API_URL=https://script.google.com/macros/s/AKfycbyMOPENtykzm_vLW_mj3DqDAGnndoLMukUSDh8gLO4AHHRsNDto04a7M_Pg3LfIqUt_/exec
+VITE_GAS_API_URL=https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec
 ```
 
 ### Langkah 3: Menjalankan Server Pengembangan
