@@ -207,7 +207,63 @@ if (!localStorage.getItem(STORAGE_KEYS.LOCAL_USERS)) {
 class PosoApiService {
   public getGasUrl(): string {
     const envUrl = (import.meta as any).env?.VITE_GAS_API_URL;
-    return envUrl || localStorage.getItem('poso_gas_url') || '';
+    const storedUrl = localStorage.getItem('poso_gas_url') || '';
+    // If envUrl is placeholder, ignore it and check storedUrl
+    if (envUrl && !envUrl.includes('YOUR_GAS_DEPLOYMENT_ID')) {
+      return envUrl;
+    }
+    return storedUrl || envUrl || '';
+  }
+
+  public isGasConfigured(): boolean {
+    const url = this.getGasUrl();
+    return Boolean(url && url.startsWith('http') && !url.includes('YOUR_GAS_DEPLOYMENT_ID'));
+  }
+
+  public setGasUrl(url: string) {
+    const cleanUrl = (url || '').trim();
+    if (cleanUrl) {
+      localStorage.setItem('poso_gas_url', cleanUrl);
+    } else {
+      localStorage.removeItem('poso_gas_url');
+    }
+    window.dispatchEvent(new CustomEvent('poso_gas_url_changed', { detail: { url: cleanUrl } }));
+  }
+
+  public async ping(): Promise<{ success: boolean; latency: number; message: string; timestamp?: string }> {
+    const gasUrl = this.getGasUrl();
+    if (!this.isGasConfigured()) {
+      return { 
+        success: false, 
+        latency: 0, 
+        message: 'URL Google Apps Script belum dikonfigurasi (masih dalam Mode Offline LocalStorage).' 
+      };
+    }
+    const start = Date.now();
+    try {
+      const res = await this.callGas<{ message?: string; timestamp?: string }>('ping', 'GET');
+      const latency = Date.now() - start;
+      if (res && res.status === 'success') {
+        return { 
+          success: true, 
+          latency, 
+          message: res.message || 'Koneksi REST API Google Apps Script & Google Sheets Aktif!',
+          timestamp: (res.data as any)?.timestamp || new Date().toISOString()
+        };
+      }
+      return { 
+        success: false, 
+        latency, 
+        message: res.message || 'Server Google Apps Script memberikan respons tidak terduga.' 
+      };
+    } catch (err: any) {
+      const latency = Date.now() - start;
+      return { 
+        success: false, 
+        latency, 
+        message: `Gagal terhubung: ${err.message || 'Koneksi terputus atau URL salah'}` 
+      };
+    }
   }
 
   public getStoredToken(): string {
@@ -340,7 +396,35 @@ class PosoApiService {
     const cleanEmail = (params.email || '').toLowerCase().trim();
     const cleanPassword = params.password || '';
 
-    // Fast Pass (local resolution if cached/seeded)
+    // 1. If GAS is configured, prioritize live remote authentication
+    if (this.isGasConfigured()) {
+      try {
+        const res = await this.callGas<{ token: string; user: User }>('login', 'POST', {
+          email: cleanEmail,
+          password: cleanPassword
+        });
+        if (res && res.status === 'success' && res.data) {
+          this.setStoredToken(res.data.token);
+          this.setStoredUser(res.data.user);
+          // Cache user locally
+          const localUsers = getStored<User[]>(STORAGE_KEYS.LOCAL_USERS, SEED_USERS);
+          const existingIdx = localUsers.findIndex(u => u.email.toLowerCase() === cleanEmail);
+          if (existingIdx !== -1) {
+            localUsers[existingIdx] = { ...localUsers[existingIdx], ...res.data.user, password_plain: cleanPassword };
+          } else {
+            localUsers.push({ ...res.data.user, password_plain: cleanPassword });
+          }
+          setStored(STORAGE_KEYS.LOCAL_USERS, localUsers);
+          return res;
+        } else if (res && res.status === 'error') {
+          return { status: 'error', code: res.code || 401, message: res.message || 'Email atau kata sandi salah.' };
+        }
+      } catch (err: any) {
+        console.warn('Live GAS login failed, trying local fallback:', err.message);
+      }
+    }
+
+    // 2. Local / Offline Fallback
     const users = getStored<User[]>(STORAGE_KEYS.LOCAL_USERS, SEED_USERS);
     let localUser = users.find(u => u.email.toLowerCase() === cleanEmail);
 
@@ -367,10 +451,10 @@ class PosoApiService {
         cleanPassword === 'Poso123!' || 
         cleanPassword === 'Admin123!' || 
         cleanPassword === 'Operator123!' || 
+        cleanPassword === 'Upt123!' ||
         cleanPassword === 'User123!';
 
       if (isPasswordMatch) {
-        // Save the exact password entered
         localUser.password_plain = cleanPassword;
         setStored(STORAGE_KEYS.LOCAL_USERS, users);
 
@@ -378,47 +462,12 @@ class PosoApiService {
         this.setStoredToken(token);
         this.setStoredUser(localUser);
 
-        // Silently sync with GAS in background
-        const gasUrl = this.getGasUrl();
-        if (gasUrl) {
-          this.callGas<{ token: string; user: User }>('login', 'POST', {
-            email: cleanEmail,
-            password: cleanPassword
-          }).catch(() => {});
-        }
-
         return {
           status: 'success',
           code: 200,
-          message: 'Login berhasil.',
+          message: 'Login berhasil (Mode Lokal).',
           data: { token, user: localUser }
         };
-      }
-    }
-
-    // Remote GAS fallback if not matched locally
-    const gasUrl = this.getGasUrl();
-    if (gasUrl) {
-      try {
-        const res = await this.callGas<{ token: string; user: User }>('login', 'POST', {
-          email: cleanEmail,
-          password: cleanPassword
-        });
-        if (res && res.status === 'success' && res.data) {
-          this.setStoredToken(res.data.token);
-          this.setStoredUser(res.data.user);
-          // Cache user locally
-          const localUsers = getStored<User[]>(STORAGE_KEYS.LOCAL_USERS, SEED_USERS);
-          if (!localUsers.some(u => u.email.toLowerCase() === cleanEmail)) {
-            localUsers.push({ ...res.data.user, password_plain: cleanPassword });
-            setStored(STORAGE_KEYS.LOCAL_USERS, localUsers);
-          }
-          return res;
-        } else if (res && res.message) {
-          return { status: 'error', code: res.code || 401, message: res.message };
-        }
-      } catch (err: any) {
-        console.warn('GAS login error:', err.message);
       }
     }
 
@@ -447,7 +496,7 @@ class PosoApiService {
     attachments?: Array<{ name: string; size: string; type: string; dataUrl?: string }>;
   }): Promise<ApiResponse<Ticket>> {
     const gasUrl = this.getGasUrl();
-    if (gasUrl) {
+    if (this.isGasConfigured()) {
       try {
         const res = await this.callGas<Ticket>('createTicket', 'POST', payload);
         if (res && res.status === 'success' && res.data) {
@@ -547,7 +596,6 @@ class PosoApiService {
     upt?: string;
     search?: string;
   }): Promise<ApiResponse<{ tickets: Ticket[]; total: number; page: number; limit: number; total_pages: number }>> {
-    const gasUrl = this.getGasUrl();
     const cleanParams: any = {};
     if (params?.page) cleanParams.page = params.page;
     if (params?.limit) cleanParams.limit = params.limit;
@@ -557,10 +605,14 @@ class PosoApiService {
     if (params?.upt && params.upt !== 'all') cleanParams.upt = params.upt;
     if (params?.search && params.search.trim()) cleanParams.search = params.search.trim();
 
-    if (gasUrl) {
+    if (this.isGasConfigured()) {
       try {
         const res = await this.callGas<{ tickets: Ticket[]; total: number; page: number; limit: number; total_pages: number }>('getTickets', 'GET', cleanParams);
         if (res && res.status === 'success' && res.data) {
+          // Sync remote tickets to local storage so device cache is up to date
+          if (Array.isArray(res.data.tickets) && res.data.tickets.length > 0) {
+            setStored(STORAGE_KEYS.LOCAL_TICKETS, res.data.tickets);
+          }
           return res;
         }
       } catch (err: any) {
@@ -650,11 +702,19 @@ class PosoApiService {
   }
 
   async getTicketDetail(ticketId: string): Promise<ApiResponse<{ ticket: Ticket; threads: ThreadMessage[] }>> {
-    const gasUrl = this.getGasUrl();
-    if (gasUrl) {
+    if (this.isGasConfigured()) {
       try {
         const res = await this.callGas<{ ticket: Ticket; threads: ThreadMessage[] }>('getTicketDetail', 'GET', { ticket_id: ticketId });
         if (res && res.status === 'success' && res.data) {
+          // Update local cache
+          const localTickets = getStored<Ticket[]>(STORAGE_KEYS.LOCAL_TICKETS, SEED_TICKETS);
+          const tIdx = localTickets.findIndex(t => t.ticket_id === ticketId);
+          if (tIdx !== -1) {
+            localTickets[tIdx] = res.data.ticket;
+          } else {
+            localTickets.unshift(res.data.ticket);
+          }
+          setStored(STORAGE_KEYS.LOCAL_TICKETS, localTickets);
           return res;
         }
       } catch (err: any) {
@@ -695,6 +755,7 @@ class PosoApiService {
     assigned_upt?: string;
     assigned_operator?: string;
   }): Promise<ApiResponse<Ticket>> {
+    // 1. Optimistic Local Update
     const tickets = getStored<Ticket[]>(STORAGE_KEYS.LOCAL_TICKETS, SEED_TICKETS);
     const index = tickets.findIndex(t => t.ticket_id === payload.ticket_id);
     let updatedTicket: Ticket;
@@ -725,12 +786,20 @@ class PosoApiService {
       };
     }
 
-    // Fire background sync to Google Apps Script
-    const gasUrl = this.getGasUrl();
-    if (gasUrl) {
-      this.callGas<Ticket>('updateTicketStatus', 'POST', payload).catch(err => {
-        console.warn('Background GAS updateTicketStatus sync failed:', err.message);
-      });
+    // 2. Sync to Google Apps Script / Google Sheets
+    if (this.isGasConfigured()) {
+      try {
+        const res = await this.callGas<Ticket>('updateTicketStatus', 'POST', payload);
+        if (res && res.status === 'success' && res.data) {
+          if (index !== -1) {
+            tickets[index] = { ...tickets[index], ...res.data };
+            setStored(STORAGE_KEYS.LOCAL_TICKETS, tickets);
+          }
+          return res;
+        }
+      } catch (err: any) {
+        console.warn('Live GAS updateTicketStatus failed:', err.message);
+      }
     }
 
     return {
@@ -763,12 +832,16 @@ class PosoApiService {
     threads.push(newThread);
     setStored(STORAGE_KEYS.LOCAL_THREADS, threads);
 
-    // Fire background sync to Google Apps Script
-    const gasUrl = this.getGasUrl();
-    if (gasUrl) {
-      this.callGas<ThreadMessage>('addThreadMessage', 'POST', payload).catch(err => {
-        console.warn('Background GAS addThreadMessage sync failed:', err.message);
-      });
+    // Sync to Google Apps Script
+    if (this.isGasConfigured()) {
+      try {
+        const res = await this.callGas<ThreadMessage>('addThreadMessage', 'POST', payload);
+        if (res && res.status === 'success' && res.data) {
+          return res;
+        }
+      } catch (err: any) {
+        console.warn('GAS addThreadMessage sync failed:', err.message);
+      }
     }
 
     return {

@@ -7,10 +7,7 @@ import {
   Lock, 
   ArrowLeft, 
   Headphones, 
-  AlertCircle,
-  Shield,
-  Layers,
-  Wrench
+  AlertCircle
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
@@ -55,11 +52,6 @@ export const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoAccount = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
   };
 
   return (
@@ -254,58 +246,6 @@ export const Login: React.FC = () => {
               <span>{loading ? 'Signing In...' : 'Sign In'}</span>
             </button>
           </form>
-
-          {/* 1-Click Demo Accounts (Fast Testing Helper) */}
-          <div className="pt-4 border-t border-[#F1F5F9] space-y-2">
-            <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider block text-center">
-              Pilih Akun Demo 1-Klik:
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDemoAccount('admin@poso.local', 'Admin123!')}
-                className="p-2 rounded-xl bg-[#FDF4FF] border border-[#F5D0FE] text-left hover:bg-[#FAE8FF] transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#9333EA]">
-                  <Shield size={12} />
-                  <span>Admin Sistem</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoAccount('operator@poso.local', 'Operator123!')}
-                className="p-2 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] text-left hover:bg-[#DBEAFE] transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#1D4ED8]">
-                  <Layers size={12} />
-                  <span>Operator Front</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoAccount('upt.ti@poso.local', 'Upt123!')}
-                className="p-2 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] text-left hover:bg-[#DCFCE7] transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#15803D]">
-                  <Wrench size={12} />
-                  <span>Teknisi UPT</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoAccount('dewi@gmail.com', 'User123!')}
-                className="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-left hover:bg-[#F1F5F9] transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#475569]">
-                  <User size={12} />
-                  <span>Pelapor Dinas</span>
-                </div>
-              </button>
-            </div>
-          </div>
 
         </div>
 
