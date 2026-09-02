@@ -242,6 +242,17 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
     ? parseTicketDetails(ticket.description, ticket.category) 
     : { cleanDescription: '', location: '', departmentAndTopic: '', attachments: [] };
 
+  const formatThreadTime = (isoString?: string) => {
+    if (!isoString) return 'Baru saja';
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return 'Baru saja';
+      return `${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+    } catch {
+      return 'Baru saja';
+    }
+  };
+
   const nextStatuses = ticket ? validTransitions[ticket.status] || [] : [];
 
   return (
@@ -389,7 +400,7 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
                                   </span>
                                 )}
                                 <span className="text-[11px] text-[#94A3B8] ml-auto flex-shrink-0">
-                                  {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                  {formatThreadTime(msg.created_at)}
                                 </span>
                               </div>
 

@@ -208,12 +208,24 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
     return 'pending';
   };
 
+  const formatThreadTime = (isoString?: string) => {
+    if (!isoString) return 'Baru saja';
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return 'Baru saja';
+      return `${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • ${d.toLocaleDateString('id-ID')}`;
+    } catch {
+      return 'Baru saja';
+    }
+  };
+
   const parsedTicket = ticket 
-    ? parseTicketDetails(ticket.description, ticket.category) 
+    ? parseTicketDetails(ticket.description || '', ticket.category) 
     : { cleanDescription: '', location: '', departmentAndTopic: '', attachments: [] };
 
   const followUpThreads = threads.filter((th, index) => {
-    if (index === 0 && (th.message.includes(parsedTicket.cleanDescription) || th.sender_role === 'pengguna_umum')) {
+    if (!th || typeof th.message !== 'string') return false;
+    if (index === 0 && parsedTicket.cleanDescription && th.message.trim() === parsedTicket.cleanDescription.trim()) {
       return false;
     }
     return true;
@@ -514,7 +526,7 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
                           </span>
                         </div>
                         <span className="text-[11px] text-[#94A3B8]">
-                          {new Date(th.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • {new Date(th.created_at).toLocaleDateString('id-ID')}
+                          {formatThreadTime(th.created_at)}
                         </span>
                       </div>
 

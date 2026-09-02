@@ -73,6 +73,17 @@ export const PublicTicketTracker: React.FC = () => {
   const prevThreadCountRef = useRef<number>(0);
   const isInitialLoadRef = useRef<boolean>(true);
 
+  const formatThreadTime = (isoString?: string) => {
+    if (!isoString) return 'Baru saja';
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return 'Baru saja';
+      return `${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • ${d.toLocaleDateString('id-ID')}`;
+    } catch {
+      return 'Baru saja';
+    }
+  };
+
   const fetchTicket = async (id: string, mail?: string, showLoading = false) => {
     if (!id.trim()) return;
     if (showLoading) setIsLoading(true);
@@ -81,16 +92,21 @@ export const PublicTicketTracker: React.FC = () => {
       const res = await apiService.trackTicket(id, mail);
       if (res.status === 'success' && res.data) {
         setTicket(res.data.ticket);
-        const newThreads = res.data.threads || [];
+        const newThreads = Array.isArray(res.data.threads) ? res.data.threads : [];
 
         // Check if there are new incoming messages from operator/helpdesk
         if (!isInitialLoadRef.current && newThreads.length > prevThreadCountRef.current) {
           const latestMsg = newThreads[newThreads.length - 1];
-          const isFromSelf = latestMsg.sender_role === 'pengguna_umum' || latestMsg.sender_name?.toLowerCase().includes(user?.name?.toLowerCase() || '###');
-          if (!isFromSelf) {
-            soundService.playIncomingMessageSound();
-            soundService.notifyBrowser(`Balasan Baru di Tiket #${id}`, `${latestMsg.sender_name}: ${latestMsg.message.slice(0, 60)}`);
-            info(`💬 Tanggapan baru dari ${latestMsg.sender_name}`);
+          if (latestMsg) {
+            const isFromSelf = 
+              latestMsg.sender_role === 'pengguna_umum' || 
+              (user?.name && (latestMsg.sender_name || '').toLowerCase().includes(user.name.toLowerCase()));
+            
+            if (!isFromSelf) {
+              soundService.playIncomingMessageSound();
+              soundService.notifyBrowser(`Balasan Baru di Tiket #${id}`, `${latestMsg.sender_name || 'Petugas'}: ${(latestMsg.message || '').slice(0, 60)}`);
+              info(`💬 Tanggapan baru dari ${latestMsg.sender_name || 'Petugas'}`);
+            }
           }
         }
 
@@ -126,7 +142,7 @@ export const PublicTicketTracker: React.FC = () => {
     if (!ticket?.ticket_id) return;
 
     const unsub = realtimeService.onNewMessage((newMsg) => {
-      if (newMsg.ticket_id === ticket.ticket_id) {
+      if (newMsg && newMsg.ticket_id === ticket.ticket_id) {
         setThreads((prev) => {
           if (prev.some(t => t.thread_id === newMsg.thread_id || (t.message === newMsg.message && t.sender_id === newMsg.sender_id))) {
             return prev;
@@ -138,7 +154,7 @@ export const PublicTicketTracker: React.FC = () => {
 
     const interval = setInterval(() => {
       fetchTicket(ticket.ticket_id, email, false);
-    }, 3000);
+    }, 3500);
 
     return () => {
       unsub();
@@ -184,7 +200,7 @@ export const PublicTicketTracker: React.FC = () => {
     };
 
     setThreads((prev) => [...prev, tempThread]);
-    prevThreadCountRef.current += 1;
+    prevThreadCountRef.current = (prevThreadCountRef.current || 0) + 1;
     soundService.playSentMessageSound();
 
     // Broadcast instantly to all other tabs and devices via WebSocket
@@ -202,6 +218,8 @@ export const PublicTicketTracker: React.FC = () => {
         success('Tanggapan Anda berhasil dikirimkan.');
         await fetchTicket(ticket.ticket_id, email, false);
       }
+    } catch (err) {
+      console.warn('Reply error:', err);
     } finally {
       setIsSendingReply(false);
     }
@@ -219,7 +237,7 @@ export const PublicTicketTracker: React.FC = () => {
   };
 
   const parsedTicket = ticket 
-    ? parseTicketDetails(ticket.description, ticket.category) 
+    ? parseTicketDetails(ticket.description || '', ticket.category) 
     : { cleanDescription: '', location: '', departmentAndTopic: '', attachments: [] };
 
   const currentStage = getStageFromStatus(ticket?.status);
@@ -231,12 +249,14 @@ export const PublicTicketTracker: React.FC = () => {
     4: ticket.status === 'closed' ? ticket.updated_at : undefined,
   } : {};
 
-  // Genuine follow up messages
+  // Genuine follow up messages (Safely filter out initial description duplicate and internal notes)
   const followUpThreads = threads.filter((th, index) => {
-    if (index === 0 && (th.message.includes(parsedTicket.cleanDescription) || th.sender_role === 'pengguna_umum')) {
+    if (!th || typeof th.message !== 'string') return false;
+    if (th.visibility === 'internal') return false;
+    if (index === 0 && parsedTicket.cleanDescription && th.message.trim() === parsedTicket.cleanDescription.trim()) {
       return false;
     }
-    return th.visibility !== 'internal';
+    return true;
   });
 
   return (
@@ -425,7 +445,7 @@ export const PublicTicketTracker: React.FC = () => {
                             </span>
                           </div>
                           <span className="text-[10px] text-[#94A3B8] font-normal">
-                            {new Date(th.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • {new Date(th.created_at).toLocaleDateString('id-ID')}
+                            {formatThreadTime(th.created_at)}
                           </span>
                         </div>
 
