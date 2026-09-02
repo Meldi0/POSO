@@ -267,21 +267,36 @@ class PosoApiService {
   }
 
   public getStoredToken(): string {
-    return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || '';
+    return sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || '';
   }
 
   public setStoredToken(token: string) {
-    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+    if (token) {
+      sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+    } else {
+      sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    }
   }
 
   public getStoredUser(): User | null {
+    const fromSession = sessionStorage.getItem(STORAGE_KEYS.AUTH_USER);
+    if (fromSession) {
+      try {
+        return JSON.parse(fromSession);
+      } catch {}
+    }
     return getStored<User | null>(STORAGE_KEYS.AUTH_USER, null);
   }
 
   public setStoredUser(user: User | null) {
     if (user) {
+      sessionStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
       setStored(STORAGE_KEYS.AUTH_USER, user);
     } else {
+      sessionStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+      sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     }
