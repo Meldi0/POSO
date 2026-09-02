@@ -77,22 +77,21 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
   const [isSavingTriage, setIsSavingTriage] = useState(false);
 
   useEffect(() => {
-    if (ticket) {
-      setActiveTab('diskusi');
+    if (ticket?.ticket_id) {
       setSelectedUpt(ticket.assigned_upt || '');
       setSelectedPriority(ticket.priority || 'Medium');
       isInitialLoadRef.current = true;
       prevThreadCountRef.current = 0;
-      fetchThreads(ticket.ticket_id, true);
+      fetchThreads(ticket.ticket_id, false);
     }
-  }, [ticket]);
+  }, [ticket?.ticket_id]);
 
   // Ultra-fast Sub-50ms WebSocket Realtime Listener
   useEffect(() => {
-    if (!ticket) return;
+    if (!ticket?.ticket_id) return;
 
     const unsub = realtimeService.onNewMessage((newMsg) => {
-      if (newMsg.ticket_id === ticket.ticket_id) {
+      if (newMsg && newMsg.ticket_id === ticket.ticket_id) {
         setThreads((prev) => {
           if (prev.some(t => t.thread_id === newMsg.thread_id || (t.message === newMsg.message && t.sender_id === newMsg.sender_id))) {
             return prev;
@@ -102,10 +101,10 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
       }
     });
 
-    // Fallback background polling every 3 seconds
+    // Fallback background polling every 3.5 seconds
     const interval = setInterval(() => {
       fetchThreads(ticket.ticket_id, false);
-    }, 3000);
+    }, 3500);
 
     return () => {
       unsub();
@@ -123,19 +122,24 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
   }, [onClose]);
 
   const fetchThreads = async (ticketId: string, showLoading = false) => {
-    if (showLoading) setLoadingThreads(true);
+    if (showLoading && threads.length === 0) setLoadingThreads(true);
     try {
       const res = await apiService.getTicketDetail(ticketId);
       if (res.status === 'success' && res.data) {
-        const newThreads = res.data.threads || [];
+        const newThreads = Array.isArray(res.data.threads) ? res.data.threads : [];
         
         if (!isInitialLoadRef.current && newThreads.length > prevThreadCountRef.current) {
           const latestMsg = newThreads[newThreads.length - 1];
-          const isFromSelf = latestMsg.sender_id === user?.user_id || latestMsg.sender_name?.toLowerCase().includes(user?.name?.toLowerCase() || '###');
-          if (!isFromSelf) {
-            soundService.playIncomingMessageSound();
-            soundService.notifyBrowser(`Pesan Baru di #${ticketId}`, `${latestMsg.sender_name}: ${latestMsg.message.slice(0, 60)}`);
-            info(`💬 Pesan baru dari ${latestMsg.sender_name}`);
+          if (latestMsg) {
+            const isFromSelf = 
+              latestMsg.sender_id === user?.user_id || 
+              (user?.name && (latestMsg.sender_name || '').toLowerCase().includes(user.name.toLowerCase()));
+            
+            if (!isFromSelf) {
+              soundService.playIncomingMessageSound();
+              soundService.notifyBrowser(`Pesan Baru di #${ticketId}`, `${latestMsg.sender_name || 'Pelapor'}: ${(latestMsg.message || '').slice(0, 60)}`);
+              info(`💬 Pesan baru dari ${latestMsg.sender_name || 'Pelapor'}`);
+            }
           }
         }
 

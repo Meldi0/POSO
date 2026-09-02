@@ -737,7 +737,30 @@ class PosoApiService {
             });
           }
 
+          // Merge local and remote threads to guarantee zero message loss
+          const localThreads = getStored<ThreadMessage[]>(STORAGE_KEYS.LOCAL_THREADS, SEED_THREADS)
+            .filter(th => th.ticket_id === ticketId);
+          const remoteThreads = Array.isArray(res.data.threads) ? res.data.threads : [];
+          const mergedThreads = [...remoteThreads];
+
+          for (const lt of localThreads) {
+            const exists = mergedThreads.some(rt => 
+              rt.thread_id === lt.thread_id || 
+              (rt.message?.trim() === lt.message?.trim() && Math.abs(new Date(rt.created_at).getTime() - new Date(lt.created_at).getTime()) < 120000)
+            );
+            if (!exists) {
+              mergedThreads.push(lt);
+            }
+          }
+
+          mergedThreads.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          res.data.threads = mergedThreads;
+
           // Update local cache
+          const allOtherLocalThreads = getStored<ThreadMessage[]>(STORAGE_KEYS.LOCAL_THREADS, SEED_THREADS)
+            .filter(th => th.ticket_id !== ticketId);
+          setStored(STORAGE_KEYS.LOCAL_THREADS, [...allOtherLocalThreads, ...mergedThreads]);
+
           const localTickets = getStored<Ticket[]>(STORAGE_KEYS.LOCAL_TICKETS, SEED_TICKETS);
           const tIdx = localTickets.findIndex(t => t.ticket_id === ticketId);
           if (tIdx !== -1) {
