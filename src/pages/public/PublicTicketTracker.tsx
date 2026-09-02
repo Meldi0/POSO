@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -26,6 +26,7 @@ import { StatusBadge, PriorityBadge } from '../../components/ui/Badge';
 import { parseTicketDetails, parseThreadMessage } from '../../utils/ticketFormatter';
 import { AttachmentGallery } from '../../components/common/AttachmentGallery';
 import { useToast } from '../../context/ToastContext';
+import { soundService } from '../../utils/sound';
 
 function LightboxModal({ url, onClose }: { url: string; onClose: () => void }) {
   return (
@@ -44,9 +45,10 @@ export const PublicTicketTracker: React.FC = () => {
   const { user, isStaff } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { success, error, info } = useToast();
+
   const paramId = searchParams.get('id') || '';
   const paramEmail = searchParams.get('email') || '';
-  const { success, error, info } = useToast();
 
   const backDestination = isStaff ? '/dashboard' : user ? '/my-tickets' : '/';
   const backLabel = isStaff 
@@ -67,38 +69,73 @@ export const PublicTicketTracker: React.FC = () => {
   const [copiedId, setCopiedId] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
-  const fetchTicket = async (id: string, mail?: string) => {
+  const prevThreadCountRef = useRef<number>(0);
+  const isInitialLoadRef = useRef<boolean>(true);
+
+  const fetchTicket = async (id: string, mail?: string, showLoading = false) => {
     if (!id.trim()) return;
-    setIsLoading(true);
+    if (showLoading) setIsLoading(true);
     setErrorMsg('');
     try {
       const res = await apiService.trackTicket(id, mail);
       if (res.status === 'success' && res.data) {
         setTicket(res.data.ticket);
-        setThreads(res.data.threads || []);
+        const newThreads = res.data.threads || [];
+
+        // Check if there are new incoming messages from operator/helpdesk
+        if (!isInitialLoadRef.current && newThreads.length > prevThreadCountRef.current) {
+          const latestMsg = newThreads[newThreads.length - 1];
+          const isFromSelf = latestMsg.sender_role === 'pengguna_umum' || latestMsg.sender_name?.toLowerCase().includes(user?.name?.toLowerCase() || '###');
+          if (!isFromSelf) {
+            soundService.playIncomingMessageSound();
+            soundService.notifyBrowser(`Balasan Baru di Tiket #${id}`, `${latestMsg.sender_name}: ${latestMsg.message.slice(0, 60)}`);
+            info(`💬 Tanggapan baru dari ${latestMsg.sender_name}`);
+          }
+        }
+
+        prevThreadCountRef.current = newThreads.length;
+        isInitialLoadRef.current = false;
+        setThreads(newThreads);
       } else {
-        setTicket(null);
-        setErrorMsg(res.message || 'Tiket tidak ditemukan. Pastikan nomor ID tiket Anda sesuai.');
+        if (showLoading) {
+          setTicket(null);
+          setErrorMsg(res.message || 'Tiket tidak ditemukan. Pastikan nomor ID tiket Anda sesuai.');
+        }
       }
     } catch (err: any) {
-      setTicket(null);
-      setErrorMsg(err.message || 'Terjadi gangguan saat memuat data tiket.');
+      if (showLoading) {
+        setTicket(null);
+        setErrorMsg(err.message || 'Terjadi gangguan saat memuat data tiket.');
+      }
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     if (paramId) {
-      fetchTicket(paramId, paramEmail);
+      isInitialLoadRef.current = true;
+      prevThreadCountRef.current = 0;
+      fetchTicket(paramId, paramEmail, true);
     }
   }, [paramId, paramEmail]);
+
+  // Real-time polling every 3 seconds for fast customer chat updates
+  useEffect(() => {
+    if (!ticket?.ticket_id) return;
+    const interval = setInterval(() => {
+      fetchTicket(ticket.ticket_id, email, false);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [ticket?.ticket_id, email]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (ticketId.trim()) {
       navigate(`/track?id=${encodeURIComponent(ticketId.trim())}${email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ''}`, { replace: true });
-      fetchTicket(ticketId, email);
+      isInitialLoadRef.current = true;
+      prevThreadCountRef.current = 0;
+      fetchTicket(ticketId, email, true);
     }
   };
 
@@ -114,18 +151,36 @@ export const PublicTicketTracker: React.FC = () => {
     e.preventDefault();
     if (!ticket || !replyMessage.trim()) return;
 
+    const outgoingMsg = replyMessage.trim();
+    setReplyMessage('');
+
+    // Instant Optimistic UI update (0ms delay)
+    const tempThread: ThreadMessage = {
+      thread_id: `TH-TEMP-${Date.now()}`,
+      ticket_id: ticket.ticket_id,
+      sender_id: user?.user_id || 'USR-PUBLIC',
+      sender_name: user?.name || ticket.requester_name || 'Pelapor',
+      sender_role: 'pengguna_umum',
+      message: outgoingMsg,
+      visibility: 'public',
+      created_at: new Date().toISOString()
+    };
+
+    setThreads((prev) => [...prev, tempThread]);
+    prevThreadCountRef.current += 1;
+    soundService.playSentMessageSound();
+
     setIsSendingReply(true);
     try {
       const res = await apiService.addThreadMessage({
         ticket_id: ticket.ticket_id,
-        message: replyMessage.trim(),
+        message: outgoingMsg,
         visibility: 'public'
       });
 
       if (res.status === 'success') {
-        setReplyMessage('');
-        success('Tanggapan Anda berhasil dikirimkan ke tim helpdesk.');
-        await fetchTicket(ticket.ticket_id, email);
+        success('Tanggapan Anda berhasil dikirimkan.');
+        await fetchTicket(ticket.ticket_id, email, false);
       }
     } finally {
       setIsSendingReply(false);

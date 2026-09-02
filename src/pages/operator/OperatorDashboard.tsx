@@ -34,6 +34,7 @@ import { DataSourceConfig } from '../../components/admin/DataSourceConfig';
 import { CommandPalette } from '../../components/features/CommandPalette';
 import { OperatorTicketModal } from '../../components/operator/OperatorTicketModal';
 import { useToast } from '../../context/ToastContext';
+import { soundService } from '../../utils/sound';
 
 export const OperatorDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -52,6 +53,9 @@ export const OperatorDashboard: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [modalTicket, setModalTicket] = useState<Ticket | null>(null);
+
+  const prevTicketCountRef = useRef<number>(0);
+  const isInitialTicketLoadRef = useRef<boolean>(true);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,6 +78,11 @@ export const OperatorDashboard: React.FC = () => {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // Request browser notification permission once
+  useEffect(() => {
+    soundService.requestNotificationPermission().catch(() => {});
+  }, []);
+
   // FAB collapse on scroll
   useEffect(() => {
     const resetIdle = () => {
@@ -89,25 +98,46 @@ export const OperatorDashboard: React.FC = () => {
   }, []);
 
   // Fetch Tickets from Database
-  const fetchTickets = async () => {
+  const fetchTickets = async (silent = false) => {
     try {
-      setIsSyncing(true);
+      if (!silent) setIsSyncing(true);
       const res = await apiService.getTickets();
       if (res && res.status === 'success' && res.data) {
-        setTickets(res.data.tickets || []);
+        const newTickets = res.data.tickets || [];
+        
+        // Check for newly arrived tickets submitted from other devices
+        if (!isInitialTicketLoadRef.current && newTickets.length > prevTicketCountRef.current) {
+          const newest = newTickets[0];
+          soundService.playIncomingMessageSound();
+          soundService.notifyBrowser(`Tiket Baru Masuk #${newest.ticket_id}`, `${newest.subject} (${newest.category})`);
+          info(`🔔 Tiket baru masuk: #${newest.ticket_id} - ${newest.subject}`);
+        }
+
+        prevTicketCountRef.current = newTickets.length;
+        isInitialTicketLoadRef.current = false;
+        setTickets(newTickets);
       }
     } catch (err: any) {
-      console.error('Failed to load tickets:', err);
-      toastError(err.message || 'Gagal memuat tiket dari database');
+      if (!silent) {
+        console.error('Failed to load tickets:', err);
+        toastError(err.message || 'Gagal memuat tiket dari database');
+      }
     } finally {
-      setIsSyncing(false);
+      if (!silent) setIsSyncing(false);
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTickets();
-  }, []);
+    fetchTickets(false);
+
+    // Fast background multi-device auto-sync every 5 seconds
+    const interval = setInterval(() => {
+      fetchTickets(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [user?.email]);
 
   // Fast Status Change Handler
   const handleStatusChange = async (ticket: Ticket, newStatus: TicketStatus) => {

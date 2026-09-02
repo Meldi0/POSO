@@ -27,6 +27,7 @@ import { AttachmentGallery } from '../common/AttachmentGallery';
 import { apiService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import { soundService } from '../../utils/sound';
 
 interface SageTicketDrawerProps {
   ticket: Ticket | null;
@@ -66,6 +67,9 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
   const [threads, setThreads] = useState<ThreadMessage[]>([]);
   const [loadingThreads, setLoadingThreads] = useState(false);
 
+  const prevThreadCountRef = useRef<number>(0);
+  const isInitialLoadRef = useRef<boolean>(true);
+
   // Triage state
   const [selectedUpt, setSelectedUpt] = useState(ticket?.assigned_upt || '');
   const [selectedPriority, setSelectedPriority] = useState<TicketPriority>(ticket?.priority || 'Medium');
@@ -76,9 +80,20 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
       setActiveTab('diskusi');
       setSelectedUpt(ticket.assigned_upt || '');
       setSelectedPriority(ticket.priority || 'Medium');
-      fetchThreads(ticket.ticket_id);
+      isInitialLoadRef.current = true;
+      prevThreadCountRef.current = 0;
+      fetchThreads(ticket.ticket_id, true);
     }
   }, [ticket]);
+
+  // Real-time polling every 3 seconds
+  useEffect(() => {
+    if (!ticket) return;
+    const interval = setInterval(() => {
+      fetchThreads(ticket.ticket_id, false);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [ticket?.ticket_id, user?.email]);
 
   // ESC keyboard handler
   useEffect(() => {
@@ -89,17 +104,31 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  const fetchThreads = async (ticketId: string) => {
-    setLoadingThreads(true);
+  const fetchThreads = async (ticketId: string, showLoading = false) => {
+    if (showLoading) setLoadingThreads(true);
     try {
       const res = await apiService.getTicketDetail(ticketId);
       if (res.status === 'success' && res.data) {
-        setThreads(res.data.threads || []);
+        const newThreads = res.data.threads || [];
+        
+        if (!isInitialLoadRef.current && newThreads.length > prevThreadCountRef.current) {
+          const latestMsg = newThreads[newThreads.length - 1];
+          const isFromSelf = latestMsg.sender_id === user?.user_id || latestMsg.sender_name?.toLowerCase().includes(user?.name?.toLowerCase() || '###');
+          if (!isFromSelf) {
+            soundService.playIncomingMessageSound();
+            soundService.notifyBrowser(`Pesan Baru di #${ticketId}`, `${latestMsg.sender_name}: ${latestMsg.message.slice(0, 60)}`);
+            info(`💬 Pesan baru dari ${latestMsg.sender_name}`);
+          }
+        }
+
+        prevThreadCountRef.current = newThreads.length;
+        isInitialLoadRef.current = false;
+        setThreads(newThreads);
       }
     } catch (err) {
       console.warn('Failed to load threads:', err);
     } finally {
-      setLoadingThreads(false);
+      if (showLoading) setLoadingThreads(false);
     }
   };
 
@@ -115,21 +144,41 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
     e.preventDefault();
     if (!ticket || !replyText.trim()) return;
 
+    const outgoingMessage = replyText.trim();
+    const isNote = isInternal;
+    setReplyText('');
+
+    // Instant Optimistic UI update
+    const tempThread: ThreadMessage = {
+      thread_id: `TH-TEMP-${Date.now()}`,
+      ticket_id: ticket.ticket_id,
+      sender_id: user?.user_id || 'USR-OP',
+      sender_name: user?.name || 'Operator',
+      sender_role: (user?.role as any) || 'operator',
+      message: outgoingMessage,
+      visibility: isNote ? 'internal' : 'public',
+      created_at: new Date().toISOString()
+    };
+
+    setThreads((prev) => [...prev, tempThread]);
+    prevThreadCountRef.current += 1;
+    soundService.playSentMessageSound();
+
     setIsSending(true);
     try {
       const res = await apiService.addThreadMessage({
         ticket_id: ticket.ticket_id,
-        message: replyText.trim(),
-        visibility: isInternal ? 'internal' : 'public'
+        message: outgoingMessage,
+        visibility: isNote ? 'internal' : 'public'
       });
 
       if (res.status === 'success') {
-        setReplyText('');
-        success(isInternal ? 'Catatan internal berhasil disimpan.' : 'Tanggapan berhasil dikirimkan ke pelapor.');
-        await fetchThreads(ticket.ticket_id);
+        success(isNote ? 'Catatan internal berhasil disimpan.' : 'Tanggapan berhasil dikirimkan.');
+        await fetchThreads(ticket.ticket_id, false);
       }
     } catch (err: any) {
       toastError(err.message || 'Gagal mengirim pesan');
+      fetchThreads(ticket.ticket_id, false);
     } finally {
       setIsSending(false);
     }

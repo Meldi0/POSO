@@ -22,6 +22,7 @@ import {
 import { StatusBadge, PriorityBadge } from '../../components/ui/Badge';
 import { SlaCountdown } from '../../components/features/SlaCountdown';
 import { parseTicketDetails } from '../../utils/ticketFormatter';
+import { soundService } from '../../utils/sound';
 
 export const MyTicketsPage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -31,30 +32,37 @@ export const MyTicketsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in_progress' | 'waiting' | 'closed'>('all');
 
-  useEffect(() => {
-    const fetchUserTickets = async () => {
-      if (!user?.email) {
-        setLoading(false);
-        return;
+  const fetchUserTickets = async (silent = false) => {
+    if (!user?.email) {
+      setLoading(false);
+      return;
+    }
+    try {
+      if (!silent) setLoading(true);
+      const res = await apiService.getTickets();
+      if (res && res.status === 'success' && res.data) {
+        const allTickets = res.data.tickets || [];
+        const userTickets = allTickets.filter(t => 
+          (t.requester_email || '').toLowerCase() === user.email.toLowerCase()
+        );
+        setTickets(userTickets);
       }
-      try {
-        setLoading(true);
-        const res = await apiService.getTickets();
-        if (res && res.status === 'success' && res.data) {
-          const allTickets = res.data.tickets || [];
-          const userTickets = allTickets.filter(t => 
-            (t.requester_email || '').toLowerCase() === user.email.toLowerCase()
-          );
-          setTickets(userTickets);
-        }
-      } catch (err) {
-        console.error('Error fetching user tickets:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (err) {
+      console.error('Error fetching user tickets:', err);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
 
-    fetchUserTickets();
+  useEffect(() => {
+    fetchUserTickets(false);
+
+    // Auto-polling every 5 seconds for user tickets
+    const interval = setInterval(() => {
+      fetchUserTickets(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [user]);
 
   const filteredTickets = tickets.filter(t => {

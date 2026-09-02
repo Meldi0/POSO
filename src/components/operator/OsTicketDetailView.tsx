@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Ticket, ThreadMessage, TicketStatus, TicketPriority } from '../../types';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { soundService } from '../../utils/sound';
 import { 
   ArrowLeft, 
   Send, 
@@ -48,6 +49,9 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [noticeMsg, setNoticeMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const prevThreadCountRef = useRef<number>(0);
+  const isInitialLoadRef = useRef<boolean>(true);
+
   // Status & Assignment quick form
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('open');
   const [selectedPriority, setSelectedPriority] = useState<TicketPriority>('Medium');
@@ -66,18 +70,40 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
       const res = await apiService.getTicketDetail(ticketId);
       if (res.status === 'success' && res.data) {
         setTicket(res.data.ticket);
-        setThreads(res.data.threads);
+        const newThreads = res.data.threads || [];
+
+        if (!isInitialLoadRef.current && newThreads.length > prevThreadCountRef.current) {
+          const latest = newThreads[newThreads.length - 1];
+          const isFromSelf = latest.sender_id === user?.user_id || latest.sender_name?.toLowerCase().includes(user?.name?.toLowerCase() || '###');
+          if (!isFromSelf) {
+            soundService.playIncomingMessageSound();
+            soundService.notifyBrowser(`Pesan Baru di #${ticketId}`, `${latest.sender_name}: ${latest.message.slice(0, 60)}`);
+          }
+        }
+
+        prevThreadCountRef.current = newThreads.length;
+        isInitialLoadRef.current = false;
+        setThreads(newThreads);
         setSelectedStatus(res.data.ticket.status);
         setSelectedPriority(res.data.ticket.priority);
         setSelectedUpt(res.data.ticket.assigned_upt || '');
       }
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadTicketData();
+    isInitialLoadRef.current = true;
+    prevThreadCountRef.current = 0;
+    loadTicketData(false);
+
+    // Auto-polling every 3 seconds for active ticket view
+    const interval = setInterval(() => {
+      loadTicketData(true);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [ticketId]);
 
   // OPTIMISTIC POST REPLY (Instant UI update)
@@ -97,9 +123,11 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
       created_at: new Date().toISOString()
     };
 
-    // 1. Optimistic instant update
+    // 1. Optimistic instant update (0ms delay)
     setThreads(prev => [...prev, tempThread]);
+    prevThreadCountRef.current += 1;
     setReplyText('');
+    soundService.playSentMessageSound();
     setNoticeMsg({ type: 'success', text: 'Balasan resmi berhasil dikirim dan tersimpan di database Google Sheets!' });
     setIsSubmitting(true);
 

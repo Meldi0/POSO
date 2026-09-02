@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Ticket, ThreadMessage } from '../../types';
 import { apiService } from '../../services/api';
+import { soundService } from '../../utils/sound';
 import { 
   Search, 
   Clock, 
@@ -42,46 +43,78 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
-  // Auto load first recent ticket if none selected
+  const prevThreadCountRef = useRef<number>(0);
+  const isInitialLoadRef = useRef<boolean>(true);
+
+  // Auto load first ticket if available
   useEffect(() => {
-    if (recentTickets.length > 0 && !ticket) {
+    if (recentTickets && recentTickets.length > 0 && !ticket) {
       const firstT = recentTickets[0];
       setTicketId(firstT.ticket_id);
-      fetchTicket(firstT.ticket_id);
+      isInitialLoadRef.current = true;
+      prevThreadCountRef.current = 0;
+      fetchTicket(firstT.ticket_id, undefined, true);
     }
   }, [recentTickets]);
 
-  const fetchTicket = async (id: string, mail?: string) => {
+  // Fast auto-polling every 3 seconds
+  useEffect(() => {
+    if (!ticket?.ticket_id) return;
+    const interval = setInterval(() => {
+      fetchTicket(ticket.ticket_id, email, false);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [ticket?.ticket_id, email]);
+
+  const fetchTicket = async (id: string, mail?: string, showLoading = false) => {
     if (!id.trim()) return;
-    setIsLoading(true);
+    if (showLoading) setIsLoading(true);
     setErrorMsg('');
     try {
       const res = await apiService.trackTicket(id, mail);
       if (res.status === 'success' && res.data) {
         setTicket(res.data.ticket);
-        setThreads(res.data.threads || []);
+        const newThreads = res.data.threads || [];
+
+        if (!isInitialLoadRef.current && newThreads.length > prevThreadCountRef.current) {
+          const latest = newThreads[newThreads.length - 1];
+          soundService.playIncomingMessageSound();
+          soundService.notifyBrowser(`Pesan Baru di #${id}`, `${latest.sender_name}: ${latest.message.slice(0, 60)}`);
+        }
+
+        prevThreadCountRef.current = newThreads.length;
+        isInitialLoadRef.current = false;
+        setThreads(newThreads);
       } else {
-        setTicket(null);
-        setErrorMsg(res.message || 'Tiket tidak ditemukan dalam sistem.');
+        if (showLoading) {
+          setTicket(null);
+          setErrorMsg(res.message || 'Tiket tidak ditemukan dalam sistem.');
+        }
       }
     } catch (err: any) {
-      setTicket(null);
-      setErrorMsg(err.message || 'Terjadi gangguan saat memuat data tiket.');
+      if (showLoading) {
+        setTicket(null);
+        setErrorMsg(err.message || 'Terjadi gangguan saat memuat data tiket.');
+      }
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (ticketId.trim()) {
-      fetchTicket(ticketId, email);
+      isInitialLoadRef.current = true;
+      prevThreadCountRef.current = 0;
+      fetchTicket(ticketId, email, true);
     }
   };
 
   const handleQuickSelect = (t: Ticket) => {
     setTicketId(t.ticket_id);
-    fetchTicket(t.ticket_id);
+    isInitialLoadRef.current = true;
+    prevThreadCountRef.current = 0;
+    fetchTicket(t.ticket_id, undefined, true);
   };
 
   const handleCopyTicketId = () => {
@@ -95,17 +128,36 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
     e.preventDefault();
     if (!ticket || !replyMessage.trim()) return;
 
+    const outgoing = replyMessage.trim();
+    const isNote = isInternalNote;
+    setReplyMessage('');
+
+    // Instant Optimistic Update (0ms delay)
+    const tempThread: ThreadMessage = {
+      thread_id: `TH-TEMP-${Date.now()}`,
+      ticket_id: ticket.ticket_id,
+      sender_id: 'USR-STAFF',
+      sender_name: 'Staf Helpdesk',
+      sender_role: 'operator',
+      message: outgoing,
+      visibility: isNote ? 'internal' : 'public',
+      created_at: new Date().toISOString()
+    };
+
+    setThreads((prev) => [...prev, tempThread]);
+    prevThreadCountRef.current += 1;
+    soundService.playSentMessageSound();
+
     setIsSendingReply(true);
     try {
       const res = await apiService.addThreadMessage({
         ticket_id: ticket.ticket_id,
-        message: replyMessage.trim(),
-        visibility: isInternalNote ? 'internal' : 'public'
+        message: outgoing,
+        visibility: isNote ? 'internal' : 'public'
       });
 
       if (res.status === 'success') {
-        setReplyMessage('');
-        await fetchTicket(ticket.ticket_id, email);
+        await fetchTicket(ticket.ticket_id, email, false);
       }
     } finally {
       setIsSendingReply(false);
