@@ -35,10 +35,12 @@ export const Login: React.FC = () => {
       const res = await login(email.trim(), password);
       if (res.success) {
         success('Selamat datang kembali!');
-        if (res.role === 'pengguna_umum') {
-          navigate('/my-tickets', { replace: true });
+        const isStaffRole = res.role === 'admin' || res.role === 'operator' || res.role === 'upt';
+        if (isStaffRole) {
+          const dest = (from && from !== '/' && from !== '/login' && from !== '/my-tickets') ? from : '/dashboard';
+          navigate(dest, { replace: true });
         } else {
-          navigate(from === '/login' ? '/dashboard' : from, { replace: true });
+          navigate('/my-tickets', { replace: true });
         }
       } else {
         const msg = res.message || 'Kombinasi email atau password salah.';

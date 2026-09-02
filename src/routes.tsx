@@ -10,19 +10,26 @@ import { OperatorDashboard } from './pages/operator/OperatorDashboard';
 import { ProtectedRoute } from './components/auth/AuthGuard';
 
 const RootRedirect: React.FC = () => {
-  const { isAuthenticated, isStaff, isLoading } = useAuth();
-  if (isLoading) return null;
-  if (!isAuthenticated) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F7F9]">
+        <div className="w-8 h-8 rounded-full border-2 border-[#0D5C75] border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
-  return <Navigate to={isStaff ? "/dashboard" : "/my-tickets"} replace />;
+  const isStaffRole = user.role === 'admin' || user.role === 'operator' || user.role === 'upt';
+  return <Navigate to={isStaffRole ? "/dashboard" : "/my-tickets"} replace />;
 };
 
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* ROOT ROUTE: Langsung ke Halaman Login */}
-      <Route path="/" element={<RootRedirect />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/submit" element={<PublicTicketForm />} />
       <Route path="/buat-tiket" element={<PublicTicketForm />} />
       <Route path="/track" element={<PublicTicketTracker />} />
