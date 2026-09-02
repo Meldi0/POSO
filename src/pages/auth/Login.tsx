@@ -57,17 +57,6 @@ export const Login: React.FC = () => {
   return (
     <div className="relative min-h-screen bg-[#F4F7F9] text-[#0F172A] font-sans flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-hidden selection:bg-[#0D5C75] selection:text-white">
       
-      {/* Top Left Navigation Link */}
-      <Link 
-        to="/" 
-        className="absolute top-5 left-6 z-30 flex items-center gap-2 text-xs font-bold text-[#0D5C75] hover:text-[#083342] bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-[#E2E8F0] shadow-xs transition-all"
-      >
-        <ArrowLeft size={14} />
-        <span>Kembali ke Beranda</span>
-      </Link>
-
-
-
       {/* Main Container Split Box */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.98, y: 15 }}

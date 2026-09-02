@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage } from './pages/public/LandingPage';
+import { useAuth } from './context/AuthContext';
 import { PublicTicketForm } from './pages/public/PublicTicketForm';
 import { PublicTicketTracker } from './pages/public/PublicTicketTracker';
 import { MyTicketsPage } from './pages/public/MyTicketsPage';
@@ -9,11 +9,20 @@ import { Register } from './pages/auth/Register';
 import { OperatorDashboard } from './pages/operator/OperatorDashboard';
 import { ProtectedRoute } from './components/auth/AuthGuard';
 
+const RootRedirect: React.FC = () => {
+  const { isAuthenticated, isStaff, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Navigate to={isStaff ? "/dashboard" : "/my-tickets"} replace />;
+};
+
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* PUBLIC ROUTES (Light / Accessible Theme) */}
-      <Route path="/" element={<LandingPage />} />
+      {/* ROOT ROUTE: Langsung ke Halaman Login */}
+      <Route path="/" element={<RootRedirect />} />
       <Route path="/submit" element={<PublicTicketForm />} />
       <Route path="/buat-tiket" element={<PublicTicketForm />} />
       <Route path="/track" element={<PublicTicketTracker />} />
@@ -43,8 +52,8 @@ export const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* Fallback to Landing */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Fallback to Login */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };
