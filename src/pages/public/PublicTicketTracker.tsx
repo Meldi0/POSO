@@ -187,12 +187,15 @@ export const PublicTicketTracker: React.FC = () => {
     const outgoingMsg = replyMessage.trim();
     setReplyMessage('');
 
+    const currentPelaporName = user?.name || ticket.requester_name || 'Pelapor';
+    const currentPelaporEmail = user?.email || ticket.requester_email || '';
+
     // Instant Optimistic UI update (0ms delay)
     const tempThread: ThreadMessage = {
       thread_id: `TH-TEMP-${Date.now()}`,
       ticket_id: ticket.ticket_id,
       sender_id: user?.user_id || 'USR-PUBLIC',
-      sender_name: user?.name || ticket.requester_name || 'Pelapor',
+      sender_name: currentPelaporName,
       sender_role: 'pengguna_umum',
       message: outgoingMsg,
       visibility: 'public',
@@ -211,7 +214,11 @@ export const PublicTicketTracker: React.FC = () => {
       const res = await apiService.addThreadMessage({
         ticket_id: ticket.ticket_id,
         message: outgoingMsg,
-        visibility: 'public'
+        visibility: 'public',
+        sender_id: user?.user_id || 'USR-PUBLIC',
+        sender_name: currentPelaporName,
+        sender_role: 'pengguna_umum',
+        sender_email: currentPelaporEmail
       });
 
       if (res.status === 'success') {
@@ -423,8 +430,16 @@ export const PublicTicketTracker: React.FC = () => {
               ) : (
                 <div className="space-y-3">
                   {followUpThreads.map((th) => {
-                    const isPelapor = th.sender_role === 'pengguna_umum';
+                    const isPelapor = 
+                      th.sender_role === 'pengguna_umum' || 
+                      th.sender_id === 'USR-PUBLIC' ||
+                      (ticket?.requester_name && th.sender_name?.toLowerCase() === ticket.requester_name.toLowerCase()) ||
+                      (user?.name && th.sender_name?.toLowerCase() === user.name.toLowerCase());
+
                     const parsedTh = parseThreadMessage(th.message);
+                    const pelaporDisplayName = (th.sender_name && th.sender_name !== 'User' && !th.sender_name.toLowerCase().includes('admin') && !th.sender_name.toLowerCase().includes('operator'))
+                      ? th.sender_name
+                      : (ticket?.requester_name || user?.name || 'Pelapor');
 
                     return (
                       <div
@@ -441,7 +456,7 @@ export const PublicTicketTracker: React.FC = () => {
                               {isPelapor ? <User size={13} /> : <Headphones size={13} />}
                             </div>
                             <span className={isPelapor ? 'text-slate-800' : 'text-[#0D5C75]'}>
-                              {isPelapor ? 'Tanggapan Pelapor' : (th.sender_name || 'Tim Petugas / Teknisi UPT')}
+                              {isPelapor ? `Tanggapan Pelapor (${pelaporDisplayName})` : (th.sender_name || 'Tim Petugas / Teknisi UPT')}
                             </span>
                           </div>
                           <span className="text-[10px] text-[#94A3B8] font-normal">

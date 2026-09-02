@@ -814,14 +814,23 @@ class PosoApiService {
     ticket_id: string;
     message: string;
     visibility: 'public' | 'internal';
+    sender_id?: string;
+    sender_name?: string;
+    sender_role?: string;
+    sender_email?: string;
   }): Promise<ApiResponse<ThreadMessage>> {
     const currentUser = this.getStoredUser();
+    const senderRole = payload.sender_role || currentUser?.role || 'pengguna_umum';
+    const senderName = payload.sender_name || currentUser?.name || (senderRole === 'pengguna_umum' ? 'Pelapor' : 'Operator Helpdesk');
+    const senderId = payload.sender_id || currentUser?.user_id || (senderRole === 'pengguna_umum' ? 'USR-PUBLIC' : 'USR-OP');
+    const senderEmail = payload.sender_email || currentUser?.email || '';
+
     const newThread: ThreadMessage = {
       thread_id: `TH-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
       ticket_id: payload.ticket_id,
-      sender_id: currentUser?.user_id || 'USR-OP',
-      sender_name: currentUser?.name || 'Operator Helpdesk',
-      sender_role: currentUser?.role || 'operator',
+      sender_id: senderId,
+      sender_name: senderName,
+      sender_role: senderRole as any,
       message: payload.message,
       visibility: payload.visibility,
       created_at: new Date().toISOString()
@@ -835,7 +844,14 @@ class PosoApiService {
     // Sync to Google Apps Script
     if (this.isGasConfigured()) {
       try {
-        const res = await this.callGas<ThreadMessage>('addThreadMessage', 'POST', payload);
+        const res = await this.callGas<ThreadMessage>('addThreadMessage', 'POST', {
+          ...payload,
+          sender_id: senderId,
+          sender_name: senderName,
+          sender_role: senderRole,
+          user_email: senderEmail,
+          user_role: senderRole
+        });
         if (res && res.status === 'success' && res.data) {
           return res;
         }

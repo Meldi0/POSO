@@ -494,8 +494,18 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
               <div className="space-y-3">
                 {followUpThreads.map((th) => {
                   const isInternal = th.visibility === 'internal';
-                  const isPelapor = th.sender_role === 'pengguna_umum';
+                  const currentUser = apiService.getStoredUser();
+                  const isPelapor = 
+                    !isInternal && (
+                      th.sender_role === 'pengguna_umum' || 
+                      th.sender_id === 'USR-PUBLIC' ||
+                      (ticket?.requester_name && th.sender_name?.toLowerCase() === ticket.requester_name.toLowerCase()) ||
+                      (currentUser?.name && th.sender_name?.toLowerCase() === currentUser.name.toLowerCase())
+                    );
                   const parsedTh = parseThreadMessage(th.message);
+                  const pelaporDisplayName = (th.sender_name && th.sender_name !== 'User' && !th.sender_name.toLowerCase().includes('admin') && !th.sender_name.toLowerCase().includes('operator'))
+                    ? th.sender_name
+                    : (ticket?.requester_name || 'Pelapor');
 
                   return (
                     <motion.div
@@ -522,7 +532,7 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
                             {isInternal ? <Lock className="w-3.5 h-3.5" /> : isPelapor ? <User className="w-3.5 h-3.5" /> : <Headphones className="w-3.5 h-3.5" />}
                           </div>
                           <span className={`font-bold ${isInternal ? 'text-amber-900' : isPelapor ? 'text-slate-800' : 'text-[#002B49]'}`}>
-                            {isInternal ? 'Catatan Internal Staf' : isPelapor ? 'Tanggapan Pelapor' : 'Tim Petugas / Teknisi UPT'}
+                            {isInternal ? 'Catatan Internal Staf' : isPelapor ? `Tanggapan Pelapor (${pelaporDisplayName})` : (th.sender_name || 'Tim Petugas / Teknisi UPT')}
                           </span>
                         </div>
                         <span className="text-[11px] text-[#94A3B8]">
