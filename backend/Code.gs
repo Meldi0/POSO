@@ -1077,10 +1077,11 @@ function apiUpdateTicketStatus(body, token) {
  * Tambah pesan balasan publik atau catatan internal (§5.4 PRD).
  */
 function apiAddThreadMessage(body, token) {
-  const user = authenticateUser(token);
-  if (!user) {
-    return { status: 'error', code: 401, message: 'Autentikasi diperlukan.' };
-  }
+  const user = authenticateUser(token, body.user_email);
+  const isCustomer = body.sender_role === 'pengguna_umum' || (user && user.role === 'pengguna_umum') || !user;
+  const senderId = isCustomer ? (body.sender_id || (user ? user.user_id : 'USR-PUBLIC')) : (user ? user.user_id : 'USR-OP');
+  const senderRole = isCustomer ? 'pengguna_umum' : (user ? user.role : 'operator');
+  const senderName = isCustomer ? (body.sender_name || (user ? user.name : 'Pelapor')) : (user ? user.name : 'Operator Helpdesk');
 
   const ticketId = body.ticket_id || '';
   const message = (body.message || '').trim();
@@ -1091,7 +1092,7 @@ function apiAddThreadMessage(body, token) {
   }
 
   // ATURAN KEAMANAN: Pengguna umum TIDAK BOLEH membuat catatan internal
-  if (user.role === 'pengguna_umum') {
+  if (senderRole === 'pengguna_umum') {
     visibility = 'public';
   }
 
@@ -1103,8 +1104,8 @@ function apiAddThreadMessage(body, token) {
   threadSheet.appendRow([
     threadId,
     ticketId,
-    user.user_id,
-    user.role,
+    senderId,
+    senderRole,
     message,
     visibility,
     nowIso

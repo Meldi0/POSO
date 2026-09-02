@@ -706,6 +706,37 @@ class PosoApiService {
       try {
         const res = await this.callGas<{ ticket: Ticket; threads: ThreadMessage[] }>('getTicketDetail', 'GET', { ticket_id: ticketId });
         if (res && res.status === 'success' && res.data) {
+          // Normalize and preserve exact sender identity
+          if (Array.isArray(res.data.threads)) {
+            const storedSenders = getStored<Record<string, { sender_name: string; sender_role: string; sender_id: string }>>('poso_thread_senders', {});
+            const ticketOwner = res.data.ticket?.requester_name || '';
+
+            res.data.threads = res.data.threads.map(th => {
+              const byId = storedSenders[th.thread_id];
+              const byMsg = storedSenders[`${th.ticket_id}_${(th.message || '').trim()}`];
+              const match = byId || byMsg;
+
+              if (match) {
+                return {
+                  ...th,
+                  sender_name: match.sender_name,
+                  sender_role: match.sender_role as any,
+                  sender_id: match.sender_id
+                };
+              }
+
+              if (th.sender_role === 'pengguna_umum' || th.sender_id === 'USR-PUBLIC') {
+                return {
+                  ...th,
+                  sender_name: th.sender_name && th.sender_name !== 'User' && !th.sender_name.toLowerCase().includes('admin') ? th.sender_name : (ticketOwner || 'Pelapor'),
+                  sender_role: 'pengguna_umum',
+                  sender_id: th.sender_id || 'USR-PUBLIC'
+                };
+              }
+              return th;
+            });
+          }
+
           // Update local cache
           const localTickets = getStored<Ticket[]>(STORAGE_KEYS.LOCAL_TICKETS, SEED_TICKETS);
           const tIdx = localTickets.findIndex(t => t.ticket_id === ticketId);
@@ -835,6 +866,20 @@ class PosoApiService {
       visibility: payload.visibility,
       created_at: new Date().toISOString()
     };
+
+    // Store sender metadata in local registry so it persists across server responses
+    const storedSenders = getStored<Record<string, { sender_name: string; sender_role: string; sender_id: string }>>('poso_thread_senders', {});
+    storedSenders[newThread.thread_id] = {
+      sender_name: senderName,
+      sender_role: senderRole,
+      sender_id: senderId
+    };
+    storedSenders[`${payload.ticket_id}_${(payload.message || '').trim()}`] = {
+      sender_name: senderName,
+      sender_role: senderRole,
+      sender_id: senderId
+    };
+    setStored('poso_thread_senders', storedSenders);
 
     // Instant local save
     const threads = getStored<ThreadMessage[]>(STORAGE_KEYS.LOCAL_THREADS, SEED_THREADS);

@@ -100,6 +100,8 @@ export const PublicTicketTracker: React.FC = () => {
           if (latestMsg) {
             const isFromSelf = 
               latestMsg.sender_role === 'pengguna_umum' || 
+              latestMsg.sender_id === 'USR-PUBLIC' ||
+              (ticket?.requester_name && (latestMsg.sender_name || '').toLowerCase().includes(ticket.requester_name.toLowerCase())) ||
               (user?.name && (latestMsg.sender_name || '').toLowerCase().includes(user.name.toLowerCase()));
             
             if (!isFromSelf) {
