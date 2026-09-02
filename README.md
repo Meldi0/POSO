@@ -1,8 +1,8 @@
 # POSO — Sistem Helpdesk & Manajemen Tiket Terpadu (v2.0)
 
-Aplikasi Helpdesk dan Manajemen Tiket Terpadu Modern berbasis **React 18 + TypeScript + Vite** dengan desain visual **Ocean Cyan & Glassmorphism**, didukung backend serverless **Google Apps Script REST API**, penyimpanan berkas **Google Drive**, serta basis data **Google Sheets**.
+Aplikasi Helpdesk dan Manajemen Tiket Terpadu Modern berbasis **React 18 + TypeScript + Vite** dengan desain visual **Ocean Cyan & Glassmorphism**, didukung backend serverless **Google Apps Script REST API**, penyimpanan berkas **Google Drive**, basis data **Google Sheets**, serta sistem komunikasi real-time instan (**WebSocket + Universal LocalStorage Event + BroadcastChannel**).
 
-Aplikasi ini dirancang **100% responsif** (ponsel, tablet, desktop) dan kaya akan interaktivitas seperti animasi mikro (*Framer Motion*), sistem notifikasi melayang (*Toast Notifications*), *Live Ticket Preview*, dan *Interactive Kanban Board*.
+Aplikasi ini dirancang **100% responsif** (ponsel, tablet, desktop) dan kaya akan interaktivitas seperti animasi mikro (*Framer Motion*), sistem notifikasi audio visual (*Toast & Chime Alerts*), *Live Ticket Preview*, *Interactive Kanban Board*, dan *Multi-Tab Isolated Session Architecture*.
 
 ---
 
@@ -11,8 +11,9 @@ Aplikasi ini dirancang **100% responsif** (ponsel, tablet, desktop) dan kaya aka
 ```
 POSO/
 ├── backend/
-│   ├── Code.gs             # Backend Apps Script: REST API, LockService, Drive File Upload, Sanitizer
-│   └── appsscript.json     # Manifest Apps Script (OAuth Scopes & Service Declarations)
+│   ├── Code.gs             # Backend Apps Script: REST API, LockService, Drive File Upload, Sanitizer & Threading
+│   ├── appsscript.json     # Manifest Apps Script (OAuth Scopes & Service Declarations)
+│   └── PANDUAN_SETUP_BACKEND.md # Panduan setup & deployment Google Apps Script
 ├── src/
 │   ├── components/
 │   │   ├── admin/
@@ -23,36 +24,46 @@ POSO/
 │   │   ├── common/
 │   │   │   ├── AttachmentGallery.tsx   # Galeri thumbnail gambar asli & Lightbox zoom modal
 │   │   │   ├── Badge.tsx               # Komponen badge status/prioritas
+│   │   │   ├── ErrorBoundary.tsx       # Penangkap error React DOM runtime yang aman
 │   │   │   └── Modal.tsx               # Komponen modal dialog responsif
+│   │   ├── notifications/
+│   │   │   ├── FloatingChatBadge.tsx   # Widget chat mengambang ala WhatsApp/Telegram dengan popup preview
+│   │   │   └── NotificationBellDropdown.tsx # Dropdown lonceng notifikasi interaktif di header
 │   │   └── operator/
 │   │       ├── SageSidebar.tsx         # Sidebar responsif (Desktop Mini-Rail + Mobile Slide Drawer)
-│   │       ├── SageTopBar.tsx          # Top bar kontrol (Pencarian Ctrl+K, Filter Kategori, Toggle Mode)
+│   │       ├── SageTopBar.tsx          # Top bar kontrol (Pencarian Ctrl+K, Lonceng Notif, Filter Kategori)
 │   │       ├── SageTicketCard.tsx      # Kartu tiket interaktif, SLA badge, & aksi 1-klik status
 │   │       ├── SageKanbanBoard.tsx     # Papan Kanban responsif dengan tab switcher kolom mobile
 │   │       ├── SageTableView.tsx       # Tampilan tabel adaptif & card list mobile view
 │   │       └── SageTicketDrawer.tsx    # Drawer detail tiket bertab (Diskusi, Triase, SLA Info)
 │   ├── context/
-│   │   ├── AuthContext.tsx             # Manajemen sesi token, hak akses RBAC, & login demo
+│   │   ├── AuthContext.tsx             # Manajemen sesi token, isolasi per-tab (sessionStorage), & RBAC
 │   │   └── ToastContext.tsx            # Sistem notifikasi toast floating global dengan animasi
 │   ├── pages/
 │   │   ├── auth/
 │   │   │   ├── Login.tsx               # Halaman login dengan 1-klik pengisian akun demo
 │   │   │   └── Register.tsx            # Registrasi mandiri akun pengguna pelapor
 │   │   ├── operator/
-│   │   │   └── OperatorDashboard.tsx   # Workstation triase operator, FAB button & keyboard controls
+│   │   │   └── OperatorDashboard.tsx   # Workstation triase operator, background polling & keyboard controls
 │   │   └── public/
 │   │       ├── LandingPage.tsx         # Beranda publik, filter bidang layanan, metrik performa & SLA
 │   │       ├── PublicTicketForm.tsx    # Formulir tiket baru + Live Ticket Preview + Drag & Drop upload
-│   │       ├── PublicTicketTracker.tsx # Pelacak tiket mandiri dengan Stepper Timeline 4 tahap
-│   │       └── MyTicketsPage.tsx       # Daftar tiket pengaduan milik pelapor terdaftar
+│   │       ├── PublicTicketTracker.tsx # Pelacak tiket mandiri dengan Stepper Timeline 4 tahap & live chat
+│   │       └── MyTicketsPage.tsx       # Portal daftar tiket pengaduan milik pelapor terdaftar
 │   ├── services/
-│   │   └── api.ts                      # Klien API terintegrasi Google Apps Script Web App & Mock Storage
+│   │   ├── api.ts                      # Klien API terintegrasi Google Apps Script Web App & Mock Storage
+│   │   └── realtime.ts                 # Layanan WebSocket, BroadcastChannel & LocalStorage realtime sync
 │   ├── types/
 │   │   └── index.ts                    # Definisi tipe data TypeScript (Ticket, Thread, User, ApiResponse)
+│   ├── utils/
+│   │   ├── sound.ts                    # Layanan audio chimes & Web Browser Notifications
+│   │   └── ticketFormatter.ts          # Parser deskripsi, lampiran, dan format tanggal aman
 │   ├── App.tsx                         # Konfigurasi router & provider global
 │   ├── index.css                       # Desain sistem Glassmorphism, smooth scrollbar & pulse glowing
-│   └── main.tsx                        # Entry point React
+│   ├── main.tsx                        # Entry point React
+│   └── routes.tsx                      # Definisi rute publik dan terproteksi RBAC
 ├── .env.example                        # Contoh konfigurasi URL endpoint backend
+├── AKUN_DEMO_LOGIN.txt                 # Daftar kredensial akun demo default
 ├── PANDUAN_PENGGUNAAN.md               # Panduan operasional lengkap tiap peran pengguna
 ├── POSO_BRD.md                         # Business Requirements Document (BRD)
 ├── POSO_PRD.md                         # Product Requirements Document (PRD)
@@ -95,37 +106,42 @@ npm run build
 
 ## 3. AKUN DEMO UNTUK PENGUJIAN
 
-Pada halaman **Login (`/login`)**, tersedia tombol **1-Klik Demo** untuk langsung mengisi kredensial berikut:
+Pada halaman **Login (`/login`)**, Anda dapat menggunakan kredensial berikut atau klik tombol demo:
 
 | Peran (*Role*) | Alamat Email | Kata Sandi | Hak Akses Utama |
 |---|---|---|---|
-| **Super Admin** | `admin@poso.local` | `Admin123!` | Manajemen staf, penugasan UPT, konfigurasi data drive & audit log |
-| **Operator Helpdesk** | `operator@poso.local` | `Operator123!` | Triase tiket Kanban, routing teknisi UPT, catatan internal & balasan |
-| **Teknisi UPT TI** | `upt.ti@poso.local` | `Upt123!` | Penanganan tiket bidang TI & Jaringan |
-| **Teknisi UPT Sarpras** | `upt.sarpras@poso.local` | `Upt123!` | Penanganan tiket sarana & prasarana gedung |
-| **Pengguna Umum** | `dewi@gmail.com` | `User123!` | Pembuatan laporan baru & riwayat tiket pribadi |
+| **1. Administrator Sistem** | `admin@poso.local` | `Admin123!` | Akses penuh ke seluruh menu, manajemen pengguna & role, integrasi data Google Sheets, dan pengaturan sistem. |
+| **2. Operator Helpdesk** | `operator@poso.local` | `Operator123!` | Triase tiket Kanban, delegasi tiket ke unit UPT, chat langsung dengan pelapor, monitoring SLA dan status tiket. |
+| **3. Staf UPT TI & Jaringan** | `upt.ti@poso.local` | `Poso123!` | Penanganan teknis tiket bidang TI & Sistem Informasi, update progres, dan catatan penyelesaian. |
+| **4. Staf UPT Sarana & Prasarana** | `upt.sarpras@poso.local` | `Poso123!` | Penanganan teknis tiket sarana, fasilitas gedung, dan kelistrikan. |
+| **5. Pengguna Umum (Pelapor)** | `dewi@gmail.com` | `User123!` | Pengajuan tiket pengaduan, pelacakan progres 4-tahap, chat dua arah dengan petugas, dan riwayat tiket pribadi. |
 
 ---
 
 ## 4. FITUR UTAMA & KEUNGGULAN SISTEM
 
-1. **Antarmuka Sepenuhnya Responsif (Mobile-First)**:
+1. **Komunikasi Realtime Dua Arah & Separasi Identitas Ketat**:
+   - **Obrolan Instan (<50ms)**: Balasan dari Admin/Petugas maupun Pelapor langsung terkirim tanpa delay.
+   - **Separasi Identitas**: Pesan dari Pelapor tampil sebagai *Tanggapan Pelapor* (ikon User abu-abu) dan pesan dari Admin/Teknisi tampil sebagai *Petugas* (ikon Headphone biru). Identitas pelapor terkunci dan tidak dapat tertimpa menjadi staf.
+   - **Notifikasi Multi-Lapisan**: Dilengkapi lonceng notifikasi di navbar, audio chime pengingat, dan widget chat mengambang ala WhatsApp/Telegram di pojok kanan bawah.
+
+2. **Isolasi Sesi Multi-Tab (`sessionStorage` Architecture)**:
+   - Sesi login diisolasi secara independen per-tab. Anda dapat membuka Tab Admin dan Tab Pelapor dalam satu peramban yang sama, dan keduanya **tidak akan tertukar saat di-refresh (Ctrl+R / Ctrl+F5)**.
+
+3. **Antarmuka Sepenuhnya Responsif (Mobile-First)**:
    - **Mobile Drawer Menu**: Navigasi sidebar tersembunyi rapi di ponsel dan dapat dibuka melalui tombol hamburger.
    - **Desktop Mini-Rail**: Sidebar desktop dapat diperkecil menjadi mode ringkas (*compact icon mode*) untuk memaksimalkan area kerja.
    - **Kanban Column Switcher**: Pengguna ponsel dapat beralih antar kolom status secara instan tanpa kesulitan menggeser layar secara horizontal.
    - **Tabel Adaptif**: Berubah menjadi *card list* yang rapi di layar ponsel dan tabel data interaktif dengan fitur pengurutan (*sorting*) di layar besar.
 
-2. **Live Ticket Preview & Smart Category Hints**:
+4. **Live Ticket Preview & Smart Category Hints**:
    - Pada formulir pengaduan publik ([PublicTicketForm.tsx](file:///c:/ticket-dashboard/src/pages/public/PublicTicketForm.tsx)), pengguna dapat melihat pratinjau kartu tiket secara real-time (*live preview*) saat mengetik.
    - Dilengkapi panduan cepat penanganan (*smart tips*) sesuai kategori keluhan yang dipilih.
 
-3. **Stepper Timeline Visual Pelacak Tiket**:
+5. **Stepper Timeline Visual Pelacak Tiket**:
    - Pada pelacak tiket ([PublicTicketTracker.tsx](file:///c:/ticket-dashboard/src/pages/public/PublicTicketTracker.tsx)), kemajuan pengerjaan tiket divisualisasikan dalam 4 tahapan (*Laporan Masuk, Triase Helpdesk, Pengerjaan UPT, Selesai*) dengan node status yang beranimasi.
 
-4. **Sistem Notifikasi Toast Global**:
-   - Menampilkan umpan balik visual instan saat memperbarui status, menyalin ID tiket ke papan klip, mengirim pesan balasan, atau login akun.
-
-5. **Drawer Detail Tiket Bertab (Multi-Tab)**:
+6. **Drawer Detail Tiket Bertab (Multi-Tab)**:
    - **Tab Diskusi**: Percakapan publik dengan pelapor dan catatan internal khusus staf (🔒).
    - **Tab Triase & UPT**: Ubah status tiket (*Open, In Progress, Waiting, Closed*) dan delegasikan ke unit UPT terkait.
    - **Tab Info & SLA**: Detail pelapor, tanggal pembuatan, target batas waktu SLA, dan panduan SOP.
@@ -135,10 +151,8 @@ Pada halaman **Login (`/login`)**, tersedia tombol **1-Klik Demo** untuk langsun
 ## 5. INTEGRASI GOOGLE WORKSPACE & APPS SCRIPT
 
 ### Konfigurasi Database:
-* **Folder Google Drive (Upload Lampiran)**:
-  `YOUR_GOOGLE_DRIVE_FOLDER_ID`
-* **Google Spreadsheet Master Database**:
-  `YOUR_GOOGLE_SPREADSHEET_ID`
+* **Folder Google Drive (Upload Lampiran)**: Folder Google Drive publik/organisasi untuk menampung file lampiran bukti pengaduan.
+* **Google Spreadsheet Master Database**: Spreadsheet yang memuat sheet `Tickets`, `Threads`, `Users`, `Settings`, `AuditLogs`.
 * **Deployment Web App URL** (`.env`):
   ```env
   VITE_GAS_API_URL=https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec
@@ -151,4 +165,5 @@ Pada halaman **Login (`/login`)**, tersedia tombol **1-Klik Demo** untuk langsun
 4. Buka **Project Settings (Ikon Gerigi)** > centang **"Show 'appsscript.json' manifest file in editor"**.
 5. Buka tab `appsscript.json` dan pastikan isinya sesuai dengan `backend/appsscript.json`.
 6. Klik **Deploy > Manage deployments > Edit > New version > Deploy**.
-7. Salin URL Web App (`/exec`) dan tempelkan ke file `.env` aplikasi Anda.
+7. Pastikan hak akses disetel ke **"Anyone" (Siapa saja)**.
+8. Salin URL Web App (`/exec`) dan tempelkan ke file `.env` aplikasi Anda.
