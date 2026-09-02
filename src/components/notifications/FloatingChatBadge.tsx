@@ -51,32 +51,40 @@ export const FloatingChatBadge: React.FC<FloatingChatBadgeProps> = ({ onOpenTick
     }
   };
 
+  // Only render floating chat badge when there is at least 1 unread message or an active popup preview
+  if (unreadCount === 0 && !activePopup) {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3 pointer-events-none select-none">
       
-      {/* 1. Floating Chat Preview Card Popup */}
+      {/* 1. Floating Chat Preview Card Popup (WhatsApp/Telegram style) */}
       <AnimatePresence>
         {activePopup && (
           <motion.div
-            initial={{ opacity: 0, y: 15, scale: 0.9 }}
+            initial={{ opacity: 0, y: 20, scale: 0.85 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.9 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            exit={{ opacity: 0, y: 15, scale: 0.85 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
             onClick={handleOpenActiveChat}
-            className="pointer-events-auto w-80 sm:w-92 bg-white rounded-[20px] p-4 shadow-[0_20px_50px_rgba(15,23,42,0.22)] border border-[#0D5C75]/20 cursor-pointer hover:border-[#0D5C75] transition-all group overflow-hidden relative"
+            className="pointer-events-auto w-80 sm:w-92 bg-white rounded-[20px] p-4 shadow-[0_20px_50px_rgba(15,23,42,0.24)] border border-[#0D5C75]/25 cursor-pointer hover:border-[#0D5C75] hover:shadow-[0_24px_60px_rgba(13,92,117,0.3)] transition-all group overflow-hidden relative"
           >
             {/* Top Accent Gradient Bar */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#083342] via-[#0D5C75] to-[#199FB1]" />
 
             <div className="flex items-start justify-between gap-2 pt-1">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#0D5C75] text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                  <MessageSquare size={14} />
+                <div className="w-8.5 h-8.5 rounded-full bg-[#0D5C75] text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                  <MessageSquare size={15} />
                 </div>
                 <div>
-                  <h4 className="text-[13px] font-bold text-[#0F172A] leading-tight">
-                    {activePopup.sender_name}
-                  </h4>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-[13px] font-bold text-[#0F172A] leading-tight">
+                      {activePopup.sender_name}
+                    </h4>
+                    <span className="w-2 h-2 rounded-full bg-[#10B981] inline-block animate-pulse" title="Online" />
+                  </div>
                   <span className="text-[10px] font-mono font-semibold text-[#0D5C75]">
                     #{activePopup.ticket_id}
                   </span>
@@ -97,12 +105,12 @@ export const FloatingChatBadge: React.FC<FloatingChatBadgeProps> = ({ onOpenTick
             </div>
 
             {/* Message Snippet */}
-            <p className="text-[12px] text-[#334155] font-medium leading-relaxed my-2 line-clamp-2 bg-[#F8FAFC] p-2.5 rounded-xl border border-[#F1F5F9]">
+            <p className="text-[12px] text-[#334155] font-medium leading-relaxed my-2.5 line-clamp-2 bg-[#F8FAFC] p-2.5 rounded-xl border border-[#F1F5F9]">
               "{activePopup.message}"
             </p>
 
             {/* Action Row */}
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center justify-between pt-0.5">
               <span className="text-[10px] text-[#94A3B8] font-semibold">Baru saja</span>
               <div className="flex items-center gap-1 text-[11px] font-bold text-[#0D5C75] group-hover:text-[#199FB1] transition-colors">
                 <span>Balas Pesan</span>
@@ -113,29 +121,32 @@ export const FloatingChatBadge: React.FC<FloatingChatBadgeProps> = ({ onOpenTick
         )}
       </AnimatePresence>
 
-      {/* 2. Floating Circular Chat Icon Button */}
-      <motion.button
-        type="button"
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.94 }}
-        onClick={handleOpenActiveChat}
-        className="pointer-events-auto relative w-14 h-14 rounded-full bg-gradient-to-tr from-[#083342] via-[#0D5C75] to-[#199FB1] text-white flex items-center justify-center shadow-[0_12px_32px_rgba(13,92,117,0.38)] hover:shadow-[0_16px_40px_rgba(13,92,117,0.5)] transition-all cursor-pointer group border-2 border-white/40"
-        title="Buka Pesan & Chat Tiket"
-      >
-        <MessageSquare size={24} className="group-hover:rotate-6 transition-transform" />
-
-        {/* Pulse glow wave when unread */}
+      {/* 2. Floating Circular Chat Icon Button (Only visible when unreadCount > 0) */}
+      <AnimatePresence>
         {unreadCount > 0 && (
-          <span className="absolute inset-0 rounded-full bg-[#199FB1] animate-ping opacity-35" />
-        )}
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5, y: 20 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={handleOpenActiveChat}
+            className="pointer-events-auto relative w-14 h-14 rounded-full bg-gradient-to-tr from-[#083342] via-[#0D5C75] to-[#199FB1] text-white flex items-center justify-center shadow-[0_12px_32px_rgba(13,92,117,0.45)] hover:shadow-[0_16px_40px_rgba(13,92,117,0.6)] transition-all cursor-pointer group border-2 border-white"
+            title={`${unreadCount} Pesan Baru Masuk - Klik untuk Balas`}
+          >
+            <MessageSquare size={24} className="group-hover:rotate-6 transition-transform" />
 
-        {/* Unread Counter Badge */}
-        {unreadCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex h-6 min-w-6 px-1.5 items-center justify-center rounded-full bg-[#EF4444] text-[11px] font-extrabold text-white shadow-md ring-2 ring-white">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+            {/* Pulse glow wave */}
+            <span className="absolute inset-0 rounded-full bg-[#199FB1] animate-ping opacity-40" />
+
+            {/* Red Badge Counter (e.g. 1, 2) like WhatsApp/Telegram */}
+            <span className="absolute -top-1.5 -right-1.5 flex h-6 min-w-6 px-1.5 items-center justify-center rounded-full bg-[#EF4444] text-[11px] font-extrabold text-white shadow-md ring-2 ring-white animate-bounce-short">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          </motion.button>
         )}
-      </motion.button>
+      </AnimatePresence>
     </div>
   );
 };

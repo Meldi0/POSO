@@ -4,6 +4,7 @@
 
 import { soundService } from '../utils/sound';
 import { ThreadMessage, Ticket } from '../types';
+import { apiService } from './api';
 
 export interface ChatNotification {
   id: string;
@@ -30,6 +31,8 @@ class PosoRealtimeService {
   private reconnectTimer: any = null;
   private currentUserId: string = '';
   private currentUserName: string = '';
+  private knownThreadIds: Set<string> = new Set();
+  private isInitialSyncDone = false;
 
   // Free high-availability public WebSocket cluster endpoints with auto-fallback
   private wsEndpoints = [
@@ -43,6 +46,7 @@ class PosoRealtimeService {
     this.loadNotifications();
     this.initBroadcastChannel();
     this.connectWebSocket();
+    this.startBackgroundSync();
   }
 
   public setUserContext(userId: string, userName: string) {
@@ -107,6 +111,62 @@ class PosoRealtimeService {
     this.reconnectTimer = setTimeout(() => {
       this.connectWebSocket();
     }, 3000);
+  }
+
+  /**
+   * Guaranteed Background Poller to detect chat messages from server across all devices
+   */
+  private startBackgroundSync() {
+    if (typeof window === 'undefined') return;
+
+    const checkServerUpdates = async () => {
+      try {
+        const res = await apiService.getTickets();
+        if (res.status === 'success' && res.data?.tickets) {
+          const recentTickets = res.data.tickets.slice(0, 8); // Check top 8 active tickets
+          
+          for (const ticket of recentTickets) {
+            const detailRes = await apiService.getTicketDetail(ticket.ticket_id);
+            if (detailRes.status === 'success' && detailRes.data?.threads) {
+              const threads = detailRes.data.threads;
+              
+              if (!this.isInitialSyncDone) {
+                // Register existing threads on initial load without firing alerts
+                threads.forEach(t => this.knownThreadIds.add(t.thread_id));
+              } else {
+                for (const thread of threads) {
+                  if (!this.knownThreadIds.has(thread.thread_id)) {
+                    this.knownThreadIds.add(thread.thread_id);
+                    
+                    // Check if sent by someone else
+                    const isFromSelf = 
+                      (this.currentUserId && thread.sender_id === this.currentUserId) ||
+                      (this.currentUserName && thread.sender_name?.toLowerCase() === this.currentUserName.toLowerCase());
+
+                    if (!isFromSelf) {
+                      this.handleIncomingPayload({
+                        type: 'NEW_CHAT',
+                        sender_id: thread.sender_id,
+                        data: thread
+                      });
+                    }
+                  }
+                }
+              }
+            }
+          }
+          this.isInitialSyncDone = true;
+        }
+      } catch (e) {
+        // Silently continue
+      }
+    };
+
+    // Initial check
+    setTimeout(checkServerUpdates, 1500);
+
+    // Periodic check every 4 seconds
+    setInterval(checkServerUpdates, 4000);
   }
 
   private handleIncomingPayload(payload: any) {
