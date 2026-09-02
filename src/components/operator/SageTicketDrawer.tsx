@@ -28,6 +28,7 @@ import { apiService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { soundService } from '../../utils/sound';
+import { realtimeService } from '../../services/realtime';
 
 interface SageTicketDrawerProps {
   ticket: Ticket | null;
@@ -86,13 +87,30 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
     }
   }, [ticket]);
 
-  // Real-time polling every 3 seconds
+  // Ultra-fast Sub-50ms WebSocket Realtime Listener
   useEffect(() => {
     if (!ticket) return;
+
+    const unsub = realtimeService.onNewMessage((newMsg) => {
+      if (newMsg.ticket_id === ticket.ticket_id) {
+        setThreads((prev) => {
+          if (prev.some(t => t.thread_id === newMsg.thread_id || (t.message === newMsg.message && t.sender_id === newMsg.sender_id))) {
+            return prev;
+          }
+          return [...prev, newMsg];
+        });
+      }
+    });
+
+    // Fallback background polling every 3 seconds
     const interval = setInterval(() => {
       fetchThreads(ticket.ticket_id, false);
     }, 3000);
-    return () => clearInterval(interval);
+
+    return () => {
+      unsub();
+      clearInterval(interval);
+    };
   }, [ticket?.ticket_id, user?.email]);
 
   // ESC keyboard handler
@@ -163,6 +181,9 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
     setThreads((prev) => [...prev, tempThread]);
     prevThreadCountRef.current += 1;
     soundService.playSentMessageSound();
+
+    // Broadcast instantly to all other tabs and devices via WebSocket
+    realtimeService.broadcastChatMessage(tempThread);
 
     setIsSending(true);
     try {

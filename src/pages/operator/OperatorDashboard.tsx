@@ -35,6 +35,8 @@ import { CommandPalette } from '../../components/features/CommandPalette';
 import { OperatorTicketModal } from '../../components/operator/OperatorTicketModal';
 import { useToast } from '../../context/ToastContext';
 import { soundService } from '../../utils/sound';
+import { realtimeService } from '../../services/realtime';
+import { FloatingChatBadge } from '../../components/notifications/FloatingChatBadge';
 
 export const OperatorDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -78,10 +80,30 @@ export const OperatorDashboard: React.FC = () => {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // Request browser notification permission once
+  // Request browser notification permission once & set realtime user context
   useEffect(() => {
     soundService.requestNotificationPermission().catch(() => {});
-  }, []);
+    if (user) {
+      realtimeService.setUserContext(user.user_id, user.name);
+    }
+  }, [user]);
+
+  // Open ticket directly from notifications or floating chat badge
+  const handleOpenTicketById = async (ticketId: string) => {
+    const found = tickets.find(t => t.ticket_id.toLowerCase() === ticketId.toLowerCase());
+    if (found) {
+      setSelectedTicket(found);
+    } else {
+      try {
+        const res = await apiService.getTicketDetail(ticketId);
+        if (res.status === 'success' && res.data) {
+          setSelectedTicket(res.data.ticket);
+        }
+      } catch (err) {
+        console.warn('Could not load ticket detail for:', ticketId);
+      }
+    }
+  };
 
   // FAB collapse on scroll
   useEffect(() => {
@@ -260,6 +282,7 @@ export const OperatorDashboard: React.FC = () => {
           onRefresh={fetchTickets}
           onExport={handleExportCSV}
           onNewTicketClick={() => window.open('/submit', '_blank')}
+          onOpenTicket={handleOpenTicketById}
           isSyncing={isSyncing}
         />
 
@@ -365,12 +388,15 @@ export const OperatorDashboard: React.FC = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => window.open('/submit', '_blank')}
-        className="fixed bottom-6 right-6 z-30 h-13 px-4 rounded-full bg-[#F58A61] hover:bg-[#E77448] text-white shadow-xl shadow-[#F58A61]/35 flex items-center gap-2 font-bold text-sm transition-all cursor-pointer"
+        className="fixed bottom-6 right-24 z-30 h-13 px-4 rounded-full bg-[#F58A61] hover:bg-[#E77448] text-white shadow-xl shadow-[#F58A61]/35 flex items-center gap-2 font-bold text-sm transition-all cursor-pointer hidden sm:flex"
         title="Buat Tiket Baru"
       >
         <Plus size={20} />
         {!fabCollapsed && <span className="pr-1 whitespace-nowrap">Tiket Baru</span>}
       </motion.button>
+
+      {/* Floating Realtime Chat Badge (Kanan Bawah) */}
+      <FloatingChatBadge onOpenTicket={handleOpenTicketById} />
 
       {/* Slide-out Ticket Drawer */}
       <SageTicketDrawer

@@ -27,6 +27,7 @@ import { parseTicketDetails, parseThreadMessage } from '../../utils/ticketFormat
 import { AttachmentGallery } from '../../components/common/AttachmentGallery';
 import { useToast } from '../../context/ToastContext';
 import { soundService } from '../../utils/sound';
+import { realtimeService } from '../../services/realtime';
 
 function LightboxModal({ url, onClose }: { url: string; onClose: () => void }) {
   return (
@@ -120,13 +121,29 @@ export const PublicTicketTracker: React.FC = () => {
     }
   }, [paramId, paramEmail]);
 
-  // Real-time polling every 3 seconds for fast customer chat updates
+  // Ultra-fast Sub-50ms WebSocket Realtime Listener for tracking page
   useEffect(() => {
     if (!ticket?.ticket_id) return;
+
+    const unsub = realtimeService.onNewMessage((newMsg) => {
+      if (newMsg.ticket_id === ticket.ticket_id) {
+        setThreads((prev) => {
+          if (prev.some(t => t.thread_id === newMsg.thread_id || (t.message === newMsg.message && t.sender_id === newMsg.sender_id))) {
+            return prev;
+          }
+          return [...prev, newMsg];
+        });
+      }
+    });
+
     const interval = setInterval(() => {
       fetchTicket(ticket.ticket_id, email, false);
     }, 3000);
-    return () => clearInterval(interval);
+
+    return () => {
+      unsub();
+      clearInterval(interval);
+    };
   }, [ticket?.ticket_id, email]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -169,6 +186,9 @@ export const PublicTicketTracker: React.FC = () => {
     setThreads((prev) => [...prev, tempThread]);
     prevThreadCountRef.current += 1;
     soundService.playSentMessageSound();
+
+    // Broadcast instantly to all other tabs and devices via WebSocket
+    realtimeService.broadcastChatMessage(tempThread);
 
     setIsSendingReply(true);
     try {

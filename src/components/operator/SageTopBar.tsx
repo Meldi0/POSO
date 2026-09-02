@@ -12,6 +12,7 @@ import {
   Plus
 } from 'lucide-react';
 import { DashboardViewType } from './SageSidebar';
+import { NotificationBellDropdown } from '../notifications/NotificationBellDropdown';
 
 interface SageTopBarProps {
   onMobileMenuToggle?: () => void;
@@ -27,6 +28,7 @@ interface SageTopBarProps {
   onRefresh: () => void;
   onExport: () => void;
   onNewTicketClick?: () => void;
+  onOpenTicket?: (ticketId: string) => void;
   isSyncing?: boolean;
 }
 
@@ -44,6 +46,7 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
   onRefresh,
   onExport,
   onNewTicketClick,
+  onOpenTicket,
   isSyncing = false
 }) => {
   return (
@@ -108,6 +111,9 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
             <span>Tabel</span>
           </button>
         </div>
+
+        {/* Bell Notification Button with Dropdown */}
+        <NotificationBellDropdown onSelectTicket={onOpenTicket} />
 
         {/* Sync Button */}
         <button
