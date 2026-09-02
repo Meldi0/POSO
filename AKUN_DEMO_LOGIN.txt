@@ -1,0 +1,50 @@
+================================================================================
+          DAFTAR AKUN LOGIN SISTEM HELPDESK TICKETING POSO
+================================================================================
+
+Berikut adalah data akun default untuk masuk ke dalam aplikasi:
+
+--------------------------------------------------------------------------------
+1. ADMINISTRATOR SISTEM
+--------------------------------------------------------------------------------
+Email       : admin@poso.local
+Password    : Admin123!
+Role        : Administrator
+Hak Akses   : Akses penuh ke seluruh menu, manajemen pengguna & role, 
+              integrasi data/Google Sheets, dan pengaturan sistem.
+
+--------------------------------------------------------------------------------
+2. OPERATOR HELPDESK
+--------------------------------------------------------------------------------
+Email       : operator@poso.local
+Password    : Operator123!
+Role        : Operator Helpdesk
+Hak Akses   : Triase tiket, delegasi tiket ke unit UPT, chat langsung 
+              dengan pelapor, monitoring SLA dan status tiket.
+
+--------------------------------------------------------------------------------
+3. STAF UPT TI & SISTEM INFORMASI
+--------------------------------------------------------------------------------
+Email       : upt.ti@poso.local
+Password    : Poso123!
+Role        : UPT Unit
+Unit Kerja  : UPT TI & Jaringan
+Hak Akses   : Menangani dan memperbarui status tiket yang ditugaskan 
+              ke unit TI & Jaringan, memberikan catatan penanganan.
+
+--------------------------------------------------------------------------------
+4. STAF UPT SARANA & PRASARANA (CGS)
+--------------------------------------------------------------------------------
+Email       : upt.sarpras@poso.local
+Password    : Poso123!
+Role        : UPT Unit
+Unit Kerja  : UPT Sarana & Prasarana
+Hak Akses   : Menangani dan memperbarui status tiket yang ditugaskan 
+              ke unit Sarana & Prasarana.
+
+================================================================================
+* Catatan:
+- Seluruh password di atas bersifat Case-Sensitive (perhatikan huruf besar/kecil).
+- Pengguna umum/pelapor tamu dapat membuat tiket dan melacak tanpa login atau 
+  melakukan registrasi akun secara mandiri melalui menu 'Daftar Akun Baru'.
+================================================================================
