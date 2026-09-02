@@ -45,6 +45,7 @@ class PosoRealtimeService {
   constructor() {
     this.loadNotifications();
     this.initBroadcastChannel();
+    this.initStorageListener();
     this.connectWebSocket();
   }
 
@@ -61,6 +62,19 @@ class PosoRealtimeService {
           this.handleIncomingPayload(event.data);
         };
       } catch (e) {}
+    }
+  }
+
+  private initStorageListener() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'poso_live_chat_event' && event.newValue) {
+          try {
+            const payload = JSON.parse(event.newValue);
+            this.handleIncomingPayload(payload);
+          } catch (e) {}
+        }
+      });
     }
   }
 
@@ -124,19 +138,27 @@ class PosoRealtimeService {
       const msg: ThreadMessage = payload.data;
       if (!msg) return;
 
+      // Prevent duplicate processing of the same message
+      const dedupeKey = `${msg.ticket_id}_${(msg.message || '').trim()}_${msg.created_at || ''}`;
+      if (this.knownThreadIds.has(dedupeKey) || (msg.thread_id && this.knownThreadIds.has(msg.thread_id))) {
+        return;
+      }
+      this.knownThreadIds.add(dedupeKey);
+      if (msg.thread_id) this.knownThreadIds.add(msg.thread_id);
+
       // 1. Play audible notification
       soundService.playIncomingMessageSound();
       soundService.notifyBrowser(
         `Pesan Baru dari ${msg.sender_name} (#${msg.ticket_id})`,
-        msg.message.slice(0, 70)
+        (msg.message || '').slice(0, 70)
       );
 
       // 2. Add to Notification Dropdown list
       const notif: ChatNotification = {
         id: `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
         ticket_id: msg.ticket_id,
-        sender_name: msg.sender_name || 'Pengguna',
-        sender_role: msg.sender_role || 'user',
+        sender_name: msg.sender_name || 'Pelapor',
+        sender_role: msg.sender_role || 'pengguna_umum',
         message: msg.message,
         created_at: msg.created_at || new Date().toISOString(),
         is_read: false
@@ -175,14 +197,19 @@ class PosoRealtimeService {
       data: msg
     };
 
-    // 1. Same-device cross-tab broadcast (0ms)
+    // 1. Same-device cross-tab BroadcastChannel (0ms)
     if (this.broadcastChannel) {
       try {
         this.broadcastChannel.postMessage(payload);
       } catch (e) {}
     }
 
-    // 2. Remote WebSocket broadcast (<50ms)
+    // 2. Universal localStorage event trigger (0ms across all window/tab boundaries)
+    try {
+      localStorage.setItem('poso_live_chat_event', JSON.stringify({ ...payload, _t: Date.now() }));
+    } catch (e) {}
+
+    // 3. Remote WebSocket broadcast (<50ms)
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       try {
         this.ws.send(JSON.stringify(payload));

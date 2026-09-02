@@ -58,6 +58,7 @@ export const OperatorDashboard: React.FC = () => {
 
   const prevTicketCountRef = useRef<number>(0);
   const isInitialTicketLoadRef = useRef<boolean>(true);
+  const lastTicketTimestampsRef = useRef<Record<string, string>>({});
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,7 +101,7 @@ export const OperatorDashboard: React.FC = () => {
           setSelectedTicket(res.data.ticket);
         }
       } catch (err) {
-        console.warn('Could not load ticket detail for:', ticketId);
+        toastError('Tiket tidak ditemukan');
       }
     }
   };
@@ -127,12 +128,59 @@ export const OperatorDashboard: React.FC = () => {
       if (res && res.status === 'success' && res.data) {
         const newTickets = res.data.tickets || [];
         
-        // Check for newly arrived tickets submitted from other devices
+        // 1. Check for newly arrived tickets submitted from other devices
         if (!isInitialTicketLoadRef.current && newTickets.length > prevTicketCountRef.current) {
           const newest = newTickets[0];
           soundService.playIncomingMessageSound();
           soundService.notifyBrowser(`Tiket Baru Masuk #${newest.ticket_id}`, `${newest.subject} (${newest.category})`);
           info(`🔔 Tiket baru masuk: #${newest.ticket_id} - ${newest.subject}`);
+        }
+
+        // 2. Check for updated tickets with new replies from customer
+        if (!isInitialTicketLoadRef.current) {
+          for (const t of newTickets) {
+            const lastUpdated = lastTicketTimestampsRef.current[t.ticket_id];
+            if (lastUpdated && lastUpdated !== t.updated_at) {
+              apiService.getTicketDetail(t.ticket_id).then(detailRes => {
+                if (detailRes.status === 'success' && detailRes.data?.threads) {
+                  const threads = detailRes.data.threads;
+                  if (threads.length > 0) {
+                    const latestMsg = threads[threads.length - 1];
+                    const isStaff = (latestMsg.sender_role === 'admin' || latestMsg.sender_role === 'operator' || latestMsg.sender_role === 'upt');
+                    if (!isStaff) {
+                      realtimeService.addNotification({
+                        id: `NOTIF-${latestMsg.thread_id || Date.now()}`,
+                        ticket_id: t.ticket_id,
+                        sender_name: latestMsg.sender_name || t.requester_name || 'Pelapor',
+                        sender_role: latestMsg.sender_role || 'pengguna_umum',
+                        message: latestMsg.message,
+                        created_at: latestMsg.created_at,
+                        is_read: false
+                      });
+                      soundService.playIncomingMessageSound();
+                      soundService.notifyBrowser(`Balasan Baru di #${t.ticket_id}`, `${latestMsg.sender_name}: ${latestMsg.message.slice(0, 60)}`);
+                      info(`💬 Pesan baru dari ${latestMsg.sender_name} di #${t.ticket_id}`);
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('poso_realtime_chat', { detail: {
+                          id: `NOTIF-${latestMsg.thread_id || Date.now()}`,
+                          ticket_id: t.ticket_id,
+                          sender_name: latestMsg.sender_name || t.requester_name || 'Pelapor',
+                          message: latestMsg.message,
+                          created_at: latestMsg.created_at,
+                          is_read: false
+                        }}));
+                      }
+                    }
+                  }
+                }
+              }).catch(() => {});
+            }
+            lastTicketTimestampsRef.current[t.ticket_id] = t.updated_at;
+          }
+        } else {
+          newTickets.forEach(t => {
+            lastTicketTimestampsRef.current[t.ticket_id] = t.updated_at;
+          });
         }
 
         prevTicketCountRef.current = newTickets.length;
@@ -153,10 +201,10 @@ export const OperatorDashboard: React.FC = () => {
   useEffect(() => {
     fetchTickets(false);
 
-    // Fast background multi-device auto-sync every 5 seconds
+    // Fast background multi-device auto-sync every 4 seconds
     const interval = setInterval(() => {
       fetchTickets(true);
-    }, 5000);
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [user?.email]);
