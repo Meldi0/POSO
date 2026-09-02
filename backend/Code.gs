@@ -864,7 +864,7 @@ function apiGetTickets(params, token) {
  * Mendukung baik Staf Operator/UPT maupun Pelacak Publik Tamu.
  */
 function apiGetTicketDetail(params, token) {
-  const user = authenticateUser(token, params.user_email);
+  const user = authenticateUser(token);
   const ticketId = (params.ticket_id || '').trim();
   if (!ticketId) {
     return { status: 'error', code: 400, message: 'ticket_id wajib diisi.' };
@@ -1077,10 +1077,11 @@ function apiUpdateTicketStatus(body, token) {
  * Tambah pesan balasan publik atau catatan internal (§5.4 PRD).
  */
 function apiAddThreadMessage(body, token) {
-  const user = authenticateUser(token, body.user_email);
-  const senderId = user ? user.user_id : (body.sender_id || 'USR-PUBLIC');
-  const senderRole = user ? user.role : (body.sender_role || 'pengguna_umum');
-  const senderName = user ? user.name : (body.sender_name || 'Pengguna');
+  const user = authenticateUser(token);
+  if (!user) {
+    return { status: 'error', code: 401, message: 'Autentikasi diperlukan.' };
+  }
+
   const ticketId = body.ticket_id || '';
   const message = (body.message || '').trim();
   let visibility = (body.visibility || 'public').toLowerCase().trim();
@@ -1090,7 +1091,7 @@ function apiAddThreadMessage(body, token) {
   }
 
   // ATURAN KEAMANAN: Pengguna umum TIDAK BOLEH membuat catatan internal
-  if (senderRole === 'pengguna_umum') {
+  if (user.role === 'pengguna_umum') {
     visibility = 'public';
   }
 
@@ -1102,8 +1103,8 @@ function apiAddThreadMessage(body, token) {
   threadSheet.appendRow([
     threadId,
     ticketId,
-    senderId,
-    senderRole,
+    user.user_id,
+    user.role,
     message,
     visibility,
     nowIso
@@ -1129,17 +1130,15 @@ function apiAddThreadMessage(body, token) {
     data: {
       thread_id: threadId,
       ticket_id: ticketId,
-      sender_id: senderId,
-      sender_name: senderName,
-      sender_role: senderRole,
+      sender_id: user.user_id,
+      sender_name: user.name,
+      sender_role: user.role,
       message: message,
       visibility: visibility,
       created_at: nowIso
     }
   };
 }
-
-
 
 // =================================================================================================
 // ADMIN ENDPOINTS: PENGGUNA, ROLE, FEATURE FLAGS, DATA SOURCE SWITCHER
