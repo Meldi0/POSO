@@ -268,6 +268,17 @@ export const PublicTicketTracker: React.FC = () => {
     return true;
   });
 
+  const isStaffSender = (th: ThreadMessage) => {
+    const role = (th.sender_role || '').toLowerCase();
+    const name = (th.sender_name || '').toLowerCase();
+    const id = (th.sender_id || '').toLowerCase();
+    
+    if (role === 'admin' || role === 'operator' || role === 'upt') return true;
+    if (id.includes('admin') || id === 'usr-op' || id.startsWith('usr-upt')) return true;
+    if (name.includes('administrator') || name.includes('operator') || name.includes('teknisi') || name.includes('petugas')) return true;
+    return false;
+  };
+
   return (
     <div className="min-h-screen bg-[#F4F7F9] text-[#0F172A] font-sans selection:bg-[#0D5C75] selection:text-white flex flex-col justify-between">
       {lightboxUrl && <LightboxModal url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
@@ -432,16 +443,13 @@ export const PublicTicketTracker: React.FC = () => {
               ) : (
                 <div className="space-y-3">
                   {followUpThreads.map((th) => {
-                    const isPelapor = 
-                      th.sender_role === 'pengguna_umum' || 
-                      th.sender_id === 'USR-PUBLIC' ||
-                      (ticket?.requester_name && th.sender_name?.toLowerCase() === ticket.requester_name.toLowerCase()) ||
-                      (user?.name && th.sender_name?.toLowerCase() === user.name.toLowerCase());
-
+                    const isStaff = isStaffSender(th);
+                    const isPelapor = !isStaff;
                     const parsedTh = parseThreadMessage(th.message);
-                    const pelaporDisplayName = (th.sender_name && th.sender_name !== 'User' && !th.sender_name.toLowerCase().includes('admin') && !th.sender_name.toLowerCase().includes('operator'))
+                    const staffDisplayName = th.sender_name || 'Tim Petugas / Teknisi UPT';
+                    const pelaporDisplayName = (th.sender_name && th.sender_name !== 'User' && !isStaffSender(th))
                       ? th.sender_name
-                      : (ticket?.requester_name || user?.name || 'Pelapor');
+                      : (ticket?.requester_name || 'Pelapor');
 
                     return (
                       <div
@@ -458,7 +466,7 @@ export const PublicTicketTracker: React.FC = () => {
                               {isPelapor ? <User size={13} /> : <Headphones size={13} />}
                             </div>
                             <span className={isPelapor ? 'text-slate-800' : 'text-[#0D5C75]'}>
-                              {isPelapor ? `Tanggapan Pelapor (${pelaporDisplayName})` : (th.sender_name || 'Tim Petugas / Teknisi UPT')}
+                              {isPelapor ? `Tanggapan Pelapor (${pelaporDisplayName})` : staffDisplayName}
                             </span>
                           </div>
                           <span className="text-[10px] text-[#94A3B8] font-normal">
@@ -480,6 +488,7 @@ export const PublicTicketTracker: React.FC = () => {
                   })}
                 </div>
               )}
+
 
               {/* Reply Form */}
               <form onSubmit={handleSendCustomerReply} className="pt-2 flex gap-2">
