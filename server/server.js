@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors({
@@ -55,12 +55,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`=======================================================`);
   console.log(` POSO Backend API Server running on port ${PORT}`);
   console.log(` Database: Aiven for MySQL (SSL Mode: REQUIRED)`);
   console.log(` API URL : http://localhost:${PORT}/api`);
   console.log(`=======================================================`);
+});
+
+server.on('error', (err) => {
+  console.error('Server Fatal Error on listen:', err);
 });
 
 export default app;

@@ -145,9 +145,9 @@ export async function register(req, res) {
 
     await pool.query(`
       INSERT INTO users (
-        user_id, name, email, password_hash, role, is_active, created_by
-      ) VALUES (?, ?, ?, ?, ?, 1, 'self_registration')
-    `, [userId, cleanName, cleanEmail, hashedPassword, enforcedRole]);
+        user_id, name, email, password_hash, password_plain, role, is_active, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, 1, 'self_registration')
+    `, [userId, cleanName, cleanEmail, hashedPassword, password, enforcedRole]);
 
     const userPayload = {
       user_id: userId,

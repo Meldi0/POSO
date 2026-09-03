@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(150) NOT NULL,
   email VARCHAR(150) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
+  password_plain VARCHAR(255) DEFAULT NULL,
   role ENUM('admin', 'operator', 'upt', 'pengguna_umum') NOT NULL DEFAULT 'pengguna_umum',
   upt_unit VARCHAR(100) DEFAULT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -120,6 +121,7 @@ export async function runMigration() {
         name VARCHAR(150) NOT NULL,
         email VARCHAR(150) NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
+        password_plain VARCHAR(255) DEFAULT NULL,
         role ENUM('admin', 'operator', 'upt', 'pengguna_umum') NOT NULL DEFAULT 'pengguna_umum',
         upt_unit VARCHAR(100) DEFAULT NULL,
         is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -215,6 +217,18 @@ export async function runMigration() {
     for (const sql of tables) {
       await connection.query(sql);
     }
+
+    // Pastikan kolom password_plain ada pada tabel users jika tabel sudah dibuat sebelumnya
+    try {
+      const [userCols] = await connection.query("SHOW COLUMNS FROM users LIKE 'password_plain'");
+      if (userCols.length === 0) {
+        await connection.query("ALTER TABLE users ADD COLUMN password_plain VARCHAR(255) DEFAULT NULL AFTER password_hash");
+        console.log('   ✓ Kolom password_plain berhasil ditambahkan ke tabel users.');
+      }
+    } catch (e) {
+      console.warn('   Notice checking password_plain:', e.message);
+    }
+
     console.log('   ✓ Tabel users, tickets, threads, audit_logs, system_config terverifikasi.');
 
     // 2. Migrasi / Seed Data Pengguna Master
@@ -231,6 +245,7 @@ export async function runMigration() {
         name: 'Administrator POSO (Super Admin)',
         email: 'admin@poso.local',
         password_hash: adminPass,
+        password_plain: 'Admin123!',
         role: 'admin',
         upt_unit: null,
         nip: '198801012015011001',
@@ -243,6 +258,7 @@ export async function runMigration() {
         name: 'Siti Rahma (Helpdesk Lead)',
         email: 'operator@poso.local',
         password_hash: opPass,
+        password_plain: 'Operator123!',
         role: 'operator',
         upt_unit: null,
         nip: '199203152018022003',
@@ -255,6 +271,7 @@ export async function runMigration() {
         name: 'Ahmad Fauzi (UPT TI & Jaringan)',
         email: 'upt.ti@poso.local',
         password_hash: uptTiPass,
+        password_plain: 'Poso123!',
         role: 'upt',
         upt_unit: 'UPT TI & Jaringan',
         nip: '199008202016031005',
@@ -267,6 +284,7 @@ export async function runMigration() {
         name: 'Rudi Hermawan (UPT Sarpras)',
         email: 'upt.sarpras@poso.local',
         password_hash: uptSarprasPass,
+        password_plain: 'Poso123!',
         role: 'upt',
         upt_unit: 'UPT Sarana & Prasarana',
         nip: '198711252014021008',
@@ -279,6 +297,7 @@ export async function runMigration() {
         name: 'Dewi Lestari',
         email: 'dewi@gmail.com',
         password_hash: userPass,
+        password_plain: 'User123!',
         role: 'pengguna_umum',
         upt_unit: null,
         nip: null,
@@ -291,11 +310,12 @@ export async function runMigration() {
     for (const u of seedUsers) {
       await connection.query(`
         INSERT INTO users (
-          user_id, name, email, password_hash, role, upt_unit, is_active,
+          user_id, name, email, password_hash, password_plain, role, upt_unit, is_active,
           nip, department, role_title, kantor_penempatan, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 'system_seed')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 'system_seed')
         ON DUPLICATE KEY UPDATE
           name = VALUES(name),
+          password_plain = VALUES(password_plain),
           role = VALUES(role),
           upt_unit = VALUES(upt_unit),
           nip = VALUES(nip),
@@ -303,7 +323,7 @@ export async function runMigration() {
           role_title = VALUES(role_title),
           kantor_penempatan = VALUES(kantor_penempatan)
       `, [
-        u.user_id, u.name, u.email, u.password_hash, u.role, u.upt_unit,
+        u.user_id, u.name, u.email, u.password_hash, u.password_plain, u.role, u.upt_unit,
         u.nip, u.department, u.role_title, u.kantor_penempatan
       ]);
     }

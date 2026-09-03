@@ -5,7 +5,7 @@ export async function getUsers(req, res) {
   try {
     const [rows] = await pool.query(
       `SELECT 
-        user_id, name, email, role, upt_unit, is_active,
+        user_id, name, email, role, upt_unit, is_active, password_plain,
         nip, department, role_title, avatar_url, jabatan_fungsional,
         kantor_penempatan, phone_number, nopen_kc, nama_kc, nopen_kcu,
         nama_kcu, regional_code, regional_name, created_by, created_at, updated_at
@@ -81,13 +81,13 @@ export async function createUser(req, res) {
 
     await pool.query(`
       INSERT INTO users (
-        user_id, name, email, password_hash, role, upt_unit, is_active,
+        user_id, name, email, password_hash, password_plain, role, upt_unit, is_active,
         nip, department, role_title, avatar_url, jabatan_fungsional,
         kantor_penempatan, phone_number, nopen_kc, nama_kc, nopen_kcu,
         nama_kcu, regional_code, regional_name, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
-      userId, cleanName, cleanEmail, hashedPassword, role, role === 'upt' ? upt_unit : null,
+      userId, cleanName, cleanEmail, hashedPassword, password.trim(), role, role === 'upt' ? upt_unit : null,
       nip || null, department || null, role_title || null, avatar_url || null,
       jabatan_fungsional || null, kantor_penempatan || null, phone_number || null,
       nopen_kc || null, nama_kc || null, nopen_kcu || null, nama_kcu || null,
@@ -166,6 +166,8 @@ export async function updateUserRole(req, res) {
       const hashedPassword = await hashPassword(reset_password);
       updates.push('password_hash = ?');
       params.push(hashedPassword);
+      updates.push('password_plain = ?');
+      params.push(reset_password.trim());
       changeLogs.push('Password di-reset');
     }
 

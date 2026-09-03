@@ -291,7 +291,7 @@ export const DataSourceConfig: React.FC = () => {
           </div>
           <div className="p-2.5 rounded-xl bg-slate-900 text-slate-100 flex items-center justify-between">
             <span>npm run dev</span>
-            <span className="text-slate-400 text-[11px] font-sans">Jalankan Express Backend (5000) & Vite (3000)</span>
+            <span className="text-slate-400 text-[11px] font-sans">Jalankan Express Backend (5001) & Vite (3000)</span>
           </div>
         </div>
       </div>

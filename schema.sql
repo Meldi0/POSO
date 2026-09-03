@@ -21,6 +21,7 @@ CREATE TABLE `users` (
   `name` VARCHAR(150) NOT NULL,
   `email` VARCHAR(150) NOT NULL,
   `password` VARCHAR(255) NOT NULL,
+  `password_plain` VARCHAR(255) DEFAULT NULL,
   `role` ENUM('admin', 'operator', 'upt', 'pengguna_umum') NOT NULL DEFAULT 'pengguna_umum',
   `unit_kerja` VARCHAR(100) DEFAULT NULL,
   `phone` VARCHAR(30) DEFAULT NULL,
@@ -114,12 +115,12 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- -------------------------------------------------------------------------------------------------
 -- MASTER SEED DATA (DATA AWAL SIAP PAKAI)
 -- -------------------------------------------------------------------------------------------------
-INSERT INTO `users` (`user_id`, `name`, `email`, `password`, `role`, `unit_kerja`, `phone`, `is_active`) VALUES
-('USR-ADMIN-01', 'Administrator POSO', 'admin@poso.local', 'Admin123!', 'admin', 'Direktorat TI & Sistem Informasi', '081234567890', 1),
-('USR-OP-01', 'Operator Helpdesk Utama', 'operator@poso.local', 'Operator123!', 'operator', 'Pusat Layanan Terpadu', '081234567891', 1),
-('USR-UPT-TI', 'Staf UPT TI & Jaringan', 'upt.ti@poso.local', 'Poso123!', 'upt', 'UPT TI & Jaringan', '081234567892', 1),
-('USR-UPT-SARPRAS', 'Staf UPT Sarana & Prasarana', 'upt.sarpras@poso.local', 'Poso123!', 'upt', 'UPT Sarana & Prasarana', '081234567893', 1),
-('USR-PUBLIC-01', 'Dewi Lestari', 'dewi@gmail.com', 'User123!', 'pengguna_umum', 'Pelapor / Pengguna Umum', '089876543210', 1);
+INSERT INTO `users` (`user_id`, `name`, `email`, `password`, `password_plain`, `role`, `unit_kerja`, `phone`, `is_active`) VALUES
+('USR-ADMIN-01', 'Administrator POSO', 'admin@poso.local', 'Admin123!', 'Admin123!', 'admin', 'Direktorat TI & Sistem Informasi', '081234567890', 1),
+('USR-OP-01', 'Operator Helpdesk Utama', 'operator@poso.local', 'Operator123!', 'Operator123!', 'operator', 'Pusat Layanan Terpadu', '081234567891', 1),
+('USR-UPT-TI', 'Staf UPT TI & Jaringan', 'upt.ti@poso.local', 'Poso123!', 'Poso123!', 'upt', 'UPT TI & Jaringan', '081234567892', 1),
+('USR-UPT-SARPRAS', 'Staf UPT Sarana & Prasarana', 'upt.sarpras@poso.local', 'Poso123!', 'Poso123!', 'upt', 'UPT Sarana & Prasarana', '081234567893', 1),
+('USR-PUBLIC-01', 'Dewi Lestari', 'dewi@gmail.com', 'User123!', 'User123!', 'pengguna_umum', 'Pelapor / Pengguna Umum', '089876543210', 1);
 
 INSERT INTO `settings` (`setting_key`, `setting_value`, `description`) VALUES
 ('SLA_LOW_HOURS', '72', 'Target penyelesaian tiket prioritas Low (72 Jam)'),

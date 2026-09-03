@@ -15,7 +15,7 @@ POSO/
 │   ├── controllers/        # Auth, Ticket, User, Analytics Controllers
 │   ├── middleware/         # JWT Authentication & RBAC Middleware
 │   ├── database/migrate.js # Skrip otomatisasi schema & seed Aiven MySQL
-│   └── server.js           # Express API Server Entry Point (Port 5000)
+│   └── server.js           # Express API Server Entry Point (Port 5001)
 ├── src/                    # Frontend React 18 + TypeScript + Tailwind CSS
 │   ├── components/
 │   │   ├── admin/
@@ -95,7 +95,7 @@ DB_USER=avnadmin
 DB_PASSWORD=YOUR_AIVEN_PASSWORD
 DB_NAME=defaultdb
 DB_SSL=true
-PORT=5000
+PORT=5001
 JWT_SECRET=poso_secret_jwt_key_2026_super_secure
 ```
 
@@ -114,7 +114,7 @@ Jalankan backend API dan frontend Vite secara bersamaan:
 ```bash
 npm run dev
 ```
-Buka peramban Anda di alamat: **`http://localhost:3000`** (Frontend) dan **`http://localhost:5000/api`** (Backend API).
+Buka peramban Anda di alamat: **`http://localhost:3000`** (Frontend) dan **`http://localhost:5001/api`** (Backend API).
 
 ### Langkah 4: Membangun untuk Produksi
 ```bash
