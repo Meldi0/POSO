@@ -86,7 +86,7 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
       { 
         id: 'datasource' as DashboardViewType, 
         icon: Database, 
-        label: 'Integrasi Data' 
+        label: 'Database Aiven' 
       },
     ] : []),
   ];
