@@ -180,7 +180,7 @@ export const SlaGuideModal: React.FC<SlaGuideModalProps> = ({ isOpen, onClose })
           {/* Footer */}
           <div className="px-6 sm:px-8 py-4 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between">
             <span className="text-xs sm:text-sm text-[#64748B] font-medium hidden sm:inline">
-              Standar Operasional Prosedur POSO Helpdesk v2.0
+              Standar Operasional Prosedur PRISMA POS v2.0
             </span>
             <button
               type="button"

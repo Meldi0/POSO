@@ -68,11 +68,11 @@ export const Register: React.FC = () => {
           <ArrowLeft size={15} />
           <span>Kembali ke Login</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-[8px] bg-[#0D5C75] flex items-center justify-center text-white">
-            <Headphones size={15} />
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-[8px] bg-slate-100 p-0.5 flex items-center justify-center border border-slate-200">
+            <img src="/prisma-pos-logo.png" alt="PRISMA POS Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="font-bold text-[14px] text-[#0D5C75]">POSO Helpdesk</span>
+          <span className="font-black text-[15px] text-[#0D5C75]">PRISMA POS</span>
         </div>
       </header>
 
@@ -184,7 +184,7 @@ export const Register: React.FC = () => {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-[#94A3B8]">
-        POSO Helpdesk System © 2026
+        PRISMA POS — Pos Resolution & Integrated Service Management Application © 2026
       </footer>
     </div>
   );

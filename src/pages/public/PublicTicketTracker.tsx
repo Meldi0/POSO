@@ -353,7 +353,12 @@ export const PublicTicketTracker: React.FC = () => {
               <ArrowLeft size={15} /> {backLabel}
             </Link>
             <ChevronRight size={14} className="text-[#CBD5E1]" />
-            <span className="text-[13px] font-semibold text-[#0D5C75]">Lacak Tiket</span>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-[5px] bg-slate-100 p-0.5 border border-slate-200 flex items-center justify-center">
+                <img src="/prisma-pos-logo.png" alt="PRISMA POS Logo" className="w-full h-full object-contain" />
+              </div>
+              <span className="text-[13px] font-bold text-[#0D5C75]">PRISMA POS</span>
+            </div>
           </div>
 
           {/* Browser Notification Prompt */}
@@ -597,7 +602,7 @@ export const PublicTicketTracker: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-[#E2E8F0] bg-white py-4 text-center text-xs text-[#94A3B8]">
-        Sistem Pelacakan Pengaduan Terpadu POSO v2.0
+        PRISMA POS — Pos Resolution & Integrated Service Management Application © 2026
       </footer>
     </div>
   );

@@ -116,11 +116,14 @@ export const MyTicketsPage: React.FC = () => {
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 border-b border-[#E2E8F0]/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/" className="w-9 h-9 rounded-[10px] bg-[#0D5C75] flex items-center justify-center text-white shadow-xs">
-              <Headphones size={18} />
+            <Link to="/" className="w-10 h-10 rounded-[10px] bg-white border border-[#E2E8F0] p-1 flex items-center justify-center shadow-2xs hover:border-[#0D5C75] transition-colors">
+              <img src="/prisma-pos-logo.png" alt="PRISMA POS Logo" className="w-full h-full object-contain" />
             </Link>
             <div>
-              <h1 className="text-[16px] font-bold text-[#0F172A] leading-tight">Tiket Saya</h1>
+              <h1 className="text-[16px] font-bold text-[#0F172A] leading-tight flex items-center gap-2">
+                <span>Tiket Saya</span>
+                <span className="text-[10px] font-extrabold text-[#0D5C75] bg-[#EAF4F8] px-2 py-0.5 rounded-full">PRISMA POS</span>
+              </h1>
               <p className="text-[11px] text-[#64748B]">{user?.name || user?.email || 'Pelapor'}</p>
             </div>
           </div>
@@ -277,7 +280,7 @@ export const MyTicketsPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-[#E2E8F0] bg-white py-4 text-center text-xs text-[#94A3B8]">
-        POSO Helpdesk System © 2026
+        PRISMA POS — Pos Resolution & Integrated Service Management Application © 2026
       </footer>
     </div>
   );

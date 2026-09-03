@@ -275,7 +275,7 @@ export const AttachmentGallery: React.FC<AttachmentGalleryProps> = ({
                   <ImageIcon className="w-14 h-14 mx-auto text-slate-600" />
                   <p className="text-sm font-bold text-slate-200">{selectedImageTitle}</p>
                   <p className="text-xs text-slate-400 max-w-md mx-auto">
-                    Foto tersimpan di Google Drive atau server lampiran POSO.
+                    Foto tersimpan di Google Drive atau server lampiran PRISMA POS.
                   </p>
                   {selectedOriginalUrl && (
                     <a
@@ -295,7 +295,7 @@ export const AttachmentGallery: React.FC<AttachmentGalleryProps> = ({
             {/* Modal Footer */}
             <div className="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
               <span className="text-[11px] truncate">
-                {selectedOriginalUrl ? 'Pratinjau Berkas Terenkripsi POSO Cloud' : 'Lampiran Berkas Pelapor'}
+                {selectedOriginalUrl ? 'Pratinjau Berkas Terenkripsi PRISMA POS Cloud' : 'Lampiran Berkas Pelapor'}
               </span>
               <button
                 type="button"

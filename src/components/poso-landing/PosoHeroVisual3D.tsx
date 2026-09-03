@@ -127,7 +127,7 @@ export const PosoHeroVisual3D: React.FC = () => {
 
             {/* Corner watermarks */}
             <div className="absolute top-4 right-4 text-[10px] font-mono font-bold text-white/40 tracking-wider">
-              POSO 2.0
+              PRISMA POS 2.0
             </div>
             <div className="absolute bottom-4 left-4 text-[10px] font-mono font-bold text-pink-300/40 tracking-wider">
               SLA READY

@@ -210,7 +210,7 @@ export function CommandPalette({ open, onClose, tickets = [], onSelectTicket }: 
             {/* Footer */}
             <div className="px-4 py-2 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between text-[11px] text-[#94A3B8]">
               <span>Gunakan tombol panah ↑ ↓ untuk memilih, Enter untuk membuka</span>
-              <span>POSO v2.0</span>
+              <span>PRISMA POS v2.0</span>
             </div>
           </motion.div>
         </>

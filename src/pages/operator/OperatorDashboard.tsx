@@ -291,7 +291,7 @@ export const OperatorDashboard: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `POSO_Tiket_Ekspor_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `PRISMA_POS_Tiket_Ekspor_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

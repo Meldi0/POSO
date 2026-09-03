@@ -174,12 +174,12 @@ export const Login: React.FC = () => {
           {/* Top Brand Tag */}
           <div className="relative z-10 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center shadow-sm">
-                <Headphones size={18} color="white" />
+              <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 p-1 flex items-center justify-center shadow-sm">
+                <img src="/prisma-pos-logo.png" alt="PRISMA POS Logo" className="w-full h-full object-contain" />
               </div>
               <div>
-                <span className="text-[15px] font-black tracking-tight text-white block leading-none">POSO</span>
-                <span className="text-[10px] font-bold text-[#A5D1E1] tracking-wider uppercase">Helpdesk Terpadu</span>
+                <span className="text-[16px] font-black tracking-tight text-white block leading-none">PRISMA POS</span>
+                <span className="text-[9px] font-bold text-[#A5D1E1] tracking-wider uppercase">Pos Resolution & Integrated Service</span>
               </div>
             </div>
 
@@ -195,10 +195,10 @@ export const Login: React.FC = () => {
           {/* Welcome Text Content */}
           <div className="relative z-10 my-auto py-10 sm:py-14 space-y-3">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              {authMode === 'login' ? 'WELCOME' : 'JOIN POSO'}
+              {authMode === 'login' ? 'WELCOME TO' : 'JOIN'} <span className="text-[#38BDF8]">PRISMA POS</span>
             </h2>
-            <p className="text-sm sm:text-base font-bold text-[#BAE6FC] uppercase tracking-wider">
-              POS INDONESIA HELPDESK SYSTEM
+            <p className="text-xs sm:text-sm font-bold text-[#BAE6FC] uppercase tracking-wider">
+              Pos Resolution & Integrated Service Management Application
             </p>
             <p className="text-xs sm:text-sm text-white/80 leading-relaxed max-w-sm pt-1">
               {authMode === 'login' 

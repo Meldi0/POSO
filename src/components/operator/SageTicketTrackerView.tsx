@@ -365,7 +365,7 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { step: 1, title: 'Laporan Masuk', desc: 'Tercatat di sistem POSO' },
+                  { step: 1, title: 'Laporan Masuk', desc: 'Tercatat di sistem PRISMA POS' },
                   { step: 2, title: 'Triase Operator', desc: 'Verifikasi & disposisi UPT' },
                   { step: 3, title: 'Pengerjaan UPT', desc: ticket.assigned_upt || 'Unit teknis terkait' },
                   { step: 4, title: 'Tuntas & Selesai', desc: 'Kendala terselesaikan' }

@@ -26,11 +26,11 @@ export const PosoFooter: React.FC<PosoFooterProps> = ({
             </div>
 
             <p className="text-xs sm:text-sm text-purple-200/70 leading-relaxed max-w-2xl font-normal">
-              POSO (Pusat Layanan Terpadu & Helpdesk) adalah sistem manajemen tiket terpadu berbasis Google Workspace yang menghubungkan seluruh sivitas dan pelanggan dengan Unit Pelaksana Teknis (UPT TI, Sarpras, & Sistem) secara transparan, terukur, dan berstandar SLA tinggi.
+              PRISMA POS (Pos Resolution & Integrated Service Management Application) adalah sistem manajemen pengaduan dan tiket terpadu PT Pos Indonesia yang menghubungkan seluruh unit kerja dan pelanggan dengan Unit Pelaksana Teknis secara transparan, terukur, dan berstandar SLA tinggi.
             </p>
 
             <div className="pt-2 text-[11px] text-purple-400/60 font-mono tracking-wider">
-              POSO HELPDESK SYSTEM © 2026 • PT POS INDONESIA (PERSERO) • ALL RIGHTS RESERVED.
+              PRISMA POS — POS RESOLUTION & INTEGRATED SERVICE MANAGEMENT APPLICATION © 2026 • PT POS INDONESIA (PERSERO) • ALL RIGHTS RESERVED.
             </div>
           </div>
 

@@ -107,8 +107,8 @@ export const PosoTeamSection: React.FC = () => {
         >
           TIM & OPERATOR <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-pink-300">TEKNIS</span>
         </motion.h2>
-        <p className="text-xs sm:text-sm font-bold text-purple-300/70 uppercase tracking-widest mt-2">
-          Penanggung Jawab Layanan & Unit Pelaksana Teknis (UPT) POSO
+        <p className="text-xs sm:text-sm font-bold text-sky-300/80 uppercase tracking-widest mt-2">
+          Penanggung Jawab Layanan & Unit Pelaksana Teknis (UPT) PRISMA POS
         </p>
       </div>
 

@@ -236,7 +236,7 @@ export const DataSourceConfig: React.FC = () => {
         </div>
 
         <p className="text-xs text-white/80 leading-relaxed">
-          Untuk menghubungkan sistem POSO di Vercel (<span className="font-mono text-[#38BDF8]">poso-jet.vercel.app</span>) dengan cluster cloud Aiven MySQL:
+          Untuk menghubungkan sistem PRISMA POS di Vercel (<span className="font-mono text-[#38BDF8]">poso-jet.vercel.app</span>) dengan cluster cloud Aiven MySQL:
         </p>
 
         <ol className="text-xs text-white/90 space-y-2 list-decimal list-inside pl-1">

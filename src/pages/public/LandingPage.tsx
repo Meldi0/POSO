@@ -64,7 +64,7 @@ const categoryMeta = [
     label: 'TI & Sistem Informasi',
     icon: Monitor,
     color: '#199FB1',
-    description: 'Jaringan Wi-Fi/LAN, VPN, aplikasi POSO, hardware komputer, dan SSO.',
+    description: 'Jaringan Wi-Fi/LAN, VPN, aplikasi PRISMA POS, hardware komputer, dan SSO.',
   },
   {
     key: 'layanan_umum',
@@ -130,12 +130,12 @@ export const LandingPage: React.FC = () => {
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 border-b border-[#E2E8F0]/80 transition-all">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-[10px] bg-[#0D5C75] flex items-center justify-center shadow-sm group-hover:bg-[#083342] transition-colors">
-              <Headphones size={18} color="white" strokeWidth={2} />
+            <div className="w-10 h-10 rounded-[10px] bg-white border border-[#E2E8F0] p-1 flex items-center justify-center shadow-2xs group-hover:border-[#0D5C75] transition-colors">
+              <img src="/prisma-pos-logo.png" alt="PRISMA POS Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <span className="text-[16px] font-bold text-[#0D5C75] leading-tight block">POSO</span>
-              <span className="text-[10px] font-semibold text-[#64748B] uppercase tracking-wider">Helpdesk Terpadu</span>
+              <span className="text-[17px] font-black text-[#0D5C75] leading-tight block tracking-tight">PRISMA POS</span>
+              <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Pos Resolution & Integrated Service</span>
             </div>
           </Link>
 
@@ -249,7 +249,7 @@ export const LandingPage: React.FC = () => {
             </h1>
 
             <p className="text-[15px] sm:text-[16px] text-white/80 leading-relaxed mb-8 max-w-xl">
-              Sistem penanganan gangguan dinas terpadu POSO — dari pengendalian operasi, sarana gedung CGS, investigasi security, hingga kendala sistem informasi.
+              Sistem penanganan gangguan dinas terpadu PRISMA POS — dari pengendalian operasi, sarana gedung CGS, investigasi security, hingga kendala sistem informasi.
             </p>
 
             {/* CTA Buttons */}
@@ -418,11 +418,11 @@ export const LandingPage: React.FC = () => {
       {/* 7. Footer */}
       <footer className="border-t border-[#E2E8F0] bg-white w-full">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-[8px] bg-[#0D5C75] flex items-center justify-center">
-              <Headphones size={14} color="white" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-[8px] bg-slate-100 p-0.5 border border-slate-200 flex items-center justify-center">
+              <img src="/prisma-pos-logo.png" alt="PRISMA POS Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-[13px] font-semibold text-[#64748B]">POSO Helpdesk System © 2026</span>
+            <span className="text-[13px] font-semibold text-[#64748B]">PRISMA POS — Pos Resolution & Integrated Service Management Application © 2026</span>
           </div>
           <div className="flex items-center gap-6">
             <Link to="/track" className="text-[13px] text-[#64748B] hover:text-[#0D5C75] transition-colors">Lacak Tiket</Link>

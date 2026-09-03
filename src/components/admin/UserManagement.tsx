@@ -242,7 +242,7 @@ export const UserManagement: React.FC = () => {
       if (res.status === 'success') {
         setStatusMsg({ 
           type: 'success', 
-          text: `Akun petugas "${name}" (${selectedRoleTitle}) berhasil didaftarkan ke Database Master POSO!` 
+          text: `Akun petugas "${name}" (${selectedRoleTitle}) berhasil didaftarkan ke Database Master PRISMA POS!` 
         });
         handleResetForm();
         await fetchUsers();
@@ -381,7 +381,7 @@ export const UserManagement: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-xs">
         <div>
           <h2 className="text-xl font-bold text-[#0F172A] tracking-tight">Manajemen Pengguna & Staf Teknis</h2>
-          <p className="text-xs text-[#64748B] mt-0.5 font-medium">Kelola data kepegawaian dinas, otorisasi peran, penempatan wilayah, dan kredensial akses POSO</p>
+          <p className="text-xs text-[#64748B] mt-0.5 font-medium">Kelola data kepegawaian dinas, otorisasi peran, penempatan wilayah, dan kredensial akses PRISMA POS</p>
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -456,7 +456,7 @@ export const UserManagement: React.FC = () => {
               {/* Sub-badge kanan */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800 shrink-0">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Tersimpan langsung ke Database Master POSO</span>
+                <span>Tersimpan langsung ke Database Master PRISMA POS</span>
               </div>
             </div>
 

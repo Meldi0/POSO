@@ -60,7 +60,7 @@ export const PolytroxKpiCards: React.FC<PolytroxKpiCardsProps> = ({
         <div className="flex items-center justify-between pb-1">
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-amber-200" />
-            <span className="text-xs font-black tracking-wider uppercase">POSO Help Center</span>
+            <span className="text-xs font-black tracking-wider uppercase">PRISMA POS Help Center</span>
           </div>
           <button type="button" className="text-white/80 hover:text-white">
             <MoreHorizontal className="w-4 h-4" />

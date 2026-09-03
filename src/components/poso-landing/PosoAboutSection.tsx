@@ -17,10 +17,10 @@ export const PosoAboutSection: React.FC = () => {
           viewport={{ once: true }}
           className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-wider uppercase font-sans"
         >
-          ABOUT <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-pink-300">POSO HELPDESK</span>
+          ABOUT <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-sky-200 to-orange-300">PRISMA POS</span>
         </motion.h2>
-        <p className="text-xs sm:text-sm font-bold text-purple-300/70 uppercase tracking-widest mt-2">
-          Pusat Bantuan & Manajemen Tiket Terpadu Berbasis Google Workspace
+        <p className="text-xs sm:text-sm font-bold text-sky-300/80 uppercase tracking-widest mt-2">
+          Pos Resolution & Integrated Service Management Application
         </p>
       </div>
 
@@ -75,7 +75,7 @@ export const PosoAboutSection: React.FC = () => {
             </h3>
 
             <p className="text-xs sm:text-sm text-purple-100/80 mt-4 leading-relaxed max-w-sm">
-              Sistem POSO memadukan triase multi-UPT cerdas dengan pemantauan Service Level Agreement (SLA) otomatis yang mendelegasikan laporan langsung ke teknisi terkait secara transparan dan terukur.
+              Sistem PRISMA POS memadukan triase multi-UPT cerdas dengan pemantauan Service Level Agreement (SLA) otomatis yang mendelegasikan laporan langsung ke teknisi terkait secara transparan dan terukur.
             </p>
 
             <div className="mt-6 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/20 border border-pink-400/40 text-[11px] font-bold text-pink-300 uppercase tracking-wider">

@@ -100,7 +100,7 @@ export const CASCADING_DEPARTMENTS: DepartmentConfig[] = [
     uptUnit: 'UPT TI & Sistem Informasi',
     topics: [
       { id: 'jaringan_vpn_internet', label: 'Jaringan Wi-Fi, LAN, & VPN' },
-      { id: 'error_aplikasi_poso', label: 'Aplikasi POSO & Core System' },
+      { id: 'error_aplikasi_poso', label: 'Aplikasi PRISMA POS & Core System' },
       { id: 'kendala_hardware', label: 'Hardware, Komputer, & Printer Barcode' },
       { id: 'reset_password_akses', label: 'Akun Email Dinas & Akses SSO' },
     ],
@@ -432,9 +432,14 @@ export const PublicTicketForm: React.FC = () => {
             <ArrowLeft size={15} />
             <span>{backLabel}</span>
           </Link>
-          <span className="text-xs font-bold text-[#0D5C75] bg-[#EAF4F8] px-3 py-1 rounded-full border border-[#A5D1E1]/40">
-            Formulir Pengaduan Online
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-[6px] bg-slate-100 p-0.5 border border-slate-200 flex items-center justify-center">
+              <img src="/prisma-pos-logo.png" alt="PRISMA POS Logo" className="w-full h-full object-contain" />
+            </div>
+            <span className="text-xs font-bold text-[#0D5C75] bg-[#EAF4F8] px-3 py-1 rounded-full border border-[#A5D1E1]/40">
+              PRISMA POS — Formulir Pengaduan
+            </span>
+          </div>
         </div>
       </header>
 

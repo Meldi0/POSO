@@ -169,7 +169,7 @@ export const SageTableView: React.FC<SageTableViewProps> = ({
 
       <div className="px-4 py-3 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between text-[12px] text-[#64748B]">
         <span>Menampilkan {sortedTickets.length} tiket</span>
-        <span>POSO Workstation</span>
+        <span>PRISMA POS Workstation</span>
       </div>
     </div>
   );

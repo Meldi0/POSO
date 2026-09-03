@@ -39,10 +39,13 @@ export const PolytroxTopBar: React.FC<PolytroxTopBarProps> = ({
     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 pb-2">
       {/* Brand Name */}
       <div className="flex items-center gap-3">
-        <h1 className="text-xl font-black tracking-widest text-[#2D2622] uppercase">
-          POSO
+        <div className="w-8 h-8 rounded-[8px] bg-slate-100 p-0.5 border border-slate-200 flex items-center justify-center">
+          <img src="/prisma-pos-logo.png" alt="PRISMA POS Logo" className="w-full h-full object-contain" />
+        </div>
+        <h1 className="text-lg font-black tracking-tight text-[#2D2622] uppercase">
+          PRISMA POS
         </h1>
-        <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-[#E75A38]/10 text-[#E75A38] border border-[#E75A38]/20">
+        <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-[#0D5C75]/10 text-[#0D5C75] border border-[#0D5C75]/20">
           Support Org
         </span>
       </div>

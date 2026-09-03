@@ -102,7 +102,7 @@ class PosoApiService {
       return {
         status: 'error',
         code: 500,
-        message: err.message || 'Gagal terhubung ke backend server POSO.'
+        message: err.message || 'Gagal terhubung ke backend server PRISMA POS.'
       };
     }
   }
@@ -124,7 +124,7 @@ class PosoApiService {
         return {
           success: true,
           latency: res.data?.latency_ms || latency,
-          message: 'Koneksi Backend POSO & Aiven MySQL Aktif!',
+          message: 'Koneksi Backend PRISMA POS & Aiven MySQL Aktif!',
           timestamp: res.data?.timestamp || new Date().toISOString()
         };
       }

@@ -91,7 +91,7 @@ export const PosoWorkflowRoadmap: React.FC = () => {
               </h4>
 
               <p className="text-xs text-purple-100/80 mt-3 leading-relaxed">
-                Operator Helpdesk POSO memverifikasi tiket, menetapkan prioritas SLA (Urgent, High, Medium), dan mendelegasikannya langsung ke unit teknis terkait (UPT Jaringan, UPT Sarpras, atau UPT Sistem Informasi) secara instan melalui sistem triase terpadu.
+                Operator Helpdesk PRISMA POS memverifikasi tiket, menetapkan prioritas SLA (Urgent, High, Medium), dan mendelegasikannya langsung ke unit teknis terkait (UPT Jaringan, UPT Sarpras, atau UPT Sistem Informasi) secara instan melalui sistem triase terpadu.
               </p>
             </div>
 
