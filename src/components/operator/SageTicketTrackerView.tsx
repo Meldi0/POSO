@@ -220,7 +220,7 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
   };
 
   const parsedTicket = ticket 
-    ? parseTicketDetails(ticket.description || '', ticket.category) 
+    ? parseTicketDetails(ticket.description || '', ticket.category, ticket.attachments) 
     : { cleanDescription: '', location: '', departmentAndTopic: '', attachments: [] };
 
   const followUpThreads = threads.filter((th, index) => {

@@ -244,7 +244,7 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
   };
 
   const parsedTicket = ticket 
-    ? parseTicketDetails(ticket.description, ticket.category) 
+    ? parseTicketDetails(ticket.description, ticket.category, ticket.attachments) 
     : { cleanDescription: '', location: '', departmentAndTopic: '', attachments: [] };
 
   const formatThreadTime = (isoString?: string) => {

@@ -159,6 +159,23 @@ export function extractAttachmentsAndCleanText(rawText: string): {
 }
 
 function parseAttachmentLine(lineContent: string, attachments: ParsedAttachment[]) {
+  // Format 0: Base64 dataUrl (nama.png: data:image/...) or direct data:image/...
+  if (lineContent.includes('data:image/') || lineContent.includes('data:application/')) {
+    const dataIdx = lineContent.indexOf('data:');
+    const prefix = lineContent.slice(0, dataIdx).trim().replace(/:+$/, '').trim();
+    const dataUrl = lineContent.slice(dataIdx).trim();
+    const fileName = prefix || 'Foto Bukti Lampiran';
+    const isImg = isImageAttachment({ name: fileName, dataUrl });
+    attachments.push({
+      name: fileName,
+      dataUrl: dataUrl,
+      url: dataUrl,
+      previewUrl: dataUrl,
+      isImage: isImg
+    });
+    return;
+  }
+
   // Format 1: nama.jpg: https://drive.google.com/...
   const urlMatch = lineContent.match(/^([^:]+):\s*(https?:\/\/[^\s]+)/);
   if (urlMatch) {

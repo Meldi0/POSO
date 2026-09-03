@@ -209,25 +209,39 @@ export const AttachmentGallery: React.FC<AttachmentGalleryProps> = ({
               <div className="flex items-center gap-2">
                 {selectedOriginalUrl && (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyLink(selectedOriginalUrl!)}
-                      className="px-2.5 py-1 text-slate-300 hover:text-white rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                      title="Salin Tautan Lampiran"
-                    >
-                      {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span className="hidden sm:inline">{copiedLink ? 'Tersalin' : 'Salin Link'}</span>
-                    </button>
-                    <a
-                      href={selectedOriginalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-2.5 py-1 bg-[#0D5C75] hover:bg-[#199FB1] text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors"
-                      title="Buka Berkas di Tab Baru / Google Drive"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Buka di Drive/Tab</span>
-                    </a>
+                    {!selectedOriginalUrl.startsWith('data:') ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyLink(selectedOriginalUrl!)}
+                          className="px-2.5 py-1 text-slate-300 hover:text-white rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Salin Tautan Lampiran"
+                        >
+                          {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span className="hidden sm:inline">{copiedLink ? 'Tersalin' : 'Salin Link'}</span>
+                        </button>
+                        <a
+                          href={selectedOriginalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1 bg-[#0D5C75] hover:bg-[#199FB1] text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors"
+                          title="Buka Berkas di Tab Baru / Google Drive"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Buka di Drive/Tab</span>
+                        </a>
+                      </>
+                    ) : (
+                      <a
+                        href={selectedOriginalUrl}
+                        download={selectedImageTitle || 'lampiran-foto-poso.png'}
+                        className="px-2.5 py-1 bg-[#0D5C75] hover:bg-[#199FB1] text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors"
+                        title="Unduh Berkas Foto"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Unduh Foto</span>
+                      </a>
+                    )}
                   </>
                 )}
                 <button
@@ -243,14 +257,14 @@ export const AttachmentGallery: React.FC<AttachmentGalleryProps> = ({
 
             {/* Modal Image View Area */}
             <div className="p-4 sm:p-6 bg-slate-950/80 flex items-center justify-center flex-1 overflow-auto min-h-[320px]">
-              {selectedImage !== 'fallback' ? (
+              {selectedImage && selectedImage !== 'fallback' ? (
                 <div className="relative max-h-[72vh] flex items-center justify-center">
                   <img
                     src={selectedImage}
                     alt={selectedImageTitle}
                     className="max-h-[70vh] max-w-full object-contain rounded-xl shadow-2xl border border-slate-800"
                     onError={() => {
-                      if (selectedOriginalUrl) {
+                      if (selectedOriginalUrl && !selectedOriginalUrl.startsWith('data:')) {
                         window.open(selectedOriginalUrl, '_blank');
                       }
                     }}
