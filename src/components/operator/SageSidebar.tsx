@@ -12,12 +12,13 @@ import {
   Headphones, 
   Search,
   Compass,
-  X
+  X,
+  Archive
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export type DashboardViewType = 'kanban' | 'table' | 'track' | 'users' | 'datasource' | 'settings' | 'reports';
+export type DashboardViewType = 'tickets' | 'archive' | 'track' | 'users' | 'datasource' | 'settings' | 'reports' | 'kanban' | 'table';
 
 interface SageSidebarProps {
   collapsed: boolean;
@@ -30,6 +31,8 @@ interface SageSidebarProps {
     in_progress: number;
     waiting: number;
     closed: number;
+    archived?: number;
+    active?: number;
   };
   mobileOpen?: boolean;
   onMobileClose?: () => void;
@@ -56,16 +59,16 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
 
   const navItems = [
     { 
-      id: 'kanban' as DashboardViewType, 
-      icon: LayoutDashboard, 
-      label: 'Triase & Kanban',
-      badge: ticketCounts ? ticketCounts.open + ticketCounts.in_progress : undefined 
-    },
-    { 
-      id: 'table' as DashboardViewType, 
+      id: 'tickets' as DashboardViewType, 
       icon: ListFilter, 
       label: 'Semua Tiket',
-      badge: ticketCounts?.total
+      badge: ticketCounts ? (ticketCounts.active ?? (ticketCounts.open + ticketCounts.in_progress + ticketCounts.waiting)) : undefined 
+    },
+    { 
+      id: 'archive' as DashboardViewType, 
+      icon: Archive, 
+      label: 'Arsip Tiket',
+      badge: ticketCounts ? (ticketCounts.archived ?? ticketCounts.closed) : undefined
     },
     { 
       id: 'track' as DashboardViewType, 
@@ -118,7 +121,7 @@ export const SageSidebar: React.FC<SageSidebarProps> = ({
       {/* Navigation Items */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto custom-scrollbar">
         {navItems.map(({ id, icon: Icon, label, badge }) => {
-          const isActive = activeView === id;
+          const isActive = activeView === id || (id === 'tickets' && (activeView === 'kanban' || activeView === 'table'));
           return (
             <button
               key={id}

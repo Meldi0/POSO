@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS tickets (
   assigned_operator VARCHAR(150) DEFAULT NULL,
   sla_due_at DATETIME DEFAULT NULL,
   closed_at DATETIME DEFAULT NULL,
+  is_archived TINYINT(1) NOT NULL DEFAULT 0,
   attachments JSON DEFAULT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -164,6 +165,7 @@ export async function runMigration() {
         assigned_operator VARCHAR(150) DEFAULT NULL,
         sla_due_at DATETIME DEFAULT NULL,
         closed_at DATETIME DEFAULT NULL,
+        is_archived TINYINT(1) NOT NULL DEFAULT 0,
         attachments JSON DEFAULT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -227,6 +229,17 @@ export async function runMigration() {
       }
     } catch (e) {
       console.warn('   Notice checking password_plain:', e.message);
+    }
+
+    // Pastikan kolom is_archived ada pada tabel tickets
+    try {
+      const [ticketCols] = await connection.query("SHOW COLUMNS FROM tickets LIKE 'is_archived'");
+      if (ticketCols.length === 0) {
+        await connection.query("ALTER TABLE tickets ADD COLUMN is_archived TINYINT(1) NOT NULL DEFAULT 0 AFTER closed_at");
+        console.log('   ✓ Kolom is_archived berhasil ditambahkan ke tabel tickets.');
+      }
+    } catch (e) {
+      console.warn('   Notice checking is_archived:', e.message);
     }
 
     console.log('   ✓ Tabel users, tickets, threads, audit_logs, system_config terverifikasi.');

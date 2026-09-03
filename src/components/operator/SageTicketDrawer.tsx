@@ -15,9 +15,10 @@ import {
   MapPin, 
   Clock, 
   AlertCircle,
-  Building2,
   CheckCircle2,
-  Trash2
+  Trash2,
+  Archive,
+  RotateCcw
 } from 'lucide-react';
 import { Ticket, ThreadMessage, TicketStatus, TicketPriority } from '../../types';
 import { StatusBadge, PriorityBadge } from '../ui/Badge';
@@ -35,6 +36,7 @@ interface SageTicketDrawerProps {
   onClose: () => void;
   onStatusChange: (ticket: Ticket, newStatus: TicketStatus) => void;
   onTicketUpdated?: () => void;
+  onArchive?: (ticket: Ticket, archive: boolean) => void;
 }
 
 const validTransitions: Record<TicketStatus, TicketStatus[]> = {
@@ -55,7 +57,8 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
   ticket,
   onClose,
   onStatusChange,
-  onTicketUpdated
+  onTicketUpdated,
+  onArchive
 }) => {
   const { user } = useAuth();
   const { success, error: toastError, info } = useToast();
@@ -307,8 +310,8 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
             </div>
 
             {/* Quick Status Bar */}
-            <div className="px-5 py-2.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-2">
+            <div className="px-5 py-2.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between gap-2 flex-shrink-0 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-semibold text-[#64748B]">Ubah Status:</span>
                 {nextStatuses.map((st) => (
                   <button
@@ -319,6 +322,33 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
                     → {statusLabels[st]}
                   </button>
                 ))}
+
+                {/* Archive / Restore button */}
+                {ticket.is_archived && onArchive ? (
+                  <button
+                    type="button"
+                    onClick={() => onArchive(ticket, false)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#EFF6FF] border border-[#BAE6FD] text-[#0284C7] hover:bg-[#0284C7] hover:text-white transition-all cursor-pointer shadow-2xs"
+                    title="Pulihkan tiket ini ke antrean aktif"
+                  >
+                    <RotateCcw size={12} />
+                    <span>Pulihkan dari Arsip</span>
+                  </button>
+                ) : onArchive ? (
+                  <button
+                    type="button"
+                    onClick={() => onArchive(ticket, true)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold border transition-all cursor-pointer shadow-2xs ${
+                      ticket.status === 'closed'
+                        ? 'bg-[#ECFDF5] border-emerald-300 text-emerald-700 hover:bg-emerald-600 hover:text-white'
+                        : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#0D5C75] hover:text-[#0D5C75]'
+                    }`}
+                    title="Pindahkan tiket ini ke arsip agar tidak menumpuk"
+                  >
+                    <Archive size={12} />
+                    <span>Pindahkan ke Arsip</span>
+                  </button>
+                ) : null}
               </div>
 
               <SlaCountdown

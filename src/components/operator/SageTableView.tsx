@@ -3,18 +3,22 @@ import { Ticket, TicketStatus } from '../../types';
 import { StatusBadge, PriorityBadge } from '../ui/Badge';
 import { SlaCountdown } from '../features/SlaCountdown';
 import { parseTicketDetails } from '../../utils/ticketFormatter';
-import { Eye, ArrowUpDown, ChevronRight, Inbox } from 'lucide-react';
+import { Eye, ArrowUpDown, ChevronRight, Inbox, Archive, RotateCcw } from 'lucide-react';
 
 interface SageTableViewProps {
   tickets: Ticket[];
   onTicketClick: (ticket: Ticket) => void;
   onStatusChange?: (ticket: Ticket, newStatus: TicketStatus) => void;
+  onArchive?: (ticket: Ticket, archive: boolean) => void;
+  isArchiveView?: boolean;
 }
 
 export const SageTableView: React.FC<SageTableViewProps> = ({
   tickets,
   onTicketClick,
-  onStatusChange
+  onStatusChange,
+  onArchive,
+  isArchiveView = false
 }) => {
   const [sortField, setSortField] = useState<'ticket_id' | 'created_at' | 'priority'>('created_at');
   const [sortAsc, setSortAsc] = useState(false);
@@ -133,14 +137,38 @@ export const SageTableView: React.FC<SageTableViewProps> = ({
                     </td>
 
                     <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onTicketClick(ticket); }}
-                        className="p-1.5 rounded-[8px] text-[#64748B] hover:text-[#0D5C75] hover:bg-white transition-all shadow-2xs"
-                        title="Buka Detail Tiket"
-                      >
-                        <Eye size={16} />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {ticket.is_archived && onArchive ? (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onArchive(ticket, false); }}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#EFF6FF] border border-[#BAE6FD] text-[#0284C7] hover:bg-[#0284C7] hover:text-white transition-all shadow-2xs cursor-pointer"
+                            title="Pulihkan tiket ini ke antrean aktif"
+                          >
+                            <RotateCcw size={12} />
+                            <span>Pulihkan</span>
+                          </button>
+                        ) : ticket.status === 'closed' && onArchive ? (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onArchive(ticket, true); }}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#F8FAFC] border border-[#CBD5E1] text-[#475569] hover:bg-[#0D5C75] hover:text-white hover:border-[#0D5C75] transition-all shadow-2xs cursor-pointer"
+                            title="Pindahkan tiket ini ke arsip agar tidak menumpuk"
+                          >
+                            <Archive size={12} />
+                            <span>Arsipkan</span>
+                          </button>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); onTicketClick(ticket); }}
+                          className="p-1.5 rounded-[8px] text-[#64748B] hover:text-[#0D5C75] hover:bg-white transition-all shadow-2xs cursor-pointer"
+                          title="Buka Detail Tiket"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

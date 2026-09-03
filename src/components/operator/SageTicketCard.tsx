@@ -3,12 +3,13 @@ import { Ticket, TicketStatus } from '../../types';
 import { PriorityBadge } from '../ui/Badge';
 import { SlaCountdown } from '../features/SlaCountdown';
 import { parseTicketDetails } from '../../utils/ticketFormatter';
-import { ArrowRight, CheckCheck, MapPin, Building2 } from 'lucide-react';
+import { ArrowRight, CheckCheck, MapPin, Building2, Archive, RotateCcw } from 'lucide-react';
 
 interface SageTicketCardProps {
   ticket: Ticket;
   onClick: (ticket: Ticket) => void;
   onStatusChange?: (ticket: Ticket, newStatus: TicketStatus) => void;
+  onArchive?: (ticket: Ticket, archive: boolean) => void;
   isDragging?: boolean;
 }
 
@@ -16,6 +17,7 @@ export const SageTicketCard: React.FC<SageTicketCardProps> = ({
   ticket,
   onClick,
   onStatusChange,
+  onArchive,
   isDragging = false
 }) => {
   const parsed = parseTicketDetails(ticket.description, ticket.category);
@@ -133,6 +135,36 @@ export const SageTicketCard: React.FC<SageTicketCardProps> = ({
             >
               <CheckCheck size={12} />
               <span>Selesai</span>
+            </button>
+          )}
+
+          {ticket.status === 'closed' && !ticket.is_archived && onArchive && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive(ticket, true);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#F8FAFC] border border-[#CBD5E1] text-[#475569] hover:bg-[#0D5C75] hover:text-white hover:border-[#0D5C75] transition-all cursor-pointer shadow-2xs"
+              title="Pindahkan tiket ini ke arsip agar antrean bersih"
+            >
+              <Archive size={11} />
+              <span>Arsipkan</span>
+            </button>
+          )}
+
+          {ticket.is_archived && onArchive && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive(ticket, false);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#EFF6FF] border border-[#BAE6FD] text-[#0284C7] hover:bg-[#0284C7] hover:text-white transition-all cursor-pointer shadow-2xs"
+              title="Pulihkan tiket ini ke antrean aktif"
+            >
+              <RotateCcw size={11} />
+              <span>Pulihkan</span>
             </button>
           )}
         </div>

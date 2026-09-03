@@ -263,10 +263,19 @@ class PosoApiService {
     priority?: TicketPriority;
     assigned_upt?: string;
     assigned_operator?: string;
+    is_archived?: boolean | number;
   }): Promise<ApiResponse<Ticket>> {
     return this.request<Ticket>(`/tickets/${encodeURIComponent(payload.ticket_id)}/status`, {
       method: 'PATCH',
       body: JSON.stringify(payload)
+    });
+  }
+
+  async archiveTicket(ticketId: string, archive = true): Promise<ApiResponse<Ticket>> {
+    return this.updateTicketStatus({
+      ticket_id: ticketId,
+      is_archived: archive ? 1 : 0,
+      ...(archive ? { status: 'closed' } : { status: 'in_progress' })
     });
   }
 

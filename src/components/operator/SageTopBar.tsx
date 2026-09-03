@@ -17,8 +17,10 @@ import { NotificationBellDropdown } from '../notifications/NotificationBellDropd
 interface SageTopBarProps {
   onMobileMenuToggle?: () => void;
   onOpenCommandPalette?: () => void;
-  activeView: DashboardViewType;
-  onViewChange: (view: DashboardViewType) => void;
+  activeView?: DashboardViewType;
+  onViewChange?: (view: DashboardViewType) => void;
+  layoutMode?: 'kanban' | 'table';
+  onLayoutModeChange?: (mode: 'kanban' | 'table') => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   selectedCategory: string;
@@ -37,6 +39,8 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
   onOpenCommandPalette,
   activeView,
   onViewChange,
+  layoutMode,
+  onLayoutModeChange,
   searchQuery,
   onSearchChange,
   selectedCategory,
@@ -49,6 +53,15 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
   onOpenTicket,
   isSyncing = false
 }) => {
+  const currentMode = layoutMode || (activeView === 'table' ? 'table' : 'kanban');
+  const handleToggle = (mode: 'kanban' | 'table') => {
+    if (onLayoutModeChange) {
+      onLayoutModeChange(mode);
+    } else if (onViewChange) {
+      onViewChange(mode);
+    }
+  };
+
   return (
     <header className="h-16 px-4 lg:px-6 bg-white border-b border-[#E2E8F0] flex items-center justify-between gap-3 sticky top-0 z-20 flex-shrink-0">
       
@@ -87,9 +100,9 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
         <div className="hidden sm:flex items-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] p-1 gap-1">
           <button
             type="button"
-            onClick={() => onViewChange('kanban')}
+            onClick={() => handleToggle('kanban')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer ${
-              activeView === 'kanban'
+              currentMode === 'kanban'
                 ? 'bg-[#0D5C75] text-white shadow-xs'
                 : 'text-[#64748B] hover:text-[#0F172A]'
             }`}
@@ -100,9 +113,9 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
 
           <button
             type="button"
-            onClick={() => onViewChange('table')}
+            onClick={() => handleToggle('table')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer ${
-              activeView === 'table'
+              currentMode === 'table'
                 ? 'bg-[#0D5C75] text-white shadow-xs'
                 : 'text-[#64748B] hover:text-[#0F172A]'
             }`}

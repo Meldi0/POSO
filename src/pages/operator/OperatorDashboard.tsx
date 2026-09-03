@@ -18,7 +18,8 @@ import {
   Clock,
   Zap,
   Shield,
-  Layers
+  Layers,
+  Archive
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { apiService } from '../../services/api';
@@ -44,7 +45,8 @@ export const OperatorDashboard: React.FC = () => {
   const { success, error: toastError, info } = useToast();
 
   // Navigation & Layout state
-  const [activeView, setActiveView] = useState<DashboardViewType>('kanban');
+  const [activeView, setActiveView] = useState<DashboardViewType>('tickets');
+  const [layoutMode, setLayoutMode] = useState<'kanban' | 'table'>('table');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -237,6 +239,73 @@ export const OperatorDashboard: React.FC = () => {
     }
   };
 
+  // Archive Ticket Handler
+  const handleArchiveTicket = async (ticket: Ticket, archive = true) => {
+    // Optimistic UI update
+    setTickets((prev) =>
+      prev.map((t) =>
+        t.ticket_id === ticket.ticket_id
+          ? {
+              ...t,
+              is_archived: archive,
+              status: archive ? 'closed' : (t.status === 'closed' ? 'in_progress' : t.status),
+              updated_at: new Date().toISOString()
+            }
+          : t
+      )
+    );
+    if (selectedTicket?.ticket_id === ticket.ticket_id) {
+      setSelectedTicket((prev) =>
+        prev
+          ? {
+              ...prev,
+              is_archived: archive,
+              status: archive ? 'closed' : (prev.status === 'closed' ? 'in_progress' : prev.status)
+            }
+          : null
+      );
+    }
+
+    try {
+      const res = await apiService.archiveTicket(ticket.ticket_id, archive);
+      if (res.status === 'success') {
+        success(archive ? `Tiket #${ticket.ticket_id} berhasil dipindahkan ke Arsip.` : `Tiket #${ticket.ticket_id} berhasil dipulihkan ke antrean aktif.`);
+      } else {
+        toastError(res.message || 'Gagal mengubah status arsip');
+        fetchTickets(true);
+      }
+    } catch (err: any) {
+      toastError(err.message || 'Terjadi gangguan jaringan');
+      fetchTickets(true);
+    }
+  };
+
+  // Archive All Closed Tickets Handler
+  const handleArchiveAllClosed = async () => {
+    const closedList = tickets.filter((t) => t.status === 'closed' && !t.is_archived);
+    if (closedList.length === 0) {
+      info('Tidak ada tiket dengan status Selesai untuk diarsipkan.');
+      return;
+    }
+
+    // Optimistic update
+    setTickets((prev) =>
+      prev.map((t) =>
+        t.status === 'closed' && !t.is_archived
+          ? { ...t, is_archived: true, updated_at: new Date().toISOString() }
+          : t
+      )
+    );
+
+    try {
+      await Promise.all(closedList.map((t) => apiService.archiveTicket(t.ticket_id, true)));
+      success(`${closedList.length} tiket selesai berhasil dipindahkan ke Arsip.`);
+    } catch (err: any) {
+      toastError('Terjadi kesalahan saat mengarsipkan tiket');
+      fetchTickets(true);
+    }
+  };
+
   // CSV Export Handler
   const handleExportCSV = () => {
     if (tickets.length === 0) {
@@ -268,8 +337,16 @@ export const OperatorDashboard: React.FC = () => {
     success('Data tiket berhasil diekspor ke CSV.');
   };
 
+  // Ticket Grouping (Active vs Archived)
+  const activeTickets = tickets.filter((t) => !t.is_archived);
+  const archivedTickets = tickets.filter((t) => Boolean(t.is_archived));
+  const closedUnarchivedTickets = tickets.filter((t) => t.status === 'closed' && !t.is_archived);
+
+  // Current Working Dataset
+  const currentTicketPool = activeView === 'archive' ? archivedTickets : activeTickets;
+
   // Filtered tickets
-  const filteredTickets = tickets.filter((t) => {
+  const filteredTickets = currentTicketPool.filter((t) => {
     const matchCat = selectedCategory === 'all' || t.category.toLowerCase().includes(selectedCategory.toLowerCase());
     const matchStatus = selectedStatus === 'all' || (t.status || 'open') === selectedStatus;
     const matchSearch =
@@ -282,11 +359,13 @@ export const OperatorDashboard: React.FC = () => {
 
   // Calculate Real Stats Strip
   const stats = {
-    open: tickets.filter((t) => t.status === 'open').length,
-    in_progress: tickets.filter((t) => t.status === 'in_progress').length,
-    waiting: tickets.filter((t) => t.status === 'waiting').length,
-    closed: tickets.filter((t) => t.status === 'closed').length,
-    urgent: tickets.filter((t) => t.priority === 'Urgent' && t.status !== 'closed').length,
+    open: activeTickets.filter((t) => t.status === 'open').length,
+    in_progress: activeTickets.filter((t) => t.status === 'in_progress').length,
+    waiting: activeTickets.filter((t) => t.status === 'waiting').length,
+    closed: activeTickets.filter((t) => t.status === 'closed').length,
+    urgent: activeTickets.filter((t) => t.priority === 'Urgent' && t.status !== 'closed').length,
+    archived: archivedTickets.length,
+    active: activeTickets.length,
     total: tickets.length,
   };
 
@@ -306,7 +385,12 @@ export const OperatorDashboard: React.FC = () => {
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed((p) => !p)}
         activeView={activeView}
-        onViewChange={(v) => setActiveView(v)}
+        onViewChange={(v) => {
+          setActiveView(v);
+          if (v === 'kanban' || v === 'table') {
+            setLayoutMode(v);
+          }
+        }}
         ticketCounts={stats}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
@@ -320,7 +404,23 @@ export const OperatorDashboard: React.FC = () => {
           onMobileMenuToggle={() => setMobileSidebarOpen(true)}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
           activeView={activeView}
-          onViewChange={setActiveView}
+          onViewChange={(v) => {
+            if (v === 'kanban' || v === 'table') {
+              setLayoutMode(v);
+              if (activeView !== 'tickets' && activeView !== 'archive') {
+                setActiveView('tickets');
+              }
+            } else {
+              setActiveView(v);
+            }
+          }}
+          layoutMode={layoutMode}
+          onLayoutModeChange={(mode) => {
+            setLayoutMode(mode);
+            if (activeView !== 'tickets' && activeView !== 'archive') {
+              setActiveView('tickets');
+            }
+          }}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           selectedCategory={selectedCategory}
@@ -337,16 +437,16 @@ export const OperatorDashboard: React.FC = () => {
         {/* Scrollable View Area */}
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto flex flex-col gap-4 custom-scrollbar">
           
-          {/* 1. STATS STRIP (MATCHING FIGMA 6 CHIPS) */}
-          {(activeView === 'kanban' || activeView === 'table') && (
+          {/* 1. STATS STRIP (6 CHIPS) */}
+          {(activeView === 'tickets' || activeView === 'archive' || activeView === 'kanban' || activeView === 'table') && (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 flex-shrink-0">
               {[
                 { label: 'Open', value: stats.open, color: '#0284C7', bg: '#EFF6FF', border: '#BAE6FD' },
                 { label: 'In Progress', value: stats.in_progress, color: '#8B5CF6', bg: '#F5F3FF', border: '#DDD6FE' },
                 { label: 'Menunggu', value: stats.waiting, color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
-                { label: 'Selesai Hari Ini', value: stats.closed, color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
+                { label: 'Selesai (Aktif)', value: stats.closed, color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
                 { label: 'Urgent Aktif', value: stats.urgent, color: '#F58A61', bg: '#FFF7ED', border: '#FFEDD5' },
-                { label: 'Total Tiket', value: stats.total, color: '#0D5C75', bg: '#EAF4F8', border: '#A5D1E1' },
+                { label: 'Total Arsip', value: stats.archived, color: '#0D5C75', bg: '#EAF4F8', border: '#A5D1E1' },
               ].map(({ label, value, color, bg, border }) => (
                 <div
                   key={label}
@@ -364,21 +464,82 @@ export const OperatorDashboard: React.FC = () => {
 
           {/* 2. DYNAMIC WORKSPACE VIEW ROUTING */}
           <div className="flex-1 min-h-0">
-            {activeView === 'kanban' && (
-              <SageKanbanBoard
-                tickets={filteredTickets}
-                onTicketClick={(t) => setSelectedTicket(t)}
-                onStatusChange={handleStatusChange}
-                onNewTicketClick={() => window.open('/submit', '_blank')}
-              />
+            {/* VIEW: SEMUA TIKET AKTIF */}
+            {(activeView === 'tickets' || activeView === 'kanban' || activeView === 'table') && (
+              <>
+                {layoutMode === 'kanban' ? (
+                  <SageKanbanBoard
+                    tickets={filteredTickets}
+                    onTicketClick={(t) => setSelectedTicket(t)}
+                    onStatusChange={handleStatusChange}
+                    onNewTicketClick={() => window.open('/submit', '_blank')}
+                    onArchive={handleArchiveTicket}
+                    onArchiveAllClosed={handleArchiveAllClosed}
+                  />
+                ) : (
+                  <SageTableView
+                    tickets={filteredTickets}
+                    onTicketClick={(t) => setSelectedTicket(t)}
+                    onStatusChange={handleStatusChange}
+                    onArchive={handleArchiveTicket}
+                  />
+                )}
+              </>
             )}
 
-            {activeView === 'table' && (
-              <SageTableView
-                tickets={filteredTickets}
-                onTicketClick={(t) => setSelectedTicket(t)}
-                onStatusChange={handleStatusChange}
-              />
+            {/* VIEW: ARSIP TIKET */}
+            {activeView === 'archive' && (
+              <div className="flex flex-col gap-4 h-full">
+                {/* Archive Header Banner */}
+                <div className="bg-[#083342] text-white p-4.5 rounded-[14px] flex items-center justify-between shadow-sm border border-white/10 flex-wrap gap-3 flex-shrink-0">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-[10px] bg-[#199FB1]/20 border border-[#199FB1]/40 flex items-center justify-center text-[#199FB1] flex-shrink-0">
+                      <Archive size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-[15px] font-bold text-white flex items-center gap-2">
+                        <span>Arsip Tiket Selesai</span>
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#199FB1]/20 text-[#199FB1] border border-[#199FB1]/30">
+                          {archivedTickets.length} Tiket
+                        </span>
+                      </h3>
+                      <p className="text-[12px] text-white/70">
+                        Tiket yang telah selesai ditangani dan dipindahkan dari antrean aktif agar pekerjaan tidak menumpuk.
+                      </p>
+                    </div>
+                  </div>
+
+                  {closedUnarchivedTickets.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleArchiveAllClosed}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] text-[12px] font-bold bg-[#199FB1] text-white hover:bg-[#147f8e] transition-all cursor-pointer shadow-sm ml-auto"
+                    >
+                      <Archive size={13} />
+                      <span>Pindahkan {closedUnarchivedTickets.length} Tiket Selesai ke Arsip</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex-1 min-h-0">
+                  {layoutMode === 'kanban' ? (
+                    <SageKanbanBoard
+                      tickets={filteredTickets}
+                      onTicketClick={(t) => setSelectedTicket(t)}
+                      onStatusChange={handleStatusChange}
+                      onArchive={handleArchiveTicket}
+                    />
+                  ) : (
+                    <SageTableView
+                      tickets={filteredTickets}
+                      onTicketClick={(t) => setSelectedTicket(t)}
+                      onStatusChange={handleStatusChange}
+                      onArchive={handleArchiveTicket}
+                      isArchiveView={true}
+                    />
+                  )}
+                </div>
+              </div>
             )}
 
             {activeView === 'track' && (
@@ -411,7 +572,7 @@ export const OperatorDashboard: React.FC = () => {
                   <div className="p-4 rounded-[12px] bg-[#F8FAFC] border border-[#E2E8F0] space-y-1">
                     <span className="text-[11px] font-bold text-[#64748B] uppercase">Tingkat Resolusi</span>
                     <p className="text-[24px] font-bold text-[#10B981]">
-                      {stats.total > 0 ? Math.round((stats.closed / stats.total) * 100) : 100}%
+                      {stats.total > 0 ? Math.round(((stats.closed + stats.archived) / stats.total) * 100) : 100}%
                     </p>
                   </div>
 
@@ -436,7 +597,7 @@ export const OperatorDashboard: React.FC = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => window.open('/submit', '_blank')}
-        className="fixed bottom-6 right-24 z-30 h-13 px-4 rounded-full bg-[#F58A61] hover:bg-[#E77448] text-white shadow-xl shadow-[#F58A61]/35 flex items-center gap-2 font-bold text-sm transition-all cursor-pointer hidden sm:flex"
+        className="fixed bottom-6 right-24 z-30 h-13 px-4 rounded-full bg-[#F58A61] hover:bg-[#E77448] text-white shadow-xl shadow-[#F58A61]/35 hidden sm:flex items-center gap-2 font-bold text-sm transition-all cursor-pointer"
         title="Buat Tiket Baru"
       >
         <Plus size={20} />
@@ -452,6 +613,7 @@ export const OperatorDashboard: React.FC = () => {
         onClose={() => setSelectedTicket(null)}
         onStatusChange={handleStatusChange}
         onTicketUpdated={fetchTickets}
+        onArchive={handleArchiveTicket}
       />
 
       {/* Operator Detail Modal (if opened via legacy trigger) */}

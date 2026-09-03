@@ -54,6 +54,7 @@ export interface Ticket {
   assigned_upt?: string;
   assigned_operator?: string;
   sla_due_at: string;
+  is_archived?: boolean;
   attachments?: Array<{ name: string; size: string; type: string; dataUrl?: string }>;
 }
 

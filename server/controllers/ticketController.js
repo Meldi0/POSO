@@ -112,10 +112,15 @@ export async function getTickets(req, res) {
       [...params, limitNum, offset]
     );
 
+    const formattedRows = rows.map(t => ({
+      ...t,
+      is_archived: Boolean(t.is_archived)
+    }));
+
     return res.status(200).json({
       status: 'success',
       data: {
-        tickets: rows,
+        tickets: formattedRows,
         total,
         page: pageNum,
         limit: limitNum,
@@ -363,7 +368,7 @@ export async function updateTicketStatus(req, res) {
   try {
     const user = req.user;
     const { id } = req.params;
-    const { status, priority, assigned_upt, assigned_operator } = req.body;
+    const { status, priority, assigned_upt, assigned_operator, is_archived } = req.body;
 
     if (user && user.role === 'pengguna_umum') {
       return res.status(403).json({
@@ -424,6 +429,13 @@ export async function updateTicketStatus(req, res) {
       updates.push('assigned_operator = ?');
       params.push(assigned_operator || null);
       changeLogs.push(`Operator: ${curr.assigned_operator || 'None'} -> ${assigned_operator || 'None'}`);
+    }
+
+    if (is_archived !== undefined) {
+      const archVal = is_archived ? 1 : 0;
+      updates.push('is_archived = ?');
+      params.push(archVal);
+      changeLogs.push(archVal ? 'Tiket dipindahkan ke arsip' : 'Tiket dipulihkan dari arsip');
     }
 
     if (updates.length === 0) {
