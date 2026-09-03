@@ -9,16 +9,12 @@ interface SageTableViewProps {
   tickets: Ticket[];
   onTicketClick: (ticket: Ticket) => void;
   onStatusChange?: (ticket: Ticket, newStatus: TicketStatus) => void;
-  onArchive?: (ticket: Ticket, archive: boolean) => void;
-  isArchiveView?: boolean;
 }
 
 export const SageTableView: React.FC<SageTableViewProps> = ({
   tickets,
   onTicketClick,
-  onStatusChange,
-  onArchive,
-  isArchiveView = false
+  onStatusChange
 }) => {
   const [sortField, setSortField] = useState<'ticket_id' | 'created_at' | 'priority'>('created_at');
   const [sortAsc, setSortAsc] = useState(false);
@@ -138,27 +134,20 @@ export const SageTableView: React.FC<SageTableViewProps> = ({
 
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
-                        {ticket.is_archived && onArchive ? (
+                        {ticket.status === 'closed' && onStatusChange && (
                           <button
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); onArchive(ticket, false); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStatusChange(ticket, 'in_progress');
+                            }}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#EFF6FF] border border-[#BAE6FD] text-[#0284C7] hover:bg-[#0284C7] hover:text-white transition-all shadow-2xs cursor-pointer"
-                            title="Pulihkan tiket ini ke antrean aktif"
+                            title="Buka kembali tiket ini dan kembalikan ke antrean aktif"
                           >
                             <RotateCcw size={12} />
-                            <span>Pulihkan</span>
+                            <span>Buka Kembali</span>
                           </button>
-                        ) : ticket.status === 'closed' && onArchive ? (
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); onArchive(ticket, true); }}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#F8FAFC] border border-[#CBD5E1] text-[#475569] hover:bg-[#0D5C75] hover:text-white hover:border-[#0D5C75] transition-all shadow-2xs cursor-pointer"
-                            title="Pindahkan tiket ini ke arsip agar tidak menumpuk"
-                          >
-                            <Archive size={12} />
-                            <span>Arsipkan</span>
-                          </button>
-                        ) : null}
+                        )}
 
                         <button
                           type="button"

@@ -36,7 +36,6 @@ interface SageTicketDrawerProps {
   onClose: () => void;
   onStatusChange: (ticket: Ticket, newStatus: TicketStatus) => void;
   onTicketUpdated?: () => void;
-  onArchive?: (ticket: Ticket, archive: boolean) => void;
 }
 
 const validTransitions: Record<TicketStatus, TicketStatus[]> = {
@@ -57,8 +56,7 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
   ticket,
   onClose,
   onStatusChange,
-  onTicketUpdated,
-  onArchive
+  onTicketUpdated
 }) => {
   const { user } = useAuth();
   const { success, error: toastError, info } = useToast();
@@ -312,43 +310,35 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
             {/* Quick Status Bar */}
             <div className="px-5 py-2.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between gap-2 flex-shrink-0 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-semibold text-[#64748B]">Ubah Status:</span>
-                {nextStatuses.map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => onStatusChange(ticket, st)}
-                    className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-white border border-[#E2E8F0] text-[#0D5C75] hover:bg-[#0D5C75] hover:text-white transition-all cursor-pointer"
-                  >
-                    → {statusLabels[st]}
-                  </button>
-                ))}
-
-                {/* Archive / Restore button */}
-                {ticket.is_archived && onArchive ? (
-                  <button
-                    type="button"
-                    onClick={() => onArchive(ticket, false)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#EFF6FF] border border-[#BAE6FD] text-[#0284C7] hover:bg-[#0284C7] hover:text-white transition-all cursor-pointer shadow-2xs"
-                    title="Pulihkan tiket ini ke antrean aktif"
-                  >
-                    <RotateCcw size={12} />
-                    <span>Pulihkan dari Arsip</span>
-                  </button>
-                ) : onArchive ? (
-                  <button
-                    type="button"
-                    onClick={() => onArchive(ticket, true)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold border transition-all cursor-pointer shadow-2xs ${
-                      ticket.status === 'closed'
-                        ? 'bg-[#ECFDF5] border-emerald-300 text-emerald-700 hover:bg-emerald-600 hover:text-white'
-                        : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#0D5C75] hover:text-[#0D5C75]'
-                    }`}
-                    title="Pindahkan tiket ini ke arsip agar tidak menumpuk"
-                  >
-                    <Archive size={12} />
-                    <span>Pindahkan ke Arsip</span>
-                  </button>
-                ) : null}
+                {ticket.status === 'closed' ? (
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]">
+                      <CheckCircle2 size={13} /> Tiket Selesai (Otomatis Masuk Arsip)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onStatusChange(ticket, 'in_progress')}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-[11px] font-bold bg-[#EFF6FF] border border-[#BAE6FD] text-[#0284C7] hover:bg-[#0284C7] hover:text-white transition-all cursor-pointer shadow-2xs"
+                      title="Buka kembali tiket ini ke antrean kerja aktif"
+                    >
+                      <RotateCcw size={12} />
+                      <span>Buka Kembali Tiket</span>
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-[11px] font-semibold text-[#64748B]">Ubah Status:</span>
+                    {nextStatuses.map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => onStatusChange(ticket, st)}
+                        className="px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-white border border-[#E2E8F0] text-[#0D5C75] hover:bg-[#0D5C75] hover:text-white transition-all cursor-pointer"
+                      >
+                        → {statusLabels[st]}
+                      </button>
+                    ))}
+                  </>
+                )}
               </div>
 
               <SlaCountdown

@@ -8,8 +8,6 @@ interface SageKanbanBoardProps {
   onTicketClick: (ticket: Ticket) => void;
   onStatusChange: (ticket: Ticket, newStatus: TicketStatus) => void;
   onNewTicketClick?: () => void;
-  onArchive?: (ticket: Ticket, archive: boolean) => void;
-  onArchiveAllClosed?: () => void;
 }
 
 const columns: { id: TicketStatus; label: string; color: string; bg: string; border: string }[] = [
@@ -23,9 +21,7 @@ export const SageKanbanBoard: React.FC<SageKanbanBoardProps> = ({
   tickets,
   onTicketClick,
   onStatusChange,
-  onNewTicketClick,
-  onArchive,
-  onArchiveAllClosed
+  onNewTicketClick
 }) => {
   const [draggingTicket, setDraggingTicket] = useState<Ticket | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TicketStatus | null>(null);
@@ -94,18 +90,6 @@ export const SageKanbanBoard: React.FC<SageKanbanBoardProps> = ({
                   <Plus size={15} />
                 </button>
               )}
-
-              {col.id === 'closed' && colTickets.length > 0 && onArchiveAllClosed && (
-                <button
-                  type="button"
-                  onClick={onArchiveAllClosed}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-white border border-[#CBD5E1] text-[#0D5C75] hover:bg-[#0D5C75] hover:text-white transition-all cursor-pointer shadow-2xs"
-                  title="Pindahkan semua tiket selesai ke arsip"
-                >
-                  <Archive size={11} />
-                  <span>Arsipkan Semua</span>
-                </button>
-              )}
             </div>
 
             {/* Column Cards Container */}
@@ -126,7 +110,6 @@ export const SageKanbanBoard: React.FC<SageKanbanBoardProps> = ({
                       ticket={ticket}
                       onClick={onTicketClick}
                       onStatusChange={onStatusChange}
-                      onArchive={onArchive}
                       isDragging={draggingTicket?.ticket_id === ticket.ticket_id}
                     />
                   </div>

@@ -9,7 +9,6 @@ interface SageTicketCardProps {
   ticket: Ticket;
   onClick: (ticket: Ticket) => void;
   onStatusChange?: (ticket: Ticket, newStatus: TicketStatus) => void;
-  onArchive?: (ticket: Ticket, archive: boolean) => void;
   isDragging?: boolean;
 }
 
@@ -17,7 +16,6 @@ export const SageTicketCard: React.FC<SageTicketCardProps> = ({
   ticket,
   onClick,
   onStatusChange,
-  onArchive,
   isDragging = false
 }) => {
   const parsed = parseTicketDetails(ticket.description, ticket.category);
@@ -138,33 +136,18 @@ export const SageTicketCard: React.FC<SageTicketCardProps> = ({
             </button>
           )}
 
-          {ticket.status === 'closed' && !ticket.is_archived && onArchive && (
+          {ticket.status === 'closed' && onStatusChange && (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onArchive(ticket, true);
-              }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#F8FAFC] border border-[#CBD5E1] text-[#475569] hover:bg-[#0D5C75] hover:text-white hover:border-[#0D5C75] transition-all cursor-pointer shadow-2xs"
-              title="Pindahkan tiket ini ke arsip agar antrean bersih"
-            >
-              <Archive size={11} />
-              <span>Arsipkan</span>
-            </button>
-          )}
-
-          {ticket.is_archived && onArchive && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onArchive(ticket, false);
+                onStatusChange(ticket, 'in_progress');
               }}
               className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-bold bg-[#EFF6FF] border border-[#BAE6FD] text-[#0284C7] hover:bg-[#0284C7] hover:text-white transition-all cursor-pointer shadow-2xs"
-              title="Pulihkan tiket ini ke antrean aktif"
+              title="Aktifkan kembali tiket ini ke antrean kerja aktif"
             >
               <RotateCcw size={11} />
-              <span>Pulihkan</span>
+              <span>Buka Kembali</span>
             </button>
           )}
         </div>

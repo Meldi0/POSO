@@ -410,6 +410,9 @@ export async function updateTicketStatus(req, res) {
       changeLogs.push(`Status: ${curr.status} -> ${status}`);
       if (status === 'closed') {
         updates.push('closed_at = NOW()');
+        updates.push('is_archived = 1');
+      } else {
+        updates.push('is_archived = 0');
       }
     }
 

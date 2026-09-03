@@ -212,43 +212,18 @@ export const OperatorDashboard: React.FC = () => {
   }, [user?.email]);
 
   // Fast Status Change Handler
+  // Fast Status Change Handler (Automatic Archiving when status === 'closed')
   const handleStatusChange = async (ticket: Ticket, newStatus: TicketStatus) => {
-    // Optimistic UI update
-    setTickets((prev) =>
-      prev.map((t) => (t.ticket_id === ticket.ticket_id ? { ...t, status: newStatus, updated_at: new Date().toISOString() } : t))
-    );
-    if (selectedTicket?.ticket_id === ticket.ticket_id) {
-      setSelectedTicket((prev) => (prev ? { ...prev, status: newStatus } : null));
-    }
+    const willBeArchived = newStatus === 'closed';
 
-    try {
-      const res = await apiService.updateTicketStatus({
-        ticket_id: ticket.ticket_id,
-        status: newStatus
-      });
-
-      if (res.status === 'success') {
-        success(`Tiket #${ticket.ticket_id} dipindah ke status ${newStatus}`);
-      } else {
-        toastError(res.message || 'Gagal memperbarui status');
-        fetchTickets();
-      }
-    } catch (err: any) {
-      toastError(err.message || 'Terjadi gangguan koneksi');
-      fetchTickets();
-    }
-  };
-
-  // Archive Ticket Handler
-  const handleArchiveTicket = async (ticket: Ticket, archive = true) => {
     // Optimistic UI update
     setTickets((prev) =>
       prev.map((t) =>
         t.ticket_id === ticket.ticket_id
           ? {
               ...t,
-              is_archived: archive,
-              status: archive ? 'closed' : (t.status === 'closed' ? 'in_progress' : t.status),
+              status: newStatus,
+              is_archived: willBeArchived,
               updated_at: new Date().toISOString()
             }
           : t
@@ -259,50 +234,34 @@ export const OperatorDashboard: React.FC = () => {
         prev
           ? {
               ...prev,
-              is_archived: archive,
-              status: archive ? 'closed' : (prev.status === 'closed' ? 'in_progress' : prev.status)
+              status: newStatus,
+              is_archived: willBeArchived
             }
           : null
       );
     }
 
     try {
-      const res = await apiService.archiveTicket(ticket.ticket_id, archive);
+      const res = await apiService.updateTicketStatus({
+        ticket_id: ticket.ticket_id,
+        status: newStatus
+      });
+
       if (res.status === 'success') {
-        success(archive ? `Tiket #${ticket.ticket_id} berhasil dipindahkan ke Arsip.` : `Tiket #${ticket.ticket_id} berhasil dipulihkan ke antrean aktif.`);
+        if (newStatus === 'closed') {
+          success(`Tiket #${ticket.ticket_id} telah selesai & otomatis masuk ke Arsip.`);
+        } else if (ticket.status === 'closed') {
+          success(`Tiket #${ticket.ticket_id} diaktifkan kembali ke antrean tiket aktif.`);
+        } else {
+          success(`Tiket #${ticket.ticket_id} diperbarui ke status ${newStatus}.`);
+        }
       } else {
-        toastError(res.message || 'Gagal mengubah status arsip');
-        fetchTickets(true);
+        toastError(res.message || 'Gagal memperbarui status');
+        fetchTickets();
       }
     } catch (err: any) {
-      toastError(err.message || 'Terjadi gangguan jaringan');
-      fetchTickets(true);
-    }
-  };
-
-  // Archive All Closed Tickets Handler
-  const handleArchiveAllClosed = async () => {
-    const closedList = tickets.filter((t) => t.status === 'closed' && !t.is_archived);
-    if (closedList.length === 0) {
-      info('Tidak ada tiket dengan status Selesai untuk diarsipkan.');
-      return;
-    }
-
-    // Optimistic update
-    setTickets((prev) =>
-      prev.map((t) =>
-        t.status === 'closed' && !t.is_archived
-          ? { ...t, is_archived: true, updated_at: new Date().toISOString() }
-          : t
-      )
-    );
-
-    try {
-      await Promise.all(closedList.map((t) => apiService.archiveTicket(t.ticket_id, true)));
-      success(`${closedList.length} tiket selesai berhasil dipindahkan ke Arsip.`);
-    } catch (err: any) {
-      toastError('Terjadi kesalahan saat mengarsipkan tiket');
-      fetchTickets(true);
+      toastError(err.message || 'Terjadi gangguan koneksi');
+      fetchTickets();
     }
   };
 
@@ -337,10 +296,11 @@ export const OperatorDashboard: React.FC = () => {
     success('Data tiket berhasil diekspor ke CSV.');
   };
 
-  // Ticket Grouping (Active vs Archived)
-  const activeTickets = tickets.filter((t) => !t.is_archived);
-  const archivedTickets = tickets.filter((t) => Boolean(t.is_archived));
-  const closedUnarchivedTickets = tickets.filter((t) => t.status === 'closed' && !t.is_archived);
+  // Automatic Grouping:
+  // Active: status !== 'closed' (open, in_progress, waiting)
+  // Archived: status === 'closed'
+  const activeTickets = tickets.filter((t) => t.status !== 'closed');
+  const archivedTickets = tickets.filter((t) => t.status === 'closed');
 
   // Current Working Dataset
   const currentTicketPool = activeView === 'archive' ? archivedTickets : activeTickets;
@@ -362,8 +322,8 @@ export const OperatorDashboard: React.FC = () => {
     open: activeTickets.filter((t) => t.status === 'open').length,
     in_progress: activeTickets.filter((t) => t.status === 'in_progress').length,
     waiting: activeTickets.filter((t) => t.status === 'waiting').length,
-    closed: activeTickets.filter((t) => t.status === 'closed').length,
-    urgent: activeTickets.filter((t) => t.priority === 'Urgent' && t.status !== 'closed').length,
+    urgent: activeTickets.filter((t) => t.priority === 'Urgent').length,
+    closed: archivedTickets.length,
     archived: archivedTickets.length,
     active: activeTickets.length,
     total: tickets.length,
@@ -444,9 +404,9 @@ export const OperatorDashboard: React.FC = () => {
                 { label: 'Open', value: stats.open, color: '#0284C7', bg: '#EFF6FF', border: '#BAE6FD' },
                 { label: 'In Progress', value: stats.in_progress, color: '#8B5CF6', bg: '#F5F3FF', border: '#DDD6FE' },
                 { label: 'Menunggu', value: stats.waiting, color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
-                { label: 'Selesai (Aktif)', value: stats.closed, color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
                 { label: 'Urgent Aktif', value: stats.urgent, color: '#F58A61', bg: '#FFF7ED', border: '#FFEDD5' },
-                { label: 'Total Arsip', value: stats.archived, color: '#0D5C75', bg: '#EAF4F8', border: '#A5D1E1' },
+                { label: 'Arsip Selesai', value: stats.closed, color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
+                { label: 'Total Tiket', value: stats.total, color: '#0D5C75', bg: '#EAF4F8', border: '#A5D1E1' },
               ].map(({ label, value, color, bg, border }) => (
                 <div
                   key={label}
@@ -473,15 +433,12 @@ export const OperatorDashboard: React.FC = () => {
                     onTicketClick={(t) => setSelectedTicket(t)}
                     onStatusChange={handleStatusChange}
                     onNewTicketClick={() => window.open('/submit', '_blank')}
-                    onArchive={handleArchiveTicket}
-                    onArchiveAllClosed={handleArchiveAllClosed}
                   />
                 ) : (
                   <SageTableView
                     tickets={filteredTickets}
                     onTicketClick={(t) => setSelectedTicket(t)}
                     onStatusChange={handleStatusChange}
-                    onArchive={handleArchiveTicket}
                   />
                 )}
               </>
@@ -490,35 +447,28 @@ export const OperatorDashboard: React.FC = () => {
             {/* VIEW: ARSIP TIKET */}
             {activeView === 'archive' && (
               <div className="flex flex-col gap-4 h-full">
-                {/* Archive Header Banner */}
-                <div className="bg-[#083342] text-white p-4.5 rounded-[14px] flex items-center justify-between shadow-sm border border-white/10 flex-wrap gap-3 flex-shrink-0">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-[10px] bg-[#199FB1]/20 border border-[#199FB1]/40 flex items-center justify-center text-[#199FB1] flex-shrink-0">
+                {/* Clean, Light-themed Archive Header */}
+                <div className="flex items-center justify-between bg-white border border-[#E2E8F0]/80 rounded-[14px] p-4 shadow-2xs flex-wrap gap-3 flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-[10px] bg-[#ECFDF5] border border-[#A7F3D0] flex items-center justify-center text-[#059669] flex-shrink-0">
                       <Archive size={20} />
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-bold text-white flex items-center gap-2">
-                        <span>Arsip Tiket Selesai</span>
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#199FB1]/20 text-[#199FB1] border border-[#199FB1]/30">
-                          {archivedTickets.length} Tiket
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-[16px] font-bold text-[#0F172A]">Arsip Tiket Selesai</h2>
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]">
+                          {archivedTickets.length} Selesai
                         </span>
-                      </h3>
-                      <p className="text-[12px] text-white/70">
-                        Tiket yang telah selesai ditangani dan dipindahkan dari antrean aktif agar pekerjaan tidak menumpuk.
+                      </div>
+                      <p className="text-[12px] text-[#64748B]">
+                        Seluruh tiket yang telah tuntas ditangani otomatis tersimpan di sini agar antrean kerja aktif tidak menumpuk.
                       </p>
                     </div>
                   </div>
 
-                  {closedUnarchivedTickets.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleArchiveAllClosed}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] text-[12px] font-bold bg-[#199FB1] text-white hover:bg-[#147f8e] transition-all cursor-pointer shadow-sm ml-auto"
-                    >
-                      <Archive size={13} />
-                      <span>Pindahkan {closedUnarchivedTickets.length} Tiket Selesai ke Arsip</span>
-                    </button>
-                  )}
+                  <div className="text-[12px] text-[#64748B] flex items-center gap-1.5 bg-[#F8FAFC] border border-[#E2E8F0] px-3 py-1.5 rounded-[8px]">
+                    <span>Tiket otomatis diarsipkan saat berstatus <strong>Selesai</strong>.</span>
+                  </div>
                 </div>
 
                 <div className="flex-1 min-h-0">
@@ -527,15 +477,12 @@ export const OperatorDashboard: React.FC = () => {
                       tickets={filteredTickets}
                       onTicketClick={(t) => setSelectedTicket(t)}
                       onStatusChange={handleStatusChange}
-                      onArchive={handleArchiveTicket}
                     />
                   ) : (
                     <SageTableView
                       tickets={filteredTickets}
                       onTicketClick={(t) => setSelectedTicket(t)}
                       onStatusChange={handleStatusChange}
-                      onArchive={handleArchiveTicket}
-                      isArchiveView={true}
                     />
                   )}
                 </div>
@@ -613,7 +560,6 @@ export const OperatorDashboard: React.FC = () => {
         onClose={() => setSelectedTicket(null)}
         onStatusChange={handleStatusChange}
         onTicketUpdated={fetchTickets}
-        onArchive={handleArchiveTicket}
       />
 
       {/* Operator Detail Modal (if opened via legacy trigger) */}
