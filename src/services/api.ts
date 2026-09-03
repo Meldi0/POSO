@@ -204,6 +204,29 @@ if (!localStorage.getItem(STORAGE_KEYS.LOCAL_USERS)) {
   setStored(STORAGE_KEYS.LOCAL_THREADS, SEED_THREADS);
 }
 
+const KNOWN_PASSWORDS_KEY = 'poso_known_passwords';
+const DEMO_PASSWORDS: Record<string, string> = {
+  'admin@poso.local': 'Admin123!',
+  'operator@poso.local': 'Operator123!',
+  'dewi@gmail.com': 'User123!',
+  'upt.ti@poso.local': 'Poso123!',
+  'upt.sarpras@poso.local': 'Poso123!'
+};
+
+export function setKnownPassword(email: string, pass: string) {
+  if (!email || !pass) return;
+  const map = getStored<Record<string, string>>(KNOWN_PASSWORDS_KEY, {});
+  map[email.toLowerCase().trim()] = pass;
+  setStored(KNOWN_PASSWORDS_KEY, map);
+}
+
+export function getKnownPassword(email: string): string | undefined {
+  if (!email) return undefined;
+  const lower = email.toLowerCase().trim();
+  const map = getStored<Record<string, string>>(KNOWN_PASSWORDS_KEY, {});
+  return map[lower] || DEMO_PASSWORDS[lower];
+}
+
 class PosoApiService {
   public getGasUrl(): string {
     const envUrl = (import.meta as any).env?.VITE_GAS_API_URL;
@@ -359,6 +382,7 @@ class PosoApiService {
   // ===============================================================================================
 
   async register(params: { name: string; email: string; password: string }): Promise<ApiResponse<{ token: string; user: User }>> {
+    setKnownPassword(params.email, params.password);
     const gasUrl = this.getGasUrl();
     if (gasUrl) {
       try {
@@ -366,6 +390,15 @@ class PosoApiService {
         if (res && res.status === 'success' && res.data) {
           this.setStoredToken(res.data.token);
           this.setStoredUser(res.data.user);
+          // Cache user locally
+          const localUsers = getStored<User[]>(STORAGE_KEYS.LOCAL_USERS, SEED_USERS);
+          const existingIdx = localUsers.findIndex(u => u.email.toLowerCase() === params.email.toLowerCase().trim());
+          if (existingIdx !== -1) {
+            localUsers[existingIdx] = { ...localUsers[existingIdx], ...res.data.user, password_plain: params.password };
+          } else {
+            localUsers.push({ ...res.data.user, password_plain: params.password });
+          }
+          setStored(STORAGE_KEYS.LOCAL_USERS, localUsers);
           return res;
         } else if (res && res.status === 'error') {
           return res;
@@ -389,7 +422,8 @@ class PosoApiService {
       role: 'pengguna_umum',
       is_active: true,
       created_by: 'self_registration',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      password_plain: params.password
     };
 
     users.push(newUser);
@@ -410,6 +444,7 @@ class PosoApiService {
   async login(params: { email: string; password: string }): Promise<ApiResponse<{ token: string; user: User }>> {
     const cleanEmail = (params.email || '').toLowerCase().trim();
     const cleanPassword = params.password || '';
+    setKnownPassword(cleanEmail, cleanPassword);
 
     // 1. If GAS is configured, prioritize live remote authentication
     if (this.isGasConfigured()) {
@@ -1008,10 +1043,12 @@ class PosoApiService {
           const merged = res.data
             .filter(u => !isDeleted(u.user_id, u.email))
             .map(u => {
-              const match = localUsers.find(lu => lu.email.toLowerCase() === u.email.toLowerCase());
+              const emailLower = (u.email || '').toLowerCase().trim();
+              const match = localUsers.find(lu => lu.email.toLowerCase() === emailLower);
+              const knownPass = match?.password_plain || getKnownPassword(emailLower);
               return {
                 ...u,
-                password_plain: match?.password_plain || (u.role === 'admin' ? 'Admin123!' : u.role === 'operator' ? 'Operator123!' : 'Poso123!')
+                password_plain: knownPass
               };
             });
           setStored(STORAGE_KEYS.LOCAL_USERS, merged);
@@ -1050,6 +1087,9 @@ class PosoApiService {
     regional_name?: string;
   }): Promise<ApiResponse<User>> {
     const emailLower = payload.email.trim().toLowerCase();
+    if (payload.password) {
+      setKnownPassword(emailLower, payload.password);
+    }
     
     // If this email was previously deleted, un-blacklist it
     const deletedIds = getStored<string[]>(STORAGE_KEYS.DELETED_USERS, []);
@@ -1106,7 +1146,7 @@ class PosoApiService {
       is_active: true,
       created_by: this.getStoredUser()?.email || 'admin@poso.local',
       created_at: new Date().toISOString(),
-      password_plain: payload.password || 'Poso123!',
+      password_plain: payload.password,
       nip: payload.nip,
       department: payload.department,
       role_title: payload.role_title,
@@ -1150,7 +1190,10 @@ class PosoApiService {
           if (idx !== -1) {
             localUsers[idx].role = payload.new_role;
             if (payload.new_upt_unit !== undefined) localUsers[idx].upt_unit = payload.new_upt_unit;
-            if (payload.reset_password) localUsers[idx].password_plain = payload.reset_password;
+            if (payload.reset_password) {
+              localUsers[idx].password_plain = payload.reset_password;
+              setKnownPassword(localUsers[idx].email, payload.reset_password);
+            }
             setStored(STORAGE_KEYS.LOCAL_USERS, localUsers);
           }
           return res;
@@ -1173,6 +1216,7 @@ class PosoApiService {
     }
     if (payload.reset_password) {
       localUsers[idx].password_plain = payload.reset_password;
+      setKnownPassword(localUsers[idx].email, payload.reset_password);
     }
     setStored(STORAGE_KEYS.LOCAL_USERS, localUsers);
 

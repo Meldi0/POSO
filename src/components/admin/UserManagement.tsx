@@ -863,7 +863,7 @@ export const UserManagement: React.FC = () => {
               filteredUsers.map(u => {
                 const isSuperAdmin = u.email === 'admin@poso.local' || (u.role === 'admin' && u.user_id === 'USR-ADMIN01');
                 const isPassVisible = visiblePasswords[u.user_id] || false;
-                const displayPass = u.password_plain || (u.email.toLowerCase() === 'pop@gmail.com' ? 'pop@gmail.com' : u.role === 'admin' ? 'Admin123!' : u.role === 'operator' ? 'Operator123!' : 'Poso123!');
+                const displayPass = u.password_plain;
 
                 return (
                   <tr key={u.user_id} className="hover:bg-slate-50/80 transition-colors">
@@ -923,33 +923,40 @@ export const UserManagement: React.FC = () => {
                     {/* Password View & Copy */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-1.5">
-                        <div className="inline-flex items-center gap-1.5 bg-[#F8FAFC] px-2 py-1 rounded-md border border-[#E2E8F0]">
-                          <span className="font-mono text-[11px] font-semibold text-slate-800 select-all">
-                            {isPassVisible ? displayPass : '••••••••'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => togglePasswordVisibility(u.user_id)}
-                            className="text-slate-400 hover:text-slate-800 p-0.5"
-                            title={isPassVisible ? "Sembunyikan Sandi" : "Lihat Kata Sandi"}
-                          >
-                            {isPassVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyPassword(displayPass)}
-                            className="text-slate-400 hover:text-[#002B49] p-0.5"
-                            title="Salin Kata Sandi"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        {displayPass ? (
+                          <div className="inline-flex items-center gap-1.5 bg-[#F8FAFC] px-2 py-1 rounded-md border border-[#E2E8F0]">
+                            <span className="font-mono text-[11px] font-semibold text-slate-800 select-all">
+                              {isPassVisible ? displayPass : '••••••••'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => togglePasswordVisibility(u.user_id)}
+                              className="text-slate-400 hover:text-slate-800 p-0.5"
+                              title={isPassVisible ? "Sembunyikan Sandi" : "Lihat Kata Sandi"}
+                            >
+                              {isPassVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyPassword(displayPass)}
+                              className="text-slate-400 hover:text-[#002B49] p-0.5"
+                              title="Salin Kata Sandi"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md border border-slate-200 text-[10px] text-slate-500 font-medium" title="Kata sandi tersimpan aman dalam format hash terenkripsi SHA-256 di database Google Sheets">
+                            <Lock className="w-3 h-3 text-slate-400" />
+                            <span>Terenkripsi</span>
+                          </div>
+                        )}
 
                         <button
                           type="button"
                           onClick={() => handleOpenResetModal(u)}
                           className="px-2 py-1 rounded-md bg-amber-50 hover:bg-amber-500 text-amber-700 hover:text-white border border-amber-200 text-[10px] font-bold transition-colors"
-                          title="Ganti Kata Sandi"
+                          title="Setel Ulang Kata Sandi"
                         >
                           Ganti
                         </button>
