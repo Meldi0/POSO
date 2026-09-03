@@ -463,55 +463,60 @@ export const OperatorDashboard: React.FC = () => {
             {/* VIEW: ARSIP TIKET */}
             {activeView === 'archive' && (
               <div className="flex flex-col gap-4 h-full">
-                {/* Clean, Light-themed Archive Header with Dedicated In-Page Search */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between bg-white border border-[#E2E8F0]/80 rounded-[14px] p-4 shadow-2xs gap-3 flex-shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-[10px] bg-[#ECFDF5] border border-[#A7F3D0] flex items-center justify-center text-[#059669] flex-shrink-0">
-                      <Archive size={20} />
+                {/* Clean, Premium Archive Header with Dedicated In-Page Search */}
+                <div className="bg-white border border-[#E2E8F0] rounded-[16px] p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
+                  {/* Left: Title, Badge & Subtitle */}
+                  <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                    <div className="w-11 h-11 rounded-[12px] bg-[#ECFDF5] border border-[#A7F3D0] flex items-center justify-center text-[#059669] shrink-0 shadow-2xs">
+                      <Archive size={22} />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-[16px] font-bold text-[#0F172A]">Arsip Tiket Selesai</h2>
-                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]">
-                          {archivedTickets.length} Tersimpan
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h2 className="text-[17px] font-bold text-[#0F172A] tracking-tight whitespace-nowrap">
+                          Arsip Tiket Selesai
+                        </h2>
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] shrink-0">
+                          {archivedTickets.length} Tiket Tersimpan
                         </span>
                       </div>
-                      <p className="text-[12px] text-[#64748B]">
-                        Seluruh riwayat tiket yang telah tuntas ditangani tersimpan di sini dalam format tabel arsip.
+                      <p className="text-[12px] text-[#64748B] mt-0.5 truncate">
+                        Pencarian dan riwayat seluruh tiket yang telah tuntas ditangani (format tabel arsip).
                       </p>
                     </div>
                   </div>
 
-                  {/* Dedicated In-Page Search Bar for Archive (Instant search by Ticket ID e.g. TICK-20260903-6991) */}
-                  <div className="relative w-full md:w-88 flex-shrink-0">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#64748B]">
-                      <Search size={15} />
+                  {/* Right: Dedicated Search Input (Standard Tailwind width & padding) */}
+                  <div className="w-full md:w-[380px] shrink-0">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#64748B]">
+                        <Search size={16} />
+                      </div>
+                      <input
+                        type="text"
+                        value={archiveSearchQuery}
+                        onChange={(e) => setArchiveSearchQuery(e.target.value)}
+                        placeholder="Cari ID Tiket (cth: TICK-20260903-6991)..."
+                        className="w-full h-10 pl-10 pr-9 bg-[#F8FAFC] border border-[#CBD5E1] rounded-[10px] text-[13px] text-[#0F172A] placeholder-[#94A3B8] focus:bg-white focus:border-[#0D5C75] focus:ring-2 focus:ring-[#0D5C75]/15 transition-all outline-none"
+                      />
+                      {archiveSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setArchiveSearchQuery('')}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#94A3B8] hover:text-[#0F172A] cursor-pointer"
+                          title="Bersihkan pencarian"
+                        >
+                          <X size={15} />
+                        </button>
+                      )}
                     </div>
-                    <input
-                      type="text"
-                      value={archiveSearchQuery}
-                      onChange={(e) => setArchiveSearchQuery(e.target.value)}
-                      placeholder="Cari ID Tiket (cth: TICK-20260903-6991)..."
-                      className="w-full h-10 pl-9.5 pr-8 bg-[#F8FAFC] border border-[#CBD5E1] rounded-[10px] text-[13px] text-[#0F172A] placeholder-[#94A3B8] focus:bg-white focus:border-[#0D5C75] focus:ring-2 focus:ring-[#0D5C75]/15 transition-all outline-none"
-                    />
-                    {archiveSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setArchiveSearchQuery('')}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#94A3B8] hover:text-[#0F172A] cursor-pointer"
-                        title="Bersihkan pencarian"
-                      >
-                        <X size={15} />
-                      </button>
-                    )}
                   </div>
                 </div>
 
                 {/* Archive Search Feedback */}
                 {archiveSearchQuery && (
-                  <div className="flex items-center justify-between px-1 text-[12px] text-[#64748B] flex-shrink-0">
+                  <div className="flex items-center justify-between px-2 text-[12px] text-[#64748B] flex-shrink-0">
                     <span>
-                      Hasil pencarian arsip untuk "<strong>{archiveSearchQuery}</strong>": {filteredArchivedTickets.length} tiket ditemukan
+                      Ditemukan <strong className="text-[#0F172A] font-bold">{filteredArchivedTickets.length}</strong> tiket untuk pencarian "<span className="text-[#0D5C75] font-semibold">{archiveSearchQuery}</span>"
                     </span>
                     <button
                       type="button"
