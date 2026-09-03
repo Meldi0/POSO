@@ -1,5 +1,29 @@
 import { pool } from '../config/db.js';
 
+export function isUptUnitMatch(userUnit, ticketUnit) {
+  if (!userUnit || !ticketUnit) return false;
+  const u = userUnit.toLowerCase().trim();
+  const t = ticketUnit.toLowerCase().trim();
+  if (u === t) return true;
+  if ((u.includes('ti') || u.includes('it') || u.includes('jaringan') || u.includes('sistem')) &&
+      (t.includes('ti') || t.includes('it') || t.includes('jaringan') || t.includes('sistem'))) {
+    return true;
+  }
+  if ((u.includes('sarpras') || u.includes('sarana') || u.includes('cgs')) &&
+      (t.includes('sarpras') || t.includes('sarana') || t.includes('cgs'))) {
+    return true;
+  }
+  if ((u.includes('sec') || u.includes('keamanan') || u.includes('security')) &&
+      (t.includes('sec') || t.includes('keamanan') || t.includes('security'))) {
+    return true;
+  }
+  if ((u.includes('qc') || u.includes('quality')) &&
+      (t.includes('qc') || t.includes('quality'))) {
+    return true;
+  }
+  return u.includes(t) || t.includes(u);
+}
+
 export async function getTickets(req, res) {
   try {
     const user = req.user;
@@ -27,8 +51,23 @@ export async function getTickets(req, res) {
         conditions.push('LOWER(requester_email) = ?');
         params.push(user.email.toLowerCase().trim());
       } else if (user.role === 'upt' && user.upt_unit) {
-        conditions.push('(LOWER(assigned_upt) = ? OR LOWER(requester_email) = ?)');
-        params.push(user.upt_unit.toLowerCase().trim(), user.email.toLowerCase().trim());
+        const unit = user.upt_unit.toLowerCase().trim();
+        if (unit.includes('ti') || unit.includes('it') || unit.includes('jaringan') || unit.includes('sistem')) {
+          conditions.push('(LOWER(assigned_upt) LIKE ? OR LOWER(assigned_upt) LIKE ? OR LOWER(assigned_upt) LIKE ? OR LOWER(requester_email) = ?)');
+          params.push('%ti%', '%jaringan%', '%sistem%', user.email.toLowerCase().trim());
+        } else if (unit.includes('sarpras') || unit.includes('sarana') || unit.includes('cgs')) {
+          conditions.push('(LOWER(assigned_upt) LIKE ? OR LOWER(assigned_upt) LIKE ? OR LOWER(assigned_upt) LIKE ? OR LOWER(requester_email) = ?)');
+          params.push('%sarana%', '%sarpras%', '%cgs%', user.email.toLowerCase().trim());
+        } else if (unit.includes('sec') || unit.includes('keamanan') || unit.includes('security')) {
+          conditions.push('(LOWER(assigned_upt) LIKE ? OR LOWER(assigned_upt) LIKE ? OR LOWER(requester_email) = ?)');
+          params.push('%security%', '%keamanan%', user.email.toLowerCase().trim());
+        } else if (unit.includes('qc') || unit.includes('quality')) {
+          conditions.push('(LOWER(assigned_upt) LIKE ? OR LOWER(assigned_upt) LIKE ? OR LOWER(requester_email) = ?)');
+          params.push('%quality%', '%qc%', user.email.toLowerCase().trim());
+        } else {
+          conditions.push('(LOWER(assigned_upt) = ? OR LOWER(assigned_upt) LIKE ? OR LOWER(requester_email) = ?)');
+          params.push(unit, `%${unit}%`, user.email.toLowerCase().trim());
+        }
       }
     } else if (requester_email) {
       conditions.push('LOWER(requester_email) = ?');
@@ -347,7 +386,7 @@ export async function updateTicketStatus(req, res) {
 
     // UPT restriction: can only process their assigned tickets
     if (user && user.role === 'upt') {
-      if (user.upt_unit && curr.assigned_upt && curr.assigned_upt.toLowerCase() !== user.upt_unit.toLowerCase()) {
+      if (user.upt_unit && curr.assigned_upt && !isUptUnitMatch(user.upt_unit, curr.assigned_upt)) {
         return res.status(403).json({
           status: 'error',
           code: 403,

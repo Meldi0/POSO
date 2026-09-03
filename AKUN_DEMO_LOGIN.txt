@@ -28,9 +28,9 @@ Hak Akses   : Triase tiket, delegasi tiket ke unit UPT, chat langsung
 Email       : upt.ti@poso.local
 Password    : Poso123!
 Role        : UPT Unit
-Unit Kerja  : UPT TI & Jaringan
+Unit Kerja  : UPT TI & Sistem Informasi (TI & Jaringan)
 Hak Akses   : Menangani dan memperbarui status tiket yang ditugaskan 
-              ke unit TI & Jaringan, memberikan catatan penanganan.
+              ke unit TI & Sistem Informasi, memberikan catatan penanganan.
 
 --------------------------------------------------------------------------------
 4. STAF UPT SARANA & PRASARANA (CGS)
@@ -38,9 +38,9 @@ Hak Akses   : Menangani dan memperbarui status tiket yang ditugaskan
 Email       : upt.sarpras@poso.local
 Password    : Poso123!
 Role        : UPT Unit
-Unit Kerja  : UPT Sarana & Prasarana
+Unit Kerja  : UPT Sarana & Prasarana (CGS)
 Hak Akses   : Menangani dan memperbarui status tiket yang ditugaskan 
-              ke unit Sarana & Prasarana.
+              ke unit Sarana & Prasarana (CGS).
 
 ================================================================================
 * Catatan:
