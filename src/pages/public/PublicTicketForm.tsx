@@ -198,31 +198,99 @@ export const PublicTicketForm: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const processFiles = (fileList: FileList | null) => {
+  const compressImage = (file: File): Promise<{ dataUrl: string; size: string }> => {
+    return new Promise((resolve) => {
+      // If not an image (e.g. PDF/document), read directly
+      if (!file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          resolve({
+            dataUrl: (e.target?.result as string) || '',
+            size: formatFileSize(file.size)
+          });
+        };
+        reader.onerror = () => {
+          resolve({ dataUrl: '', size: '0 B' });
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      // If it is an image, compress & resize to max 1600px dimension and JPEG quality 0.82
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const rawDataUrl = (e.target?.result as string) || '';
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1600;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            const approxBytes = Math.round((compressed.length * 3) / 4);
+            resolve({
+              dataUrl: compressed,
+              size: formatFileSize(approxBytes)
+            });
+          } else {
+            resolve({
+              dataUrl: rawDataUrl,
+              size: formatFileSize(file.size)
+            });
+          }
+        };
+        img.onerror = () => {
+          resolve({
+            dataUrl: rawDataUrl,
+            size: formatFileSize(file.size)
+          });
+        };
+        img.src = rawDataUrl;
+      };
+      reader.onerror = () => {
+        resolve({ dataUrl: '', size: '0 B' });
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const processFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
 
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
-      if (file.size > 10 * 1024 * 1024) {
-        error(`Berkas "${file.name}" melebihi batas 10MB.`);
+      if (file.size > 20 * 1024 * 1024) {
+        error(`Berkas "${file.name}" melebihi batas 20MB.`);
         continue;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        setAttachments(prev => [
-          ...prev,
-          {
-            id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-            name: file.name,
-            size: formatFileSize(file.size),
-            type: file.type,
-            dataUrl: dataUrl
-          }
-        ]);
-      };
-      reader.readAsDataURL(file);
+      const { dataUrl, size } = await compressImage(file);
+      if (!dataUrl) continue;
+
+      setAttachments(prev => [
+        ...prev,
+        {
+          id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          name: file.name,
+          size: size,
+          type: file.type.startsWith('image/') ? 'image/jpeg' : file.type,
+          dataUrl: dataUrl
+        }
+      ]);
     }
   };
 

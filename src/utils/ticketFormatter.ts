@@ -204,13 +204,28 @@ function parseAttachmentLine(lineContent: string, attachments: ParsedAttachment[
   }
 }
 
-export function parseTicketDetails(rawDescription: string, categoryFallback?: string): ParsedTicketDetails {
+export function parseTicketDetails(rawDescription: string, categoryFallback?: string, directAttachments?: any[]): ParsedTicketDetails {
   if (!rawDescription) {
+    const direct: ParsedAttachment[] = [];
+    if (Array.isArray(directAttachments)) {
+      directAttachments.forEach(item => {
+        const isImg = isImageAttachment(item);
+        direct.push({
+          name: item.name || 'Lampiran Berkas',
+          size: item.size || '',
+          type: item.type || (isImg ? 'image/jpeg' : ''),
+          url: item.url || '',
+          dataUrl: item.dataUrl || item.data_url || '',
+          previewUrl: getDirectImagePreviewUrl(item),
+          isImage: isImg
+        });
+      });
+    }
     return {
       cleanDescription: '',
       location: 'Gedung Graha Pos Indonesia',
       departmentAndTopic: categoryFallback || 'Operasional Pos',
-      attachments: []
+      attachments: direct
     };
   }
 
@@ -234,6 +249,25 @@ export function parseTicketDetails(rawDescription: string, categoryFallback?: st
 
   // 3. Extract all attachments & clean remaining text
   const { cleanText, attachments } = extractAttachmentsAndCleanText(text);
+
+  // 4. Merge directAttachments if provided and not already present
+  if (Array.isArray(directAttachments) && directAttachments.length > 0) {
+    directAttachments.forEach(item => {
+      const isImg = isImageAttachment(item);
+      const url = item.url || item.dataUrl || item.data_url || '';
+      if (!attachments.some(a => (a.url && a.url === url) || (a.dataUrl && a.dataUrl === url) || (a.name === item.name && a.size === item.size))) {
+        attachments.push({
+          name: item.name || 'Lampiran Berkas',
+          size: item.size || '',
+          type: item.type || (isImg ? 'image/jpeg' : ''),
+          url: item.url || '',
+          dataUrl: item.dataUrl || item.data_url || '',
+          previewUrl: getDirectImagePreviewUrl(item),
+          isImage: isImg
+        });
+      }
+    });
+  }
 
   return {
     cleanDescription: cleanText || rawDescription,

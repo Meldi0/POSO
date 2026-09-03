@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS tickets (
   department VARCHAR(150) DEFAULT NULL,
   topic VARCHAR(150) DEFAULT NULL,
   location VARCHAR(150) DEFAULT NULL,
-  description TEXT NOT NULL,
+  description LONGTEXT NOT NULL,
   priority ENUM('Low', 'Medium', 'High', 'Urgent') NOT NULL DEFAULT 'Medium',
   status ENUM('open', 'in_progress', 'waiting', 'closed') NOT NULL DEFAULT 'open',
   channel ENUM('web', 'email') NOT NULL DEFAULT 'web',
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS threads (
   sender_id VARCHAR(50) NOT NULL,
   sender_name VARCHAR(150) NOT NULL,
   sender_role VARCHAR(50) NOT NULL DEFAULT 'pengguna_umum',
-  message TEXT NOT NULL,
+  message LONGTEXT NOT NULL,
   visibility ENUM('public', 'internal') NOT NULL DEFAULT 'public',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (thread_id),
@@ -238,8 +238,10 @@ export async function runMigration() {
         await connection.query("ALTER TABLE tickets ADD COLUMN is_archived TINYINT(1) NOT NULL DEFAULT 0 AFTER closed_at");
         console.log('   ✓ Kolom is_archived berhasil ditambahkan ke tabel tickets.');
       }
+      await connection.query("ALTER TABLE threads MODIFY message LONGTEXT");
+      await connection.query("ALTER TABLE tickets MODIFY description LONGTEXT");
     } catch (e) {
-      console.warn('   Notice checking is_archived:', e.message);
+      console.warn('   Notice checking table columns:', e.message);
     }
 
     console.log('   ✓ Tabel users, tickets, threads, audit_logs, system_config terverifikasi.');

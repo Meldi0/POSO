@@ -356,7 +356,7 @@ export async function createTicket(req, res) {
     return res.status(500).json({
       status: 'error',
       code: 500,
-      message: 'Gagal membuat tiket baru.'
+      message: err.sqlMessage || err.message || 'Gagal membuat tiket baru.'
     });
   } finally {
     connection.release();
