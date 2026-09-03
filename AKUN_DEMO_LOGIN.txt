@@ -11,7 +11,7 @@ Email       : admin@poso.local
 Password    : Admin123!
 Role        : Administrator
 Hak Akses   : Akses penuh ke seluruh menu, manajemen pengguna & role, 
-              integrasi data/Google Sheets, dan pengaturan sistem.
+              integrasi basis data cloud Aiven MySQL, dan pengaturan sistem.
 
 --------------------------------------------------------------------------------
 2. OPERATOR HELPDESK

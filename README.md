@@ -1,8 +1,8 @@
-# POSO — Sistem Helpdesk & Manajemen Tiket Terpadu (v2.1)
+# POSO — Sistem Helpdesk & Manajemen Tiket Terpadu (v2.5)
 
-Aplikasi Helpdesk dan Manajemen Tiket Terpadu Modern berbasis **React 18 + TypeScript + Vite** dengan desain visual **Ocean Cyan & Glassmorphism**, didukung backend serverless **Google Apps Script REST API**, penyimpanan berkas **Google Drive**, basis data **Google Sheets**, serta sistem komunikasi & notifikasi real-time instan (**WebSocket + Universal LocalStorage Event + BroadcastChannel + Web Audio API**).
+Aplikasi Helpdesk dan Manajemen Tiket Terpadu Modern berbasis **React 18 + TypeScript + Vite** dengan desain visual **Ocean Cyan & Glassmorphism**, didukung backend **Node.js / Express REST API** dan basis data relasional cloud **Aiven for MySQL** (SSL Mode: REQUIRED), serta sistem komunikasi & notifikasi real-time instan (**WebSocket + Universal LocalStorage Event + BroadcastChannel + Web Audio API**).
 
-Aplikasi ini dirancang **100% responsif** (ponsel, tablet, desktop) dengan fitur unggulan: **Galeri Foto & Pratinjau Lampiran Google Drive Terpadu**, **Sistem Notifikasi Real-time Pelanggan & Staf**, *Live Ticket Preview*, *Interactive Kanban Board*, dan *Multi-Tab Isolated Session Architecture*.
+Aplikasi ini dirancang **100% responsif** (ponsel, tablet, desktop) dengan fitur unggulan: **Single Source of Truth Aiven MySQL**, **Sistem Notifikasi Real-time Pelanggan & Staf**, *Live Ticket Preview*, *Interactive Kanban Board*, dan *Multi-Tab Isolated Session Architecture*.
 
 ---
 
@@ -10,15 +10,17 @@ Aplikasi ini dirancang **100% responsif** (ponsel, tablet, desktop) dengan fitur
 
 ```
 POSO/
-├── backend/
-│   ├── Code.gs             # Backend Apps Script: REST API, LockService, Google Drive File Storage & Threading
-│   ├── appsscript.json     # Manifest Apps Script (OAuth Scopes & Service Declarations)
-│   └── PANDUAN_SETUP_BACKEND.md # Panduan setup & deployment Google Apps Script
-├── src/
+├── server/                 # Official Backend Node.js / Express API
+│   ├── config/db.js        # Aiven MySQL Connection Pool (SSL REQUIRED)
+│   ├── controllers/        # Auth, Ticket, User, Analytics Controllers
+│   ├── middleware/         # JWT Authentication & RBAC Middleware
+│   ├── database/migrate.js # Skrip otomatisasi schema & seed Aiven MySQL
+│   └── server.js           # Express API Server Entry Point (Port 5000)
+├── src/                    # Frontend React 18 + TypeScript + Tailwind CSS
 │   ├── components/
 │   │   ├── admin/
-│   │   │   ├── DataSourceConfig.tsx    # Pemantauan status Google Drive & Spreadsheet
-│   │   │   └── UserManagement.tsx      # Manajemen akun staf operator & penugasan UPT
+│   │   │   ├── DataSourceConfig.tsx    # Pemantauan status cluster Aiven MySQL
+│   │   │   └── UserManagement.tsx      # Manajemen pengguna & role RBAC
 │   │   ├── auth/
 │   │   │   └── AuthGuard.tsx           # Pelindung rute login & otorisasi RBAC
 │   │   ├── common/
@@ -80,22 +82,39 @@ POSO/
 npm install
 ```
 
-### Langkah 2: Konfigurasi Backend (Opsional)
-Jika ingin menghubungkan ke backend Google Apps Script Anda:
+### Langkah 2: Konfigurasi Database Aiven MySQL
+Salin template konfigurasi:
 ```bash
 cp .env.example .env
 ```
-Isi file `.env` dengan URL Web App hasil deploy:
+Isi file `.env` dengan kredensial database cloud Aiven for MySQL Anda:
 ```env
-VITE_GAS_API_URL=https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec
+DB_HOST=mysql-1810b125-nugrahaeldi123-5f2b.f.aivencloud.com
+DB_PORT=21970
+DB_USER=avnadmin
+DB_PASSWORD=YOUR_AIVEN_PASSWORD
+DB_NAME=defaultdb
+DB_SSL=true
+PORT=5000
+JWT_SECRET=poso_secret_jwt_key_2026_super_secure
 ```
-*(Jika `.env` tidak diisi, aplikasi akan otomatis menggunakan **Mock Storage Browser** yang lengkap dengan data bawaan)*.
 
-### Langkah 3: Menjalankan Development Server
+### Langkah 3: Migrasi & Inisialisasi Database
+Jalankan pengujian koneksi dan migrasi otomatis:
+```bash
+# Uji koneksi ke Aiven MySQL
+npm run test:db
+
+# Jalankan migrasi tabel & seed data awal
+npm run migrate
+```
+
+### Langkah 4: Menjalankan Aplikasi (Backend + Frontend)
+Jalankan backend API dan frontend Vite secara bersamaan:
 ```bash
 npm run dev
 ```
-Buka peramban Anda di alamat: **`http://localhost:5173`**
+Buka peramban Anda di alamat: **`http://localhost:3000`** (Frontend) dan **`http://localhost:5000/api`** (Backend API).
 
 ### Langkah 4: Membangun untuk Produksi
 ```bash

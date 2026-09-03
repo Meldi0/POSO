@@ -131,7 +131,7 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
     prevThreadCountRef.current += 1;
     setReplyText('');
     soundService.playSentMessageSound();
-    setNoticeMsg({ type: 'success', text: 'Balasan resmi berhasil dikirim dan tersimpan di database Google Sheets!' });
+    setNoticeMsg({ type: 'success', text: 'Balasan resmi berhasil dikirim dan tersimpan di database Aiven MySQL!' });
 
     try {
       await apiService.addThreadMessage({
@@ -170,7 +170,7 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
     // 1. Optimistic instant update
     setThreads(prev => [...prev, tempThread]);
     setInternalNoteText('');
-    setNoticeMsg({ type: 'success', text: 'Catatan internal privat berhasil disimpan ke Google Sheets (Khusus Staf & UPT).' });
+    setNoticeMsg({ type: 'success', text: 'Catatan internal privat berhasil disimpan ke database Aiven MySQL (Khusus Staf & UPT).' });
     setIsSubmitting(true);
 
     try {
@@ -204,7 +204,7 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
 
     setNoticeMsg({ 
       type: 'success', 
-      text: `Status berhasil diubah ke [${selectedStatus.toUpperCase()}], Prioritas [${selectedPriority}], dan tersimpan ke Google Sheets!` 
+      text: `Status berhasil diubah ke [${selectedStatus.toUpperCase()}], Prioritas [${selectedPriority}], dan tersimpan ke database Aiven MySQL!` 
     });
     setIsSubmitting(true);
 

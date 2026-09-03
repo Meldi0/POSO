@@ -121,7 +121,7 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
           onClick={onRefresh}
           disabled={isSyncing}
           className="flex items-center gap-1.5 h-9.5 px-3 rounded-[10px] border border-[#E2E8F0] text-[12px] font-semibold text-[#64748B] bg-white hover:bg-[#F1F5F9] transition-colors cursor-pointer disabled:opacity-50"
-          title="Sinkronkan database Google Sheets"
+          title="Sinkronkan database Aiven MySQL"
         >
           <RefreshCw size={14} className={isSyncing ? 'animate-spin text-[#0D5C75]' : ''} />
           <span className="hidden md:inline">Sinkronkan</span>

@@ -946,7 +946,7 @@ export const UserManagement: React.FC = () => {
                             </button>
                           </div>
                         ) : (
-                          <div className="inline-flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md border border-slate-200 text-[10px] text-slate-500 font-medium" title="Kata sandi tersimpan aman dalam format hash terenkripsi SHA-256 di database Google Sheets">
+                          <div className="inline-flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md border border-slate-200 text-[10px] text-slate-500 font-medium" title="Kata sandi tersimpan aman dalam format hash terenkripsi bcrypt / SHA-256 di database Aiven MySQL">
                             <Lock className="w-3 h-3 text-slate-400" />
                             <span>Terenkripsi</span>
                           </div>

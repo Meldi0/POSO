@@ -12,7 +12,6 @@ import {
   Headphones, 
   Search,
   Compass,
-  FileSpreadsheet,
   X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';

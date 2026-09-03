@@ -52,9 +52,9 @@ Aplikasi POSO dapat beroperasi dalam dua mode:
 - Seluruh data tersimpan secara mandiri di penyimpanan peramban (*sessionStorage & localStorage*).
 - Sangat praktis untuk demo, simulasi alur kerja, dan pengujian fitur.
 
-### B. Mode Produksi Terhubung (Google Apps Script Live)
-- Frontend terhubung langsung dengan endpoint Web App Google Apps Script (`.env` -> `VITE_GAS_API_URL`).
-- Berkas foto/dokumen otomatis terunggah ke folder Google Drive resmi, dan rekaman data tercatat rapi di Google Sheets Master Database.
+### B. Mode Produksi Terhubung (Aiven for MySQL Live)
+- Frontend terhubung langsung dengan backend Node.js / Express API dan cluster cloud database **Aiven for MySQL** (SSL Mode: REQUIRED).
+- Seluruh data tiket, percakapan, pengguna, hak akses RBAC, serta audit log tercatat secara real-time di tabel relasional database `defaultdb`.
 
 ---
 

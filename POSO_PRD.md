@@ -9,7 +9,7 @@
 
 ## 1. Ringkasan Produk
 
-**POSO Helpdesk** adalah sistem helpdesk dan manajemen tiket terpadu modern multi-channel berbasis **React 18 + TypeScript + Vite** dengan antarmuka **Ocean Cyan Glassmorphism**, didukung backend serverless **Google Apps Script REST API**, penyimpanan berkas **Google Drive**, basis data **Google Sheets**, serta subsistem komunikasi & notifikasi real-time instan (**WebSocket + Universal LocalStorage Event + BroadcastChannel + Web Audio API**).
+**POSO Helpdesk** adalah sistem helpdesk dan manajemen tiket terpadu modern multi-channel berbasis **React 18 + TypeScript + Vite** dengan antarmuka **Ocean Cyan Glassmorphism**, didukung backend **Node.js / Express REST API**, basis data relasional cloud **Aiven for MySQL** (SSL Mode: REQUIRED), serta subsistem komunikasi & notifikasi real-time instan (**WebSocket + Universal LocalStorage Event + BroadcastChannel + Web Audio API**).
 
 Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk, Teknisi UPT, dan Super Administrator*), mendukung pengunggahan foto bukti kerusakan dengan pratinjau thumbnail dan Lightbox modal langsung, pemisahan percakapan publik dan catatan internal, *Live Ticket Preview*, *Interactive Kanban Board*, sistem notifikasi multi-lapisan untuk staf dan pelanggan, serta desain **100% responsif di perangkat mobile, tablet, dan desktop**.
 
@@ -25,9 +25,9 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk,
 | **Iconography** | Lucide React Icons | 100% Ikon vektor profesional |
 | **Audio Synthesizer** | Web Audio API (Native 0ms Latency) | Penghasil nada ganda harmonik C6/G6 tanpa dependensi file audio eksternal |
 | **Notifikasi Browser** | Web Push Notification API | Peringatan desktop/smartphone saat tab peramban sedang tidak aktif |
-| **Penyimpanan Berkas** | Google Drive API (`DriveApp`) + Google CDN | File lampiran disimpan di Google Drive resmi; thumbnail via `lh3.googleusercontent.com/d/{id}` |
-| **Backend REST API** | Google Apps Script (`doGet` & `doPost`) | Penanganan request RESTful, JSON Payload, Selective LockService, Sanitizer |
-| **Basis Data Master** | Google Sheets (`POSO Master Database`) | Penyimpanan terstruktur: `Tickets`, `Users`, `Ticket_Threads`, `Audit_Log` |
+| **Backend REST API** | Node.js + Express API (`server/`) | RESTful API, JWT Auth, Connection Pooling, Transaction Control, RBAC Guard |
+| **Basis Data Master** | Aiven for MySQL (`defaultdb`) | RDBMS Cloud: `users`, `tickets`, `threads`, `audit_logs`, `system_config` |
+| **Keamanan Jaringan** | TLS 1.3 / SSL Mode: REQUIRED | Enkripsi end-to-end koneksi database cloud |
 | **Real-time Sync Engine** | WebSocket + BroadcastChannel + Storage Events | Sinkronisasi pesan dan status lintas tab dan lintas perangkat (<50ms) |
 
 ---
@@ -128,16 +128,19 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk,
 
 ---
 
-## 6. Skema Basis Data Google Sheets
+## 6. Skema Basis Data Relasional Aiven MySQL (`defaultdb`)
 
-### 6.1 Sheet `Tickets`
-`ticket_id` | `created_at` | `updated_at` | `subject` | `category` | `description` | `status` | `priority` | `channel` | `requester_name` | `requester_email` | `assigned_upt` | `assigned_operator` | `sla_due_at`
+### 6.1 Tabel `users`
+`user_id` (PK) | `name` | `email` (UK) | `password_hash` | `role` (ENUM) | `upt_unit` | `is_active` | `nip` | `department` | `role_title` | `avatar_url` | `jabatan_fungsional` | `kantor_penempatan` | `phone_number` | `created_at` | `updated_at`
 
-### 6.2 Sheet `Ticket_Threads`
-`thread_id` | `ticket_id` | `sender_id` | `sender_role` | `message` | `visibility` | `created_at`
+### 6.2 Tabel `tickets`
+`ticket_id` (PK) | `subject` | `category` | `department` | `topic` | `location` | `description` | `priority` (ENUM) | `status` (ENUM) | `channel` | `requester_name` | `requester_email` | `requester_phone` | `assigned_upt` | `assigned_operator` | `sla_due_at` | `closed_at` | `attachments` (JSON) | `created_at` | `updated_at`
 
-### 6.3 Sheet `Users`
-`user_id` | `name` | `email` | `password_hash` | `salt` | `role` | `assigned_upt` | `created_at`
+### 6.3 Tabel `threads`
+`thread_id` (PK) | `ticket_id` (FK) | `sender_id` | `sender_name` | `sender_role` | `message` | `visibility` (ENUM: public, internal) | `created_at`
 
-### 6.4 Sheet `Audit_Log`
-`log_id` | `timestamp` | `user_id` | `action` | `target_id` | `details`
+### 6.4 Tabel `audit_logs`
+`log_id` (PK) | `ticket_id` | `actor_id` | `actor_name` | `actor_role` | `action` | `details` | `created_at`
+
+### 6.5 Tabel `system_config`
+`config_key` (PK) | `config_value` (JSON) | `description` | `updated_at`

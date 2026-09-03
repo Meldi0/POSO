@@ -17,7 +17,7 @@ Penanganan keluhan dan permohonan layanan teknis pada instansi sering kali terse
 - Hambatan dalam evaluasi target kecepatan layanan (*Service Level Agreement / SLA*).
 - Pemborosan biaya lisensi perangkat lunak helpdesk proprietary pihak ketiga.
 
-**POSO** dikembangkan sebagai sistem helpdesk dan manajemen tiket terpusat terintegrasi (*osTicket-inspired*) dengan biaya operasional minimal menggunakan ekosistem **Google Workspace (Google Apps Script, Google Drive, & Google Sheets)** sebagai backend basis data terstruktur, dipadukan dengan antarmuka web modern yang **100% responsif di perangkat mobile, tablet, dan desktop**, dilengkapi **galeri pratinjau foto/lampiran langsung** dan **sistem notifikasi interaktif dua arah (audio, desktop push, toast, dan floating widget)**.
+**POSO** dikembangkan sebagai sistem helpdesk dan manajemen tiket terpusat terintegrasi (*osTicket-inspired*) dengan arsitektur cloud performa tinggi menggunakan basis data relasional **Aiven for MySQL** (SSL Mode: REQUIRED) dan backend **Node.js / Express REST API**, dipadukan dengan antarmuka web modern yang **100% responsif di perangkat mobile, tablet, dan desktop**, dilengkapi **galeri pratinjau foto/lampiran langsung** dan **sistem notifikasi interaktif dua arah (audio, desktop push, toast, dan floating widget)**.
 
 ---
 
@@ -25,9 +25,9 @@ Penanganan keluhan dan permohonan layanan teknis pada instansi sering kali terse
 
 1. **Satu Pintu Layanan (*Single Point of Entry*)**: Menyediakan portal publik terpadu yang dapat diakses dengan mudah dari peramban ponsel, tablet, maupun desktop.
 2. **Triase & Distribusi Cepat Multi-UPT**: Memungkinkan operator helpdesk mendistribusikan laporan ke Unit Pelaksana Teknis terkait (*UPT TI & Jaringan, UPT Sarana & Prasarana, UPT Sistem Informasi, dll.*) secara instan.
-3. **Penyimpanan Berkas Foto & Pratinjau Terpadu**: Mengunggah berkas lampiran foto secara langsung ke Google Drive instansi, mengekstrak tautan secara otomatis, dan menyajikan pratinjau gambar (*thumbnail & lightbox*) langsung di layar tanpa teks mentah yang berantakan.
+3. **Penyimpanan Berkas Foto & Pratinjau Terpadu**: Menyimpan berkas bukti lampiran, mengekstrak tautan secara otomatis, dan menyajikan pratinjau gambar (*thumbnail & lightbox*) langsung di layar.
 4. **Sistem Notifikasi Real-time Pelanggan & Staf**: Menghadirkan notifikasi instan (<50ms) dengan suara denting Web Audio API, notifikasi desktop browser, lonceng notifikasi, dan floating chat badge saat ada balasan atau pembaruan status pengerjaan tiket.
-5. **Efisiensi Anggaran Infrastruktur & Isolasi Akun**: Memanfaatkan Google Apps Script REST API tanpa biaya server bulanan, serta mendukung isolasi folder penyimpanan Google Drive resmi agar tidak bercampur dengan akun pribadi.
+5. **Basis Data Cloud Andal & Aman**: Menggunakan Aiven for MySQL dengan enkripsi SSL REQUIRED, connection pooling otomatis, dan integritas referensial relasional penuh.
 6. **Aksesibilitas & Responsivitas Mobile**: Memastikan staf teknisi di lapangan dan pelapor dapat membuat, memeriksa, dan memperbarui status tiket secara instan dari smartphone.
 
 ---
@@ -41,8 +41,8 @@ Penanganan keluhan dan permohonan layanan teknis pada instansi sering kali terse
 | **Pratinjau Bukti Foto** | Foto bukti kerusakan dari pelapor langsung muncul sebagai thumbnail gambar dan dapat diperbesar dengan Lightbox modal 1-klik di semua tampilan admin maupun pelapor. |
 | **Aksesibilitas Mobile** | Staf teknisi UPT dapat memperbarui status tiket langsung saat berada di lokasi perbaikan melalui tampilan mobile drawer dan aksi 1-klik. |
 | **Kolaborasi Staf** | Operator dan staf teknis UPT dapat menambahkan *Catatan Internal (Internal Notes)* yang hanya terlihat oleh staf, terpisah dari balasan publik ke pelapor. |
-| **Penyimpanan Aset Terpusat** | Foto bukti kerusakan disimpan rapi di folder Google Drive instansi resmi dan dapat dikonfigurasi target foldernya secara dinamis. |
-| **Penghematan Biaya** | Biaya infrastruktur 100% serverless memanfaatkan Google Workspace yang sudah ada tanpa biaya lisensi bulanan. |
+| **Penyimpanan Aset Terpusat** | Berkas bukti kerusakan tersimpan rapi dengan manajemen relasional yang terintegrasi. |
+| **Keandalan Infrastruktur** | Didukung Aiven for MySQL berstandar industri dengan koneksi aman terenkripsi TLS 1.3/SSL. |
 | **Kemudahan Manajemen** | Super Administrator dapat mengelola akun staf, menetapkan unit penugasan UPT, dan memantau status sumber data Google Drive dari UI. |
 
 ---
