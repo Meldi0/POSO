@@ -126,10 +126,11 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticket || !replyMessage.trim()) return;
+    if (!ticket || !replyMessage.trim() || isSendingReply) return;
 
     const outgoing = replyMessage.trim();
     const isNote = isInternalNote;
+    setIsSendingReply(true);
     setReplyMessage('');
 
     // Instant Optimistic Update (0ms delay)
@@ -148,7 +149,6 @@ export const SageTicketTrackerView: React.FC<SageTicketTrackerViewProps> = ({ re
     prevThreadCountRef.current += 1;
     soundService.playSentMessageSound();
 
-    setIsSendingReply(true);
     try {
       const res = await apiService.addThreadMessage({
         ticket_id: ticket.ticket_id,

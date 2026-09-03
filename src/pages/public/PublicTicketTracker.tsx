@@ -247,9 +247,10 @@ export const PublicTicketTracker: React.FC = () => {
 
   const handleSendCustomerReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticket || !replyMessage.trim()) return;
+    if (!ticket || !replyMessage.trim() || isSendingReply) return;
 
     const outgoingMsg = replyMessage.trim();
+    setIsSendingReply(true);
     setReplyMessage('');
 
     const currentPelaporName = user?.name || ticket.requester_name || 'Pelapor';
@@ -274,7 +275,6 @@ export const PublicTicketTracker: React.FC = () => {
     // Broadcast instantly to all other tabs and devices via WebSocket
     realtimeService.broadcastChatMessage(tempThread);
 
-    setIsSendingReply(true);
     try {
       const res = await apiService.addThreadMessage({
         ticket_id: ticket.ticket_id,

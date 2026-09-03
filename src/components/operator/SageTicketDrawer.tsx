@@ -164,10 +164,11 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticket || !replyText.trim()) return;
+    if (!ticket || !replyText.trim() || isSending) return;
 
     const outgoingMessage = replyText.trim();
     const isNote = isInternal;
+    setIsSending(true);
     setReplyText('');
 
     // Instant Optimistic UI update
@@ -189,7 +190,6 @@ export const SageTicketDrawer: React.FC<SageTicketDrawerProps> = ({
     // Broadcast instantly to all other tabs and devices via WebSocket
     realtimeService.broadcastChatMessage(tempThread);
 
-    setIsSending(true);
     try {
       const res = await apiService.addThreadMessage({
         ticket_id: ticket.ticket_id,

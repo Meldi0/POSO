@@ -95,7 +95,7 @@ export const OperatorTicketModal: React.FC<OperatorTicketModalProps> = ({
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || isSendingReply) return;
 
     setIsSendingReply(true);
     try {

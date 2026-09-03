@@ -105,7 +105,7 @@ export const PolytroxInspector: React.FC<PolytroxInspectorProps> = ({
 
   const handlePostReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticket || !replyText.trim()) return;
+    if (!ticket || !replyText.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
     const content = replyText.trim();
@@ -127,7 +127,7 @@ export const PolytroxInspector: React.FC<PolytroxInspectorProps> = ({
 
   const handlePostInternalNote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticket || !internalNoteText.trim()) return;
+    if (!ticket || !internalNoteText.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
     const content = internalNoteText.trim();

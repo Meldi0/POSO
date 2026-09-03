@@ -111,8 +111,9 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
   // OPTIMISTIC POST REPLY (Instant UI update)
   const handlePostReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticket || !replyText.trim()) return;
+    if (!ticket || !replyText.trim() || isSubmitting) return;
 
+    setIsSubmitting(true);
     const messageContent = replyText.trim();
     const tempThread: ThreadMessage = {
       thread_id: `TH-TEMP-${Date.now()}`,
@@ -131,7 +132,6 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
     setReplyText('');
     soundService.playSentMessageSound();
     setNoticeMsg({ type: 'success', text: 'Balasan resmi berhasil dikirim dan tersimpan di database Google Sheets!' });
-    setIsSubmitting(true);
 
     try {
       await apiService.addThreadMessage({
@@ -152,8 +152,9 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
   // OPTIMISTIC POST INTERNAL NOTE (Instant UI update)
   const handlePostInternalNote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticket || !internalNoteText.trim()) return;
+    if (!ticket || !internalNoteText.trim() || isSubmitting) return;
 
+    setIsSubmitting(true);
     const messageContent = internalNoteText.trim();
     const tempThread: ThreadMessage = {
       thread_id: `TH-TEMP-${Date.now()}`,

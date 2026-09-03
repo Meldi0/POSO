@@ -1097,8 +1097,44 @@ function apiAddThreadMessage(body, token) {
   }
 
   const threadSheet = getSheet(SHEET_NAMES.THREADS);
-  const threadId = 'TH-' + Utilities.getUuid().substring(0, 8);
   const nowIso = new Date().toISOString();
+
+  // DEDUPLIKASI & IDEMPOTENSI: Cegah pesan ganda jika dikirim berulang dalam rentang 15 detik
+  const lastThreadRow = threadSheet.getLastRow();
+  if (lastThreadRow > 1) {
+    const checkCount = Math.min(10, lastThreadRow - 1);
+    const recentRows = threadSheet.getRange(lastThreadRow - checkCount + 1, 1, checkCount, 7).getValues();
+    const nowMs = Date.now();
+    for (let r = recentRows.length - 1; r >= 0; r--) {
+      const rowTicketId = String(recentRows[r][1]);
+      const rowSenderId = String(recentRows[r][2]);
+      const rowMessage = String(recentRows[r][4]).trim();
+      const rowTimestamp = new Date(recentRows[r][6]).getTime();
+
+      if (rowTicketId === ticketId && rowMessage === message && rowSenderId === senderId) {
+        if (nowMs - rowTimestamp < 15000) {
+          // Duplikat terdeteksi dalam 15 detik terakhir, kembalikan data yang sudah ada tanpa menulis ulang
+          return {
+            status: 'success',
+            code: 200,
+            message: 'Pesan telah tercatat sebelumnya (Deduplikasi aktif).',
+            data: {
+              thread_id: String(recentRows[r][0]),
+              ticket_id: ticketId,
+              sender_id: senderId,
+              sender_name: senderName,
+              sender_role: senderRole,
+              message: message,
+              visibility: visibility,
+              created_at: String(recentRows[r][6])
+            }
+          };
+        }
+      }
+    }
+  }
+
+  const threadId = 'TH-' + Utilities.getUuid().substring(0, 8);
 
   // Append-only
   threadSheet.appendRow([
@@ -1111,17 +1147,21 @@ function apiAddThreadMessage(body, token) {
     nowIso
   ]);
 
-  // Update timestamp tiket di sheet Tickets
-  const ticketSheet = getSheet(SHEET_NAMES.TICKETS);
-  const lastRow = ticketSheet.getLastRow();
-  if (lastRow > 1) {
-    const data = ticketSheet.getRange(2, 1, lastRow - 1, 1).getValues();
-    for (let i = 0; i < data.length; i++) {
-      if (String(data[i][0]) === String(ticketId)) {
-        ticketSheet.getRange(i + 2, 3).setValue(nowIso); // updated_at
-        break;
+  // Update timestamp tiket di sheet Tickets (Background safe)
+  try {
+    const ticketSheet = getSheet(SHEET_NAMES.TICKETS);
+    const lastRow = ticketSheet.getLastRow();
+    if (lastRow > 1) {
+      const ticketIds = ticketSheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (let i = 0; i < ticketIds.length; i++) {
+        if (String(ticketIds[i][0]) === String(ticketId)) {
+          ticketSheet.getRange(i + 2, 3).setValue(nowIso); // updated_at
+          break;
+        }
       }
     }
+  } catch (errTick) {
+    Logger.log('Update ticket timestamp warning: ' + errTick.message);
   }
 
   return {
@@ -1131,9 +1171,9 @@ function apiAddThreadMessage(body, token) {
     data: {
       thread_id: threadId,
       ticket_id: ticketId,
-      sender_id: user.user_id,
-      sender_name: user.name,
-      sender_role: user.role,
+      sender_id: senderId,
+      sender_name: senderName,
+      sender_role: senderRole,
       message: message,
       visibility: visibility,
       created_at: nowIso

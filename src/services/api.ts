@@ -879,6 +879,8 @@ class PosoApiService {
     };
   }
 
+  private inFlightThreads = new Map<string, Promise<ApiResponse<ThreadMessage>>>();
+
   async addThreadMessage(payload: {
     ticket_id: string;
     message: string;
@@ -888,67 +890,86 @@ class PosoApiService {
     sender_role?: string;
     sender_email?: string;
   }): Promise<ApiResponse<ThreadMessage>> {
-    const currentUser = this.getStoredUser();
-    const senderRole = payload.sender_role || currentUser?.role || 'pengguna_umum';
-    const senderName = payload.sender_name || currentUser?.name || (senderRole === 'pengguna_umum' ? 'Pelapor' : 'Operator Helpdesk');
-    const senderId = payload.sender_id || currentUser?.user_id || (senderRole === 'pengguna_umum' ? 'USR-PUBLIC' : 'USR-OP');
-    const senderEmail = payload.sender_email || currentUser?.email || '';
+    const cleanMsg = (payload.message || '').trim();
+    const dedupeKey = `${payload.ticket_id}_${payload.visibility}_${cleanMsg}`;
 
-    const newThread: ThreadMessage = {
-      thread_id: `TH-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
-      ticket_id: payload.ticket_id,
-      sender_id: senderId,
-      sender_name: senderName,
-      sender_role: senderRole as any,
-      message: payload.message,
-      visibility: payload.visibility,
-      created_at: new Date().toISOString()
-    };
-
-    // Store sender metadata in local registry so it persists across server responses
-    const storedSenders = getStored<Record<string, { sender_name: string; sender_role: string; sender_id: string }>>('poso_thread_senders', {});
-    storedSenders[newThread.thread_id] = {
-      sender_name: senderName,
-      sender_role: senderRole,
-      sender_id: senderId
-    };
-    storedSenders[`${payload.ticket_id}_${(payload.message || '').trim()}`] = {
-      sender_name: senderName,
-      sender_role: senderRole,
-      sender_id: senderId
-    };
-    setStored('poso_thread_senders', storedSenders);
-
-    // Instant local save
-    const threads = getStored<ThreadMessage[]>(STORAGE_KEYS.LOCAL_THREADS, SEED_THREADS);
-    threads.push(newThread);
-    setStored(STORAGE_KEYS.LOCAL_THREADS, threads);
-
-    // Sync to Google Apps Script
-    if (this.isGasConfigured()) {
-      try {
-        const res = await this.callGas<ThreadMessage>('addThreadMessage', 'POST', {
-          ...payload,
-          sender_id: senderId,
-          sender_name: senderName,
-          sender_role: senderRole,
-          user_email: senderEmail,
-          user_role: senderRole
-        });
-        if (res && res.status === 'success' && res.data) {
-          return res;
-        }
-      } catch (err: any) {
-        console.warn('GAS addThreadMessage sync failed:', err.message);
-      }
+    // MUTEX & DEDUPLIKASI: Jika request yang sama sedang diproses dalam 4 detik, kembalikan promise yang sama
+    if (this.inFlightThreads.has(dedupeKey)) {
+      return this.inFlightThreads.get(dedupeKey)!;
     }
 
-    return {
-      status: 'success',
-      code: 201,
-      message: 'Pesan terkirim.',
-      data: newThread
-    };
+    const execPromise = (async () => {
+      const currentUser = this.getStoredUser();
+      const senderRole = payload.sender_role || currentUser?.role || 'pengguna_umum';
+      const senderName = payload.sender_name || currentUser?.name || (senderRole === 'pengguna_umum' ? 'Pelapor' : 'Operator Helpdesk');
+      const senderId = payload.sender_id || currentUser?.user_id || (senderRole === 'pengguna_umum' ? 'USR-PUBLIC' : 'USR-OP');
+      const senderEmail = payload.sender_email || currentUser?.email || '';
+
+      const newThread: ThreadMessage = {
+        thread_id: `TH-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+        ticket_id: payload.ticket_id,
+        sender_id: senderId,
+        sender_name: senderName,
+        sender_role: senderRole as any,
+        message: cleanMsg,
+        visibility: payload.visibility,
+        created_at: new Date().toISOString()
+      };
+
+      // Store sender metadata in local registry so it persists across server responses
+      const storedSenders = getStored<Record<string, { sender_name: string; sender_role: string; sender_id: string }>>('poso_thread_senders', {});
+      storedSenders[newThread.thread_id] = {
+        sender_name: senderName,
+        sender_role: senderRole,
+        sender_id: senderId
+      };
+      storedSenders[`${payload.ticket_id}_${cleanMsg}`] = {
+        sender_name: senderName,
+        sender_role: senderRole,
+        sender_id: senderId
+      };
+      setStored('poso_thread_senders', storedSenders);
+
+      // Instant local save
+      const threads = getStored<ThreadMessage[]>(STORAGE_KEYS.LOCAL_THREADS, SEED_THREADS);
+      threads.push(newThread);
+      setStored(STORAGE_KEYS.LOCAL_THREADS, threads);
+
+      // Sync to Google Apps Script
+      if (this.isGasConfigured()) {
+        try {
+          const res = await this.callGas<ThreadMessage>('addThreadMessage', 'POST', {
+            ...payload,
+            message: cleanMsg,
+            sender_id: senderId,
+            sender_name: senderName,
+            sender_role: senderRole,
+            user_email: senderEmail,
+            user_role: senderRole
+          });
+          if (res && res.status === 'success' && res.data) {
+            return res;
+          }
+        } catch (err: any) {
+          console.warn('GAS addThreadMessage sync failed:', err.message);
+        }
+      }
+
+      return {
+        status: 'success' as const,
+        code: 201,
+        message: 'Pesan terkirim.',
+        data: newThread
+      };
+    })();
+
+    this.inFlightThreads.set(dedupeKey, execPromise);
+    // Hapus key setelah 4 detik
+    setTimeout(() => {
+      this.inFlightThreads.delete(dedupeKey);
+    }, 4000);
+
+    return execPromise;
   }
 
   async trackTicket(ticketId: string, email?: string): Promise<ApiResponse<{ ticket: Ticket; threads: ThreadMessage[] }>> {
