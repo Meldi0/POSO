@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Ticket, ThreadMessage, TicketStatus, TicketPriority } from '../../types';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { parseTicketDetails, parseThreadMessage } from '../../utils/ticketFormatter';
+import { AttachmentGallery } from '../common/AttachmentGallery';
 import { 
   X, 
   Send, 
@@ -260,6 +262,7 @@ export const OperatorTicketModal: React.FC<OperatorTicketModalProps> = ({
                   }
 
                   if (isInternal) {
+                    const parsedInternal = parseThreadMessage(t.message);
                     return (
                       <div
                         key={t.thread_id}
@@ -276,13 +279,19 @@ export const OperatorTicketModal: React.FC<OperatorTicketModalProps> = ({
                           </span>
                         </div>
                         <p className="text-amber-100/90 whitespace-pre-wrap leading-relaxed">
-                          {t.message}
+                          {parsedInternal.cleanText}
                         </p>
+                        {parsedInternal.attachments.length > 0 && (
+                          <div className="pt-2">
+                            <AttachmentGallery attachments={parsedInternal.attachments} isDarkTheme={true} />
+                          </div>
+                        )}
                       </div>
                     );
                   }
 
                   // Public reply
+                  const parsedPublic = parseThreadMessage(t.message);
                   return (
                     <div
                       key={t.thread_id}
@@ -292,7 +301,12 @@ export const OperatorTicketModal: React.FC<OperatorTicketModalProps> = ({
                         <span className="font-semibold text-white">{t.sender_name} ({t.sender_role})</span>
                         <span>{new Date(t.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span>
                       </div>
-                      <p className="text-slate-200 whitespace-pre-wrap leading-relaxed">{t.message}</p>
+                      <p className="text-slate-200 whitespace-pre-wrap leading-relaxed">{parsedPublic.cleanText}</p>
+                      {parsedPublic.attachments.length > 0 && (
+                        <div className="pt-2">
+                          <AttachmentGallery attachments={parsedPublic.attachments} isDarkTheme={true} />
+                        </div>
+                      )}
                     </div>
                   );
                 })

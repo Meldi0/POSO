@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Ticket, ThreadMessage, TicketStatus, TicketPriority } from '../../types';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { parseTicketDetails, parseThreadMessage } from '../../utils/ticketFormatter';
+import { AttachmentGallery } from '../common/AttachmentGallery';
 import { 
   FileText, 
   Send, 
@@ -233,11 +235,21 @@ export const PolytroxInspector: React.FC<PolytroxInspectorProps> = ({
         </div>
 
         {/* Subjek & Deskripsi */}
-        <div className="p-3.5 rounded-2xl bg-[#FAF5F0] border border-[#F0E8E1] space-y-1">
-          <span className="text-[10px] font-extrabold text-[#8C847E] uppercase tracking-wider block">Subjek Keluhan</span>
-          <p className="text-xs font-bold text-[#2D2622] leading-snug">{ticket.subject}</p>
-          <p className="text-[11px] text-[#6E6660] pt-1 whitespace-pre-wrap">{ticket.description}</p>
-        </div>
+        {(() => {
+          const parsedTicket = parseTicketDetails(ticket.description, ticket.category);
+          return (
+            <div className="p-3.5 rounded-2xl bg-[#FAF5F0] border border-[#F0E8E1] space-y-1">
+              <span className="text-[10px] font-extrabold text-[#8C847E] uppercase tracking-wider block">Subjek Keluhan</span>
+              <p className="text-xs font-bold text-[#2D2622] leading-snug">{ticket.subject}</p>
+              <p className="text-[11px] text-[#6E6660] pt-1 whitespace-pre-wrap">{parsedTicket.cleanDescription || ticket.description}</p>
+              {parsedTicket.attachments.length > 0 && (
+                <div className="pt-2">
+                  <AttachmentGallery attachments={parsedTicket.attachments} />
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Triase Form Box (Recommended Action Box) */}
         <div className="bg-[#FAF5F0] p-4 rounded-2xl border border-[#F0E8E1] space-y-3">
@@ -325,6 +337,8 @@ export const PolytroxInspector: React.FC<PolytroxInspectorProps> = ({
               {threads.map((t) => {
                 const isInternal = t.visibility === 'internal';
                 const isCustomer = t.sender_role === 'pengguna_umum';
+                const parsedMsg = parseThreadMessage(t.message);
+
                 if (isInternal) {
                   return (
                     <div key={t.thread_id} className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-1">
@@ -332,7 +346,12 @@ export const PolytroxInspector: React.FC<PolytroxInspectorProps> = ({
                         <span>🔒 CATATAN INTERNAL ({t.sender_name})</span>
                         <span>{new Date(t.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-                      <p className="whitespace-pre-wrap">{t.message}</p>
+                      <p className="whitespace-pre-wrap">{parsedMsg.cleanText}</p>
+                      {parsedMsg.attachments.length > 0 && (
+                        <div className="pt-1.5">
+                          <AttachmentGallery attachments={parsedMsg.attachments} />
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -348,7 +367,12 @@ export const PolytroxInspector: React.FC<PolytroxInspectorProps> = ({
                         {new Date(t.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p className="text-[#2D2622] whitespace-pre-wrap">{t.message}</p>
+                    <p className="text-[#2D2622] whitespace-pre-wrap">{parsedMsg.cleanText}</p>
+                    {parsedMsg.attachments.length > 0 && (
+                      <div className="pt-1.5">
+                        <AttachmentGallery attachments={parsedMsg.attachments} />
+                      </div>
+                    )}
                   </div>
                 );
               })}

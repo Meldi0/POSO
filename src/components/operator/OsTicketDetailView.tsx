@@ -3,6 +3,8 @@ import { Ticket, ThreadMessage, TicketStatus, TicketPriority } from '../../types
 import { apiService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { soundService } from '../../utils/sound';
+import { parseTicketDetails, parseThreadMessage } from '../../utils/ticketFormatter';
+import { AttachmentGallery } from '../common/AttachmentGallery';
 import { 
   ArrowLeft, 
   Send, 
@@ -495,6 +497,7 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
 
             // Internal Note (osTicket Classic Yellow/Amber Box)
             if (isInternal) {
+              const parsedInternal = parseThreadMessage(t.message);
               return (
                 <div
                   key={t.thread_id}
@@ -510,13 +513,19 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
                     </span>
                   </div>
                   <p className="text-amber-100 whitespace-pre-wrap leading-relaxed pt-1 text-xs sm:text-sm">
-                    {t.message}
+                    {parsedInternal.cleanText}
                   </p>
+                  {parsedInternal.attachments.length > 0 && (
+                    <div className="pt-2">
+                      <AttachmentGallery attachments={parsedInternal.attachments} isDarkTheme={true} />
+                    </div>
+                  )}
                 </div>
               );
             }
 
             // Public Message (Customer or Staff Response)
+            const parsedPublic = parseThreadMessage(t.message);
             return (
               <div
                 key={t.thread_id}
@@ -549,8 +558,14 @@ export const OsTicketDetailView: React.FC<OsTicketDetailViewProps> = ({
                 </div>
 
                 <p className="whitespace-pre-wrap leading-relaxed text-slate-200 pt-1 text-xs sm:text-sm">
-                  {t.message}
+                  {parsedPublic.cleanText}
                 </p>
+
+                {parsedPublic.attachments.length > 0 && (
+                  <div className="pt-2">
+                    <AttachmentGallery attachments={parsedPublic.attachments} isDarkTheme={true} />
+                  </div>
+                )}
               </div>
             );
           })}

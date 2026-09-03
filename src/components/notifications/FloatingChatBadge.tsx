@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MessageSquare, X, ArrowRight, Sparkles, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { realtimeService, ChatNotification } from '../../services/realtime';
+import { parseThreadMessage } from '../../utils/ticketFormatter';
 
 interface FloatingChatBadgeProps {
   onOpenTicket: (ticketId: string) => void;
@@ -105,9 +106,15 @@ export const FloatingChatBadge: React.FC<FloatingChatBadgeProps> = ({ onOpenTick
             </div>
 
             {/* Message Snippet */}
-            <p className="text-[12px] text-[#334155] font-medium leading-relaxed my-2.5 line-clamp-2 bg-[#F8FAFC] p-2.5 rounded-xl border border-[#F1F5F9]">
-              "{activePopup.message}"
-            </p>
+            {(() => {
+              const parsed = parseThreadMessage(activePopup.message);
+              const displaySnippet = parsed.cleanText || (parsed.attachments.length > 0 ? `📷 Mengirimkan ${parsed.attachments.length} foto/lampiran berkas` : activePopup.message);
+              return (
+                <p className="text-[12px] text-[#334155] font-medium leading-relaxed my-2.5 line-clamp-2 bg-[#F8FAFC] p-2.5 rounded-xl border border-[#F1F5F9]">
+                  "{displaySnippet}"
+                </p>
+              );
+            })()}
 
             {/* Action Row */}
             <div className="flex items-center justify-between pt-0.5">

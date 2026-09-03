@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -17,20 +17,29 @@ import {
   Calendar,
   AlertCircle,
   Headphones,
-  Compass
+  Compass,
+  Image as ImageIcon,
+  Paperclip
 } from 'lucide-react';
 import { StatusBadge, PriorityBadge } from '../../components/ui/Badge';
 import { SlaCountdown } from '../../components/features/SlaCountdown';
 import { parseTicketDetails } from '../../utils/ticketFormatter';
 import { soundService } from '../../utils/sound';
+import { NotificationBellDropdown } from '../../components/notifications/NotificationBellDropdown';
+import { FloatingChatBadge } from '../../components/notifications/FloatingChatBadge';
+import { useToast } from '../../context/ToastContext';
 
 export const MyTicketsPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { info, success } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in_progress' | 'waiting' | 'closed'>('all');
+
+  const prevStatusMapRef = useRef<Record<string, string>>({});
+  const isInitialLoadRef = useRef<boolean>(true);
 
   const fetchUserTickets = async (silent = false) => {
     if (!user?.email) {
@@ -45,6 +54,29 @@ export const MyTicketsPage: React.FC = () => {
         const userTickets = allTickets.filter(t => 
           (t.requester_email || '').toLowerCase() === user.email.toLowerCase()
         );
+
+        // Check for any status updates on user's tickets
+        if (!isInitialLoadRef.current) {
+          userTickets.forEach(t => {
+            const oldStatus = prevStatusMapRef.current[t.ticket_id];
+            if (oldStatus && oldStatus !== t.status) {
+              soundService.playIncomingMessageSound();
+              soundService.notifyBrowser(
+                `Pembaruan Status Tiket #${t.ticket_id}`,
+                `Status tiket "${t.subject}" kini berubah menjadi ${t.status.toUpperCase()}`
+              );
+              info(`📢 Tiket #${t.ticket_id} diperbarui statusnya menjadi: ${t.status}`);
+            }
+          });
+        }
+
+        const newStatusMap: Record<string, string> = {};
+        userTickets.forEach(t => {
+          newStatusMap[t.ticket_id] = t.status;
+        });
+        prevStatusMapRef.current = newStatusMap;
+        isInitialLoadRef.current = false;
+
         setTickets(userTickets);
       }
     } catch (err) {
@@ -57,13 +89,17 @@ export const MyTicketsPage: React.FC = () => {
   useEffect(() => {
     fetchUserTickets(false);
 
-    // Auto-polling every 5 seconds for user tickets
+    // Auto-polling every 4 seconds for user tickets
     const interval = setInterval(() => {
       fetchUserTickets(true);
-    }, 5000);
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [user]);
+
+  const handleOpenTicketTracker = (ticketId: string) => {
+    navigate(`/track?id=${ticketId}`);
+  };
 
   const filteredTickets = tickets.filter(t => {
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
@@ -80,7 +116,7 @@ export const MyTicketsPage: React.FC = () => {
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 border-b border-[#E2E8F0]/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/" className="w-9 h-9 rounded-[10px] bg-[#0D5C75] flex items-center justify-center text-white">
+            <Link to="/" className="w-9 h-9 rounded-[10px] bg-[#0D5C75] flex items-center justify-center text-white shadow-xs">
               <Headphones size={18} />
             </Link>
             <div>
@@ -90,11 +126,14 @@ export const MyTicketsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Realtime Notification Dropdown */}
+            <NotificationBellDropdown onSelectTicket={handleOpenTicketTracker} />
+
             <Link
               to="/submit"
-              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[10px] bg-[#0D5C75] text-white text-[13px] font-semibold hover:bg-[#083342] transition-colors shadow-sm"
+              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[10px] bg-[#0D5C75] text-white text-[13px] font-semibold hover:bg-[#083342] transition-colors shadow-xs"
             >
-              <Plus size={15} /> Buat Tiket
+              <Plus size={15} /> <span className="hidden sm:inline">Buat</span> Tiket
             </Link>
 
             <Link
@@ -145,7 +184,7 @@ export const MyTicketsPage: React.FC = () => {
                 onClick={() => setStatusFilter(f.key as any)}
                 className={`px-3 py-1.5 rounded-[8px] text-[12px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   statusFilter === f.key
-                    ? 'bg-[#0D5C75] text-white shadow-sm'
+                    ? 'bg-[#0D5C75] text-white shadow-xs'
                     : 'text-[#64748B] hover:bg-[#F1F5F9]'
                 }`}
               >
@@ -182,6 +221,8 @@ export const MyTicketsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTickets.map((t) => {
               const parsed = parseTicketDetails(t.description, t.category);
+              const hasAttachments = parsed.attachments.length > 0;
+
               return (
                 <div
                   key={t.ticket_id}
@@ -203,6 +244,14 @@ export const MyTicketsPage: React.FC = () => {
                     <p className="text-[12px] text-[#64748B] line-clamp-2">
                       {parsed.cleanDescription || t.description}
                     </p>
+
+                    {/* Attachment indicator pill */}
+                    {hasAttachments && (
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-[#0D5C75] bg-[#EAF4F8] px-2 py-0.5 rounded-md w-fit">
+                        <ImageIcon size={12} />
+                        <span>{parsed.attachments.length} Foto/Berkas Lampiran</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-3 border-t border-[#F1F5F9] flex items-center justify-between">
@@ -222,6 +271,9 @@ export const MyTicketsPage: React.FC = () => {
         )}
 
       </main>
+
+      {/* Floating Interactive Realtime Chat Badge for Customer */}
+      <FloatingChatBadge onOpenTicket={handleOpenTicketTracker} />
 
       {/* Footer */}
       <footer className="border-t border-[#E2E8F0] bg-white py-4 text-center text-xs text-[#94A3B8]">

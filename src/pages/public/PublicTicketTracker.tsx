@@ -3,22 +3,23 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { apiService } from '../../services/api';
-import { Ticket, ThreadMessage } from '../../types';
+import { Ticket, ThreadMessage, TicketStatus } from '../../types';
 import { 
   Search, 
   ArrowLeft, 
   ChevronRight, 
-  Download, 
   Send, 
-  Paperclip, 
-  X, 
-  ZoomIn, 
   Copy, 
   Check, 
   Info,
   Clock,
   User,
-  Headphones
+  Headphones,
+  Bell,
+  BellRing,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { StepperTimeline, Stage } from '../../components/features/StepperTimeline';
 import { SlaCountdown } from '../../components/features/SlaCountdown';
@@ -28,19 +29,6 @@ import { AttachmentGallery } from '../../components/common/AttachmentGallery';
 import { useToast } from '../../context/ToastContext';
 import { soundService } from '../../utils/sound';
 import { realtimeService } from '../../services/realtime';
-
-function LightboxModal({ url, onClose }: { url: string; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
-      <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute -top-10 right-0 text-white/70 hover:text-white p-1 cursor-pointer">
-          <X size={22} />
-        </button>
-        <img src={url} alt="Lampiran" className="rounded-[12px] w-full object-contain max-h-[80vh]" />
-      </div>
-    </div>
-  );
-}
 
 export const PublicTicketTracker: React.FC = () => {
   const { user, isStaff } = useAuth();
@@ -68,10 +56,32 @@ export const PublicTicketTracker: React.FC = () => {
   const [replyMessage, setReplyMessage] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  
+  // Realtime Customer Notification States
+  const [hasNotificationPermission, setHasNotificationPermission] = useState(true);
+  const [liveResponseAlert, setLiveResponseAlert] = useState<{ sender: string; text: string } | null>(null);
 
   const prevThreadCountRef = useRef<number>(0);
+  const prevTicketStatusRef = useRef<string>('');
   const isInitialLoadRef = useRef<boolean>(true);
+
+  // Check browser notification permission status
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setHasNotificationPermission(Notification.permission === 'granted');
+    }
+  }, []);
+
+  const handleRequestNotificationPermission = async () => {
+    const granted = await soundService.requestNotificationPermission();
+    setHasNotificationPermission(granted);
+    if (granted) {
+      soundService.playIncomingMessageSound();
+      success('Notifikasi browser berhasil diaktifkan.');
+    } else {
+      info('Notifikasi browser diblokir atau diabaikan.');
+    }
+  };
 
   const formatThreadTime = (isoString?: string) => {
     if (!isoString) return 'Baru saja';
@@ -84,6 +94,13 @@ export const PublicTicketTracker: React.FC = () => {
     }
   };
 
+  const statusLabelMap: Record<string, string> = {
+    open: 'Terbuka (Open)',
+    in_progress: 'Sedang Dikerjakan (In Progress)',
+    waiting: 'Menunggu Balasan (Waiting)',
+    closed: 'Selesai (Closed)'
+  };
+
   const fetchTicket = async (id: string, mail?: string, showLoading = false) => {
     if (!id.trim()) return;
     if (showLoading) setIsLoading(true);
@@ -91,23 +108,46 @@ export const PublicTicketTracker: React.FC = () => {
     try {
       const res = await apiService.trackTicket(id, mail);
       if (res.status === 'success' && res.data) {
-        setTicket(res.data.ticket);
+        const currentTicket = res.data.ticket;
         const newThreads = Array.isArray(res.data.threads) ? res.data.threads : [];
 
-        // Check if there are new incoming messages from operator/helpdesk
+        // Check if ticket status changed by staff
+        if (!isInitialLoadRef.current && prevTicketStatusRef.current && currentTicket.status !== prevTicketStatusRef.current) {
+          const newStatusLabel = statusLabelMap[currentTicket.status] || currentTicket.status;
+          soundService.playIncomingMessageSound();
+          soundService.notifyBrowser(
+            `Pembaruan Status Tiket #${id}`,
+            `Status tiket Anda telah diperbarui menjadi "${newStatusLabel}" oleh tim teknisi.`
+          );
+          info(`📢 Status tiket diperbarui menjadi: ${newStatusLabel}`);
+        }
+        prevTicketStatusRef.current = currentTicket.status;
+        setTicket(currentTicket);
+
+        // Check if there are new incoming messages from operator/helpdesk/UPT
         if (!isInitialLoadRef.current && newThreads.length > prevThreadCountRef.current) {
           const latestMsg = newThreads[newThreads.length - 1];
           if (latestMsg) {
             const isFromSelf = 
               latestMsg.sender_role === 'pengguna_umum' || 
               latestMsg.sender_id === 'USR-PUBLIC' ||
-              (ticket?.requester_name && (latestMsg.sender_name || '').toLowerCase().includes(ticket.requester_name.toLowerCase())) ||
+              (currentTicket?.requester_name && (latestMsg.sender_name || '').toLowerCase().includes(currentTicket.requester_name.toLowerCase())) ||
               (user?.name && (latestMsg.sender_name || '').toLowerCase().includes(user.name.toLowerCase()));
             
             if (!isFromSelf) {
+              const staffName = latestMsg.sender_name || 'Petugas UPT';
+              const cleanMsg = parseThreadMessage(latestMsg.message).cleanText;
               soundService.playIncomingMessageSound();
-              soundService.notifyBrowser(`Balasan Baru di Tiket #${id}`, `${latestMsg.sender_name || 'Petugas'}: ${(latestMsg.message || '').slice(0, 60)}`);
-              info(`💬 Tanggapan baru dari ${latestMsg.sender_name || 'Petugas'}`);
+              soundService.notifyBrowser(
+                `💬 Balasan Baru dari ${staffName} (#${id})`,
+                cleanMsg.slice(0, 80)
+              );
+              info(`💬 Tanggapan baru dari ${staffName}`);
+              setLiveResponseAlert({
+                sender: staffName,
+                text: cleanMsg
+              });
+              setTimeout(() => setLiveResponseAlert(null), 9000);
             }
           }
         }
@@ -135,6 +175,7 @@ export const PublicTicketTracker: React.FC = () => {
     if (paramId) {
       isInitialLoadRef.current = true;
       prevThreadCountRef.current = 0;
+      prevTicketStatusRef.current = '';
       fetchTicket(paramId, paramEmail, true);
     }
   }, [paramId, paramEmail]);
@@ -145,6 +186,27 @@ export const PublicTicketTracker: React.FC = () => {
 
     const unsub = realtimeService.onNewMessage((newMsg) => {
       if (newMsg && newMsg.ticket_id === ticket.ticket_id) {
+        const isFromSelf = 
+          newMsg.sender_role === 'pengguna_umum' || 
+          newMsg.sender_id === 'USR-PUBLIC' ||
+          (ticket?.requester_name && (newMsg.sender_name || '').toLowerCase().includes(ticket.requester_name.toLowerCase())) ||
+          (user?.name && (newMsg.sender_name || '').toLowerCase().includes(user.name.toLowerCase()));
+
+        if (!isFromSelf) {
+          const staffName = newMsg.sender_name || 'Petugas UPT';
+          const cleanMsg = parseThreadMessage(newMsg.message).cleanText;
+          soundService.playIncomingMessageSound();
+          soundService.notifyBrowser(
+            `💬 Tanggapan Baru dari ${staffName} (#${ticket.ticket_id})`,
+            cleanMsg.slice(0, 80)
+          );
+          setLiveResponseAlert({
+            sender: staffName,
+            text: cleanMsg
+          });
+          setTimeout(() => setLiveResponseAlert(null), 9000);
+        }
+
         setThreads((prev) => {
           if (prev.some(t => t.thread_id === newMsg.thread_id || (t.message === newMsg.message && t.sender_id === newMsg.sender_id))) {
             return prev;
@@ -162,7 +224,7 @@ export const PublicTicketTracker: React.FC = () => {
       unsub();
       clearInterval(interval);
     };
-  }, [ticket?.ticket_id, email]);
+  }, [ticket?.ticket_id, email, user]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,6 +232,7 @@ export const PublicTicketTracker: React.FC = () => {
       navigate(`/track?id=${encodeURIComponent(ticketId.trim())}${email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ''}`, { replace: true });
       isInitialLoadRef.current = true;
       prevThreadCountRef.current = 0;
+      prevTicketStatusRef.current = '';
       fetchTicket(ticketId, email, true);
     }
   };
@@ -281,18 +344,59 @@ export const PublicTicketTracker: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F4F7F9] text-[#0F172A] font-sans selection:bg-[#0D5C75] selection:text-white flex flex-col justify-between">
-      {lightboxUrl && <LightboxModal url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
-
+      
       {/* Header */}
       <header className="sticky top-0 z-20 backdrop-blur-md bg-white/80 border-b border-[#E2E8F0]/80">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
-          <Link to={backDestination} className="flex items-center gap-1.5 text-[#64748B] hover:text-[#0D5C75] transition-colors text-[13px] font-medium">
-            <ArrowLeft size={15} /> {backLabel}
-          </Link>
-          <ChevronRight size={14} className="text-[#CBD5E1]" />
-          <span className="text-[13px] font-semibold text-[#0D5C75]">Lacak Tiket</span>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to={backDestination} className="flex items-center gap-1.5 text-[#64748B] hover:text-[#0D5C75] transition-colors text-[13px] font-medium">
+              <ArrowLeft size={15} /> {backLabel}
+            </Link>
+            <ChevronRight size={14} className="text-[#CBD5E1]" />
+            <span className="text-[13px] font-semibold text-[#0D5C75]">Lacak Tiket</span>
+          </div>
+
+          {/* Browser Notification Prompt */}
+          {!hasNotificationPermission && (
+            <button
+              type="button"
+              onClick={handleRequestNotificationPermission}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0D5C75]/10 text-[#0D5C75] text-[11px] font-bold hover:bg-[#0D5C75]/20 transition-colors cursor-pointer"
+              title="Aktifkan Notifikasi Desktop Browser"
+            >
+              <BellRing size={12} className="animate-pulse" />
+              <span>Aktifkan Notifikasi</span>
+            </button>
+          )}
         </div>
       </header>
+
+      {/* Real-time Incoming Live Notification Banner for Customer */}
+      <AnimatePresence>
+        {liveResponseAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 max-w-lg w-[92%] bg-gradient-to-r from-[#083342] to-[#0D5C75] text-white p-3.5 rounded-2xl shadow-2xl border border-white/20 flex items-start gap-3"
+          >
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Sparkles size={16} className="text-amber-300 animate-spin-slow" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs font-black text-amber-300">
+                  Tanggapan Baru dari {liveResponseAlert.sender}
+                </span>
+                <span className="text-[10px] text-white/70">Baru saja</span>
+              </div>
+              <p className="text-xs text-white/90 line-clamp-2 mt-0.5 font-medium">
+                "{liveResponseAlert.text}"
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
         {/* Search Bar Card */}
@@ -392,45 +496,23 @@ export const PublicTicketTracker: React.FC = () => {
                 <div className="p-3.5 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0] text-[13px] sm:text-[14px] text-[#0F172A] leading-relaxed whitespace-pre-wrap">
                   {parsedTicket.cleanDescription || ticket.description}
                 </div>
-              </div>
 
-              {/* Attachments */}
-              {parsedTicket.attachments.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide mb-2">Lampiran Bukti</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {parsedTicket.attachments.map((att, idx) => (
-                      <div key={idx} className="relative group">
-                        {att.dataUrl ? (
-                          <img
-                            src={att.dataUrl}
-                            alt={att.name}
-                            className="w-20 h-20 rounded-[10px] object-cover border border-[#E2E8F0] cursor-pointer"
-                            onClick={() => setLightboxUrl(att.dataUrl || null)}
-                          />
-                        ) : (
-                          <div className="w-20 h-20 rounded-[10px] border border-[#E2E8F0] bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600 p-2 text-center">
-                            {att.name}
-                          </div>
-                        )}
-                        {att.dataUrl && (
-                          <div className="absolute inset-0 bg-black/40 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <button onClick={() => setLightboxUrl(att.dataUrl || null)} className="text-white cursor-pointer" title="Perbesar">
-                              <ZoomIn size={16} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                {/* Attachments for initial description */}
+                {parsedTicket.attachments.length > 0 && (
+                  <div className="pt-2">
+                    <AttachmentGallery attachments={parsedTicket.attachments} />
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Conversation Thread Card */}
             <div className="bg-white rounded-[16px] border border-[#E2E8F0]/80 shadow-[0_2px_8px_rgba(15,23,42,0.06)] p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3">
-                <h3 className="text-[14px] font-bold text-[#0F172A]">Riwayat Tanggapan & Perkembangan</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[14px] font-bold text-[#0F172A]">Riwayat Tanggapan & Perkembangan</h3>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Realtime Aktif" />
+                </div>
                 <span className="text-[12px] font-semibold text-[#64748B]">{followUpThreads.length} tanggapan</span>
               </div>
 
@@ -438,7 +520,7 @@ export const PublicTicketTracker: React.FC = () => {
                 <div className="p-6 rounded-[12px] bg-[#F8FAFC] border border-dashed border-[#CBD5E1] text-center space-y-1">
                   <Info size={22} className="text-[#94A3B8] mx-auto mb-1" />
                   <p className="text-xs font-bold text-slate-700">Belum ada balasan tambahan dari teknisi</p>
-                  <p className="text-[11px] text-[#64748B]">Tiket Anda sudah berada di antrean UPT terkait dan akan segera ditindaklanjuti.</p>
+                  <p className="text-[11px] text-[#64748B]">Tiket Anda sudah berada di antrean UPT terkait dan akan segera ditindaklanjuti. Halaman ini akan otomatis berdering dan memunculkan notifikasi saat ada balasan baru.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -488,7 +570,6 @@ export const PublicTicketTracker: React.FC = () => {
                   })}
                 </div>
               )}
-
 
               {/* Reply Form */}
               <form onSubmit={handleSendCustomerReply} className="pt-2 flex gap-2">

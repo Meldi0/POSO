@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bell, CheckCheck, MessageSquare, Clock, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { realtimeService, ChatNotification } from '../../services/realtime';
+import { parseThreadMessage } from '../../utils/ticketFormatter';
 
 interface NotificationBellDropdownProps {
   onSelectTicket?: (ticketId: string) => void;
@@ -149,9 +150,15 @@ export const NotificationBellDropdown: React.FC<NotificationBellDropdownProps> =
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-[#475569] line-clamp-2 leading-relaxed font-medium">
-                        "{n.message}"
-                      </p>
+                      {(() => {
+                        const parsed = parseThreadMessage(n.message);
+                        const displaySnippet = parsed.cleanText || (parsed.attachments.length > 0 ? `📷 Mengirimkan ${parsed.attachments.length} foto/lampiran berkas` : n.message);
+                        return (
+                          <p className="text-[11px] text-[#475569] line-clamp-2 leading-relaxed font-medium">
+                            "{displaySnippet}"
+                          </p>
+                        );
+                      })()}
 
                       <div className="flex items-center justify-between pt-0.5">
                         <span className="font-mono text-[10px] font-bold text-[#0D5C75]">
