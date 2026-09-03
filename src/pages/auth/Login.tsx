@@ -12,7 +12,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  LogIn
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
@@ -135,7 +136,7 @@ export const Login: React.FC = () => {
         initial={{ opacity: 0, scale: 0.98, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-5xl bg-white rounded-[28px] sm:rounded-[36px] shadow-[0_24px_64px_rgba(15,23,42,0.12)] border border-[#E2E8F0] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[590px]"
+        className="relative z-10 w-full max-w-5xl bg-white rounded-[28px] sm:rounded-[36px] shadow-[0_24px_64px_rgba(15,23,42,0.12)] border border-[#E2E8F0] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[610px]"
       >
         
         {/* =========================================================================
@@ -186,7 +187,7 @@ export const Login: React.FC = () => {
 
             <Link 
               to="/" 
-              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white transition-colors flex items-center gap-1"
+              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white transition-colors flex items-center gap-1.5"
             >
               <ArrowLeft size={13} />
               <span>Beranda</span>
@@ -220,43 +221,43 @@ export const Login: React.FC = () => {
         {/* =========================================================================
             RIGHT COLUMN: SIGN IN / REGISTER FORM (CLEAN WHITE CARD)
         ========================================================================= */}
-        <div className="lg:col-span-6 p-6 sm:p-10 lg:p-11 flex flex-col justify-center bg-white space-y-4">
+        <div className="lg:col-span-6 p-7 sm:p-10 lg:p-12 flex flex-col justify-center bg-white space-y-5">
           
           {/* Top Auth Mode Tabs Switcher */}
-          <div className="flex items-center p-1 bg-[#F1F5F9] rounded-xl border border-[#E2E8F0]">
+          <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
             <button
               type="button"
               onClick={() => handleSwitchMode('login')}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 authMode === 'login'
-                  ? 'bg-white text-[#0D5C75] shadow-xs border border-[#E2E8F0]/70'
-                  : 'text-[#64748B] hover:text-[#0F172A]'
+                  ? 'bg-white text-[#0D5C75] shadow-xs border border-slate-200'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <User size={13} />
+              <LogIn size={14} />
               <span>Masuk (Sign In)</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSwitchMode('register')}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 authMode === 'register'
-                  ? 'bg-white text-[#0D5C75] shadow-xs border border-[#E2E8F0]/70'
-                  : 'text-[#64748B] hover:text-[#0F172A]'
+                  ? 'bg-white text-[#0D5C75] shadow-xs border border-slate-200'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <UserPlus size={13} />
+              <UserPlus size={14} />
               <span>Daftar Akun Baru</span>
             </button>
           </div>
 
           {/* Header */}
-          <div className="space-y-0.5">
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
               {authMode === 'login' ? 'Masuk ke Akun Anda' : 'Buat Akun Pelapor'}
             </h1>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-xs text-slate-500">
               {authMode === 'login'
                 ? 'Gunakan email dan kata sandi akun yang telah terdaftar'
                 : 'Lengkapi formulir singkat untuk mendaftarkan akun baru'}
@@ -270,7 +271,7 @@ export const Login: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2"
             >
-              <AlertCircle size={15} className="text-rose-600 flex-shrink-0" />
+              <AlertCircle size={16} className="text-rose-600 flex-shrink-0" />
               <span>{errorMsg}</span>
             </motion.div>
           )}
@@ -286,16 +287,16 @@ export const Login: React.FC = () => {
                 exit={{ opacity: 0, x: 8 }}
                 transition={{ duration: 0.16 }}
                 onSubmit={handleLoginSubmit} 
-                className="space-y-3.5"
+                className="space-y-4"
               >
                 {/* Email Field */}
                 <div>
-                  <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Alamat Email
                   </label>
                   <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
-                      <Mail size={15} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <Mail size={16} />
                     </div>
                     <input
                       type="email"
@@ -303,19 +304,19 @@ export const Login: React.FC = () => {
                       placeholder="nama@posindonesia.co.id atau email Anda"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full h-10.5 pl-9.5 pr-4 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] focus:bg-white border border-[#E2E8F0] focus:border-[#0D5C75] text-xs sm:text-[13px] font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                      className="w-full h-11 pl-12 pr-4 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Password Field */}
                 <div>
-                  <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Kata Sandi
                   </label>
                   <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
-                      <Lock size={15} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <Lock size={16} />
                     </div>
                     <input
                       type={showPassword ? 'text' : 'password'}
@@ -323,12 +324,12 @@ export const Login: React.FC = () => {
                       placeholder="Masukkan kata sandi akun"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full h-10.5 pl-9.5 pr-16 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] focus:bg-white border border-[#E2E8F0] focus:border-[#0D5C75] text-xs sm:text-[13px] font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                      className="w-full h-11 pl-12 pr-20 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(p => !p)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-extrabold px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[#0D5C75] uppercase tracking-wider transition-colors cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black px-2.5 py-1 rounded-md bg-slate-200/80 hover:bg-slate-300 text-slate-700 uppercase tracking-wider transition-colors cursor-pointer"
                     >
                       {showPassword ? 'HIDE' : 'SHOW'}
                     </button>
@@ -337,12 +338,12 @@ export const Login: React.FC = () => {
 
                 {/* Options Row */}
                 <div className="flex items-center justify-between pt-0.5">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-[#64748B] cursor-pointer select-none">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded text-[#0D5C75] focus:ring-[#0D5C75] border-[#CBD5E1]"
+                      className="w-4 h-4 rounded text-[#0D5C75] focus:ring-[#0D5C75] border-slate-300"
                     />
                     <span>Ingat saya</span>
                   </label>
@@ -359,14 +360,15 @@ export const Login: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-[0.99] mt-1"
+                  className="w-full h-11.5 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-[0.99] mt-1"
                 >
+                  <LogIn size={16} />
                   <span>{loading ? 'Memverifikasi Akun...' : 'Masuk ke Sistem'}</span>
                 </button>
 
                 {/* Switch to Register footer */}
-                <div className="text-center pt-1">
-                  <p className="text-xs text-[#64748B]">
+                <div className="text-center pt-2">
+                  <p className="text-xs text-slate-500">
                     Belum memiliki akun?{' '}
                     <button
                       type="button"
@@ -387,16 +389,16 @@ export const Login: React.FC = () => {
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.16 }}
                 onSubmit={handleRegisterSubmit} 
-                className="space-y-3"
+                className="space-y-3.5"
               >
                 {/* Full Name */}
                 <div>
-                  <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Nama Lengkap
                   </label>
                   <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
-                      <User size={15} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <User size={16} />
                     </div>
                     <input
                       type="text"
@@ -404,19 +406,19 @@ export const Login: React.FC = () => {
                       placeholder="Nama lengkap pelapor"
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
-                      className="w-full h-10 pl-9.5 pr-4 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] focus:bg-white border border-[#E2E8F0] focus:border-[#0D5C75] text-xs sm:text-[13px] font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                      className="w-full h-11 pl-12 pr-4 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Alamat Email
                   </label>
                   <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
-                      <Mail size={15} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <Mail size={16} />
                     </div>
                     <input
                       type="email"
@@ -424,21 +426,21 @@ export const Login: React.FC = () => {
                       placeholder="email.aktif@gmail.com"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      className="w-full h-10 pl-9.5 pr-4 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] focus:bg-white border border-[#E2E8F0] focus:border-[#0D5C75] text-xs sm:text-[13px] font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                      className="w-full h-11 pl-12 pr-4 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Password & Confirm Password in 2-Column Responsive Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Password */}
                   <div>
-                    <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
                       Kata Sandi (Min. 6)
                     </label>
                     <div className="relative">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
-                        <Lock size={14} />
+                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <Lock size={15} />
                       </div>
                       <input
                         type={showRegPassword ? 'text' : 'password'}
@@ -447,12 +449,12 @@ export const Login: React.FC = () => {
                         placeholder="Sandi baru"
                         value={regPassword}
                         onChange={(e) => setRegPassword(e.target.value)}
-                        className="w-full h-10 pl-8.5 pr-14 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] focus:bg-white border border-[#E2E8F0] focus:border-[#0D5C75] text-xs sm:text-[13px] font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                        className="w-full h-11 pl-11 pr-16 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                       />
                       <button
                         type="button"
                         onClick={() => setShowRegPassword(p => !p)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-[#0D5C75] uppercase tracking-wider transition-colors cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-black px-2 py-1 rounded bg-slate-200/80 hover:bg-slate-300 text-slate-700 uppercase tracking-wider transition-colors cursor-pointer"
                       >
                         {showRegPassword ? 'HIDE' : 'SHOW'}
                       </button>
@@ -461,12 +463,12 @@ export const Login: React.FC = () => {
 
                   {/* Confirm Password */}
                   <div>
-                    <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
                       Ulangi Kata Sandi
                     </label>
                     <div className="relative">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
-                        <Lock size={14} />
+                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <Lock size={15} />
                       </div>
                       <input
                         type="password"
@@ -475,7 +477,7 @@ export const Login: React.FC = () => {
                         placeholder="Konfirmasi"
                         value={regConfirmPassword}
                         onChange={(e) => setRegConfirmPassword(e.target.value)}
-                        className="w-full h-10 pl-8.5 pr-3 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] focus:bg-white border border-[#E2E8F0] focus:border-[#0D5C75] text-xs sm:text-[13px] font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                        className="w-full h-11 pl-11 pr-4 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                       />
                     </div>
                   </div>
@@ -485,15 +487,15 @@ export const Login: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-[0.99] mt-1"
+                  className="w-full h-11.5 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-[0.99] mt-2"
                 >
-                  <UserPlus size={15} />
+                  <UserPlus size={16} />
                   <span>{loading ? 'Mendaftarkan Akun...' : 'Daftar Akun Baru'}</span>
                 </button>
 
                 {/* Switch to Login footer */}
-                <div className="text-center pt-1">
-                  <p className="text-xs text-[#64748B]">
+                <div className="text-center pt-2">
+                  <p className="text-xs text-slate-500">
                     Sudah memiliki akun terdaftar?{' '}
                     <button
                       type="button"
