@@ -6,14 +6,9 @@ import {
   User, 
   Lock, 
   Mail,
-  UserPlus,
   ArrowLeft, 
   Headphones, 
-  AlertCircle,
-  CheckCircle2,
-  Sparkles,
-  ShieldCheck,
-  LogIn
+  AlertCircle
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
@@ -79,7 +74,7 @@ export const Login: React.FC = () => {
           navigate('/my-tickets', { replace: true });
         }
       } else {
-        const msg = res.message || 'Kombinasi email atau kata sandi salah.';
+        const msg = res.message || 'Kombinasi email atau password salah.';
         setErrorMsg(msg);
         toastError(msg);
       }
@@ -98,12 +93,12 @@ export const Login: React.FC = () => {
     setErrorMsg('');
 
     if (regPassword !== regConfirmPassword) {
-      setErrorMsg('Konfirmasi kata sandi tidak cocok.');
+      setErrorMsg('Konfirmasi password tidak cocok.');
       return;
     }
 
     if (regPassword.length < 6) {
-      setErrorMsg('Kata sandi minimal 6 karakter.');
+      setErrorMsg('Password minimal 6 karakter.');
       return;
     }
 
@@ -136,18 +131,20 @@ export const Login: React.FC = () => {
         initial={{ opacity: 0, scale: 0.98, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-5xl bg-white rounded-[28px] sm:rounded-[36px] shadow-[0_24px_64px_rgba(15,23,42,0.12)] border border-[#E2E8F0] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[610px]"
+        className="relative z-10 w-full max-w-5xl bg-white rounded-[28px] sm:rounded-[36px] shadow-[0_24px_64px_rgba(15,23,42,0.12)] border border-[#E2E8F0] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[580px]"
       >
         
         {/* =========================================================================
             LEFT COLUMN: 3D ORGANIC CURVES & WELCOME HERO (OCEAN & CYAN PALETTE)
         ========================================================================= */}
-        <div className="lg:col-span-6 relative bg-gradient-to-br from-[#083342] via-[#0D5C75] to-[#199FB1] p-8 sm:p-10 lg:p-12 text-white flex flex-col justify-between overflow-hidden">
+        <div className="lg:col-span-6 relative bg-gradient-to-br from-[#083342] via-[#0D5C75] to-[#199FB1] p-8 sm:p-12 text-white flex flex-col justify-between overflow-hidden">
           
           {/* Background Ambient Glow & Spheres */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Top Large Curved Blob */}
             <div className="absolute -top-24 -left-20 w-96 h-96 rounded-full bg-gradient-to-br from-[#199FB1]/50 to-[#0D5C75]/20 blur-2xl" />
 
+            {/* Main Central 3D Sphere */}
             <motion.div 
               animate={{
                 y: [-6, 6, -6],
@@ -160,6 +157,7 @@ export const Login: React.FC = () => {
               }}
             />
 
+            {/* Second Smaller Overlapping 3D Sphere */}
             <motion.div 
               animate={{
                 y: [8, -8, 8],
@@ -187,80 +185,77 @@ export const Login: React.FC = () => {
 
             <Link 
               to="/" 
-              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-xs font-bold text-white transition-colors flex items-center gap-1.5"
             >
-              <ArrowLeft size={13} />
+              <ArrowLeft size={14} />
               <span>Beranda</span>
             </Link>
           </div>
 
           {/* Welcome Text Content */}
-          <div className="relative z-10 my-auto py-8 sm:py-10 space-y-2.5">
+          <div className="relative z-10 my-auto py-10 sm:py-14 space-y-3">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              {authMode === 'login' ? 'WELCOME BACK' : 'JOIN POSO'}
+              {authMode === 'login' ? 'WELCOME' : 'JOIN POSO'}
             </h2>
-            <p className="text-xs sm:text-sm font-bold text-[#BAE6FC] uppercase tracking-wider">
+            <p className="text-sm sm:text-base font-bold text-[#BAE6FC] uppercase tracking-wider">
               POS INDONESIA HELPDESK SYSTEM
             </p>
             <p className="text-xs sm:text-sm text-white/80 leading-relaxed max-w-sm pt-1">
               {authMode === 'login' 
-                ? 'Sistem Manajemen Pengaduan & Layanan Terpadu POS Indonesia. Masuk untuk mengelola tiket, merespons pelapor, dan memantau SLA.'
-                : 'Daftarkan akun pelapor Anda untuk melacak riwayat pengaduan secara terpusat, menerima tanggapan teknisi real-time, dan mempermudah komunikasi.'}
+                ? 'Sistem Manajemen Pengaduan & Layanan Terpadu POS Indonesia. Laporkan kendala, pantau progres penanganan, dan tingkatkan efisiensi operasional dengan standar SLA terukur.'
+                : 'Daftarkan akun pelapor Anda untuk kemudahan pelacakan riwayat kendala, konsultasi interaktif dua arah bersama operator, dan pembaruan instan.'}
             </p>
           </div>
 
           {/* Bottom Security Note */}
           <div className="relative z-10 flex items-center gap-2 text-[11px] text-[#BAE6FC]/80 font-medium">
             <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-            <span>Koneksi Sistem Terenkripsi & Terverifikasi SSL</span>
+            <span>Koneksi Sistem Terenkripsi & Terverifikasi SSO</span>
           </div>
 
         </div>
 
 
         {/* =========================================================================
-            RIGHT COLUMN: SIGN IN / REGISTER FORM (CLEAN WHITE CARD)
+            RIGHT COLUMN: SIGN IN / SIGN UP FORM (CLEAN WHITE CARD)
         ========================================================================= */}
-        <div className="lg:col-span-6 p-7 sm:p-10 lg:p-12 flex flex-col justify-center bg-white space-y-5">
+        <div className="lg:col-span-6 p-8 sm:p-12 flex flex-col justify-center bg-white space-y-5">
           
-          {/* Top Auth Mode Tabs Switcher */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
+          {/* Top Segmented Mode Tabs */}
+          <div className="grid grid-cols-2 p-1 bg-[#F1F5F9] rounded-xl">
             <button
               type="button"
               onClick={() => handleSwitchMode('login')}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`py-2 text-xs font-bold rounded-lg transition-all text-center cursor-pointer ${
                 authMode === 'login'
-                  ? 'bg-white text-[#0D5C75] shadow-xs border border-slate-200'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white text-[#0D5C75] shadow-xs'
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
-              <LogIn size={14} />
-              <span>Masuk (Sign In)</span>
+              Sign In (Masuk)
             </button>
-
             <button
               type="button"
               onClick={() => handleSwitchMode('register')}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`py-2 text-xs font-bold rounded-lg transition-all text-center cursor-pointer ${
                 authMode === 'register'
-                  ? 'bg-white text-[#0D5C75] shadow-xs border border-slate-200'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white text-[#0D5C75] shadow-xs'
+                  : 'text-[#64748B] hover:text-[#0F172A]'
               }`}
             >
-              <UserPlus size={14} />
-              <span>Daftar Akun Baru</span>
+              Sign Up (Daftar)
             </button>
           </div>
 
           {/* Header */}
           <div className="space-y-1">
-            <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
-              {authMode === 'login' ? 'Masuk ke Akun Anda' : 'Buat Akun Pelapor'}
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
+              {authMode === 'login' ? 'Sign In' : 'Sign Up'}
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs sm:text-sm text-[#64748B]">
               {authMode === 'login'
-                ? 'Gunakan email dan kata sandi akun yang telah terdaftar'
-                : 'Lengkapi formulir singkat untuk mendaftarkan akun baru'}
+                ? 'Silakan masukkan email dan kata sandi akun Anda'
+                : 'Lengkapi formulir singkat untuk membuat akun baru'}
             </p>
           </div>
 
@@ -276,60 +271,54 @@ export const Login: React.FC = () => {
             </motion.div>
           )}
 
-          {/* Animated Tab Switch Form */}
+          {/* Forms with AnimatePresence */}
           <AnimatePresence mode="wait">
             {authMode === 'login' ? (
               /* ================= MODE: LOGIN ================= */
               <motion.form 
                 key="login-form"
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 8 }}
-                transition={{ duration: 0.16 }}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
                 onSubmit={handleLoginSubmit} 
                 className="space-y-4"
               >
                 {/* Email Field */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Alamat Email
-                  </label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <Mail size={16} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
+                      <User size={18} />
                     </div>
                     <input
                       type="email"
                       required
-                      placeholder="nama@posindonesia.co.id atau email Anda"
+                      placeholder="Email Dinas / User Name"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full h-11 pl-12 pr-4 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                      className="w-full h-12 pl-12 pr-4 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0]/60 focus:bg-white border border-transparent focus:border-[#0D5C75] text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Password Field */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Kata Sandi
-                  </label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <Lock size={16} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
+                      <Lock size={18} />
                     </div>
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
-                      placeholder="Masukkan kata sandi akun"
+                      placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full h-11 pl-12 pr-20 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                      className="w-full h-12 pl-12 pr-16 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0]/60 focus:bg-white border border-transparent focus:border-[#0D5C75] text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(p => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black px-2.5 py-1 rounded-md bg-slate-200/80 hover:bg-slate-300 text-slate-700 uppercase tracking-wider transition-colors cursor-pointer"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-extrabold text-[#0D5C75] hover:text-[#199FB1] uppercase tracking-wider transition-colors cursor-pointer"
                     >
                       {showPassword ? 'HIDE' : 'SHOW'}
                     </button>
@@ -337,45 +326,44 @@ export const Login: React.FC = () => {
                 </div>
 
                 {/* Options Row */}
-                <div className="flex items-center justify-between pt-0.5">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer select-none">
+                <div className="flex items-center justify-between pt-1">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[#64748B] cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#0D5C75] focus:ring-[#0D5C75] border-slate-300"
+                      className="w-4 h-4 rounded text-[#0D5C75] focus:ring-[#0D5C75] border-[#CBD5E1]"
                     />
-                    <span>Ingat saya</span>
+                    <span>Remember me</span>
                   </label>
 
                   <span 
                     onClick={() => alert('Silakan hubungi Administrator atau IT Support Helpdesk untuk mereset kata sandi akun dinas Anda.')}
                     className="text-xs font-semibold text-[#0D5C75] hover:text-[#199FB1] hover:underline cursor-pointer"
                   >
-                    Lupa Kata Sandi?
+                    Forgot Password?
                   </span>
                 </div>
 
-                {/* Sign In Button */}
+                {/* Primary Sign In Button */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11.5 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-[0.99] mt-1"
+                  className="w-full h-12 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 flex items-center justify-center cursor-pointer active:scale-[0.99] mt-2 disabled:opacity-50"
                 >
-                  <LogIn size={16} />
-                  <span>{loading ? 'Memverifikasi Akun...' : 'Masuk ke Sistem'}</span>
+                  <span>{loading ? 'Signing In...' : 'Sign In'}</span>
                 </button>
 
-                {/* Switch to Register footer */}
+                {/* Footer Switch */}
                 <div className="text-center pt-2">
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[#64748B]">
                     Belum memiliki akun?{' '}
                     <button
                       type="button"
                       onClick={() => handleSwitchMode('register')}
                       className="font-bold text-[#0D5C75] hover:text-[#199FB1] hover:underline cursor-pointer"
                     >
-                      Daftar Akun Baru Sekarang
+                      Daftar Akun Baru
                     </button>
                   </p>
                 </div>
@@ -384,119 +372,103 @@ export const Login: React.FC = () => {
               /* ================= MODE: REGISTER ================= */
               <motion.form 
                 key="register-form"
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.16 }}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
                 onSubmit={handleRegisterSubmit} 
                 className="space-y-3.5"
               >
                 {/* Full Name */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Nama Lengkap
-                  </label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <User size={16} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
+                      <User size={18} />
                     </div>
                     <input
                       type="text"
                       required
-                      placeholder="Nama lengkap pelapor"
+                      placeholder="Nama Lengkap"
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
-                      className="w-full h-11 pl-12 pr-4 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                      className="w-full h-12 pl-12 pr-4 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0]/60 focus:bg-white border border-transparent focus:border-[#0D5C75] text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Alamat Email
-                  </label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <Mail size={16} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
+                      <Mail size={18} />
                     </div>
                     <input
                       type="email"
                       required
-                      placeholder="email.aktif@gmail.com"
+                      placeholder="Email Aktif (contoh@gmail.com)"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      className="w-full h-11 pl-12 pr-4 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                      className="w-full h-12 pl-12 pr-4 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0]/60 focus:bg-white border border-transparent focus:border-[#0D5C75] text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
                     />
                   </div>
                 </div>
 
-                {/* Password & Confirm Password in 2-Column Responsive Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Password */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Kata Sandi (Min. 6)
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                        <Lock size={15} />
-                      </div>
-                      <input
-                        type={showRegPassword ? 'text' : 'password'}
-                        required
-                        minLength={6}
-                        placeholder="Sandi baru"
-                        value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
-                        className="w-full h-11 pl-11 pr-16 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowRegPassword(p => !p)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-black px-2 py-1 rounded bg-slate-200/80 hover:bg-slate-300 text-slate-700 uppercase tracking-wider transition-colors cursor-pointer"
-                      >
-                        {showRegPassword ? 'HIDE' : 'SHOW'}
-                      </button>
+                {/* Password */}
+                <div>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
+                      <Lock size={18} />
                     </div>
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Ulangi Kata Sandi
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                        <Lock size={15} />
-                      </div>
-                      <input
-                        type="password"
-                        required
-                        minLength={6}
-                        placeholder="Konfirmasi"
-                        value={regConfirmPassword}
-                        onChange={(e) => setRegConfirmPassword(e.target.value)}
-                        className="w-full h-11 pl-11 pr-4 rounded-xl bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 focus:border-[#0D5C75] text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
-                      />
-                    </div>
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      placeholder="Kata Sandi (Min. 6 Karakter)"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      className="w-full h-12 pl-12 pr-16 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0]/60 focus:bg-white border border-transparent focus:border-[#0D5C75] text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(p => !p)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-extrabold text-[#0D5C75] hover:text-[#199FB1] uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      {showRegPassword ? 'HIDE' : 'SHOW'}
+                    </button>
                   </div>
                 </div>
 
-                {/* Register Submit Button */}
+                {/* Confirm Password */}
+                <div>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
+                      <Lock size={18} />
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      placeholder="Konfirmasi Kata Sandi"
+                      value={regConfirmPassword}
+                      onChange={(e) => setRegConfirmPassword(e.target.value)}
+                      className="w-full h-12 pl-12 pr-4 rounded-xl bg-[#F1F5F9] hover:bg-[#E2E8F0]/60 focus:bg-white border border-transparent focus:border-[#0D5C75] text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0D5C75]/20 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Primary Register Button */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11.5 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-[0.99] mt-2"
+                  className="w-full h-12 rounded-xl bg-[#0D5C75] hover:bg-[#083342] text-white text-sm font-bold transition-all shadow-md shadow-[#0D5C75]/25 flex items-center justify-center cursor-pointer active:scale-[0.99] mt-2 disabled:opacity-50"
                 >
-                  <UserPlus size={16} />
-                  <span>{loading ? 'Mendaftarkan Akun...' : 'Daftar Akun Baru'}</span>
+                  <span>{loading ? 'Creating Account...' : 'Sign Up'}</span>
                 </button>
 
-                {/* Switch to Login footer */}
+                {/* Footer Switch */}
                 <div className="text-center pt-2">
-                  <p className="text-xs text-slate-500">
-                    Sudah memiliki akun terdaftar?{' '}
+                  <p className="text-xs text-[#64748B]">
+                    Sudah memiliki akun?{' '}
                     <button
                       type="button"
                       onClick={() => handleSwitchMode('login')}
