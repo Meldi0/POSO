@@ -96,34 +96,36 @@ export const SageTopBar: React.FC<SageTopBarProps> = ({
 
       {/* Right: View Switcher (Kanban vs Table) & Actions */}
       <div className="flex items-center gap-2">
-        {/* Segmented View Switcher */}
-        <div className="hidden sm:flex items-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] p-1 gap-1">
-          <button
-            type="button"
-            onClick={() => handleToggle('kanban')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer ${
-              currentMode === 'kanban'
-                ? 'bg-[#0D5C75] text-white shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A]'
-            }`}
-          >
-            <LayoutGrid size={13} />
-            <span>Kanban</span>
-          </button>
+        {/* Segmented View Switcher (Khusus antrean tiket kerja aktif, arsip formatnya tabel) */}
+        {activeView !== 'archive' && activeView !== 'track' && activeView !== 'reports' && activeView !== 'users' && activeView !== 'datasource' && (
+          <div className="hidden sm:flex items-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => handleToggle('kanban')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer ${
+                currentMode === 'kanban'
+                  ? 'bg-[#0D5C75] text-white shadow-xs'
+                  : 'text-[#64748B] hover:text-[#0F172A]'
+              }`}
+            >
+              <LayoutGrid size={13} />
+              <span>Kanban</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleToggle('table')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer ${
-              currentMode === 'table'
-                ? 'bg-[#0D5C75] text-white shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A]'
-            }`}
-          >
-            <TableIcon size={13} />
-            <span>Tabel</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => handleToggle('table')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer ${
+                currentMode === 'table'
+                  ? 'bg-[#0D5C75] text-white shadow-xs'
+                  : 'text-[#64748B] hover:text-[#0F172A]'
+              }`}
+            >
+              <TableIcon size={13} />
+              <span>Tabel</span>
+            </button>
+          </div>
+        )}
 
         {/* Bell Notification Button with Dropdown */}
         <NotificationBellDropdown onSelectTicket={onOpenTicket} />

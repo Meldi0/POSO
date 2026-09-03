@@ -19,7 +19,8 @@ import {
   Zap,
   Shield,
   Layers,
-  Archive
+  Archive,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { apiService } from '../../services/api';
@@ -50,6 +51,7 @@ export const OperatorDashboard: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [archiveSearchQuery, setArchiveSearchQuery] = useState('');
 
   // Tickets & Data state
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -302,11 +304,8 @@ export const OperatorDashboard: React.FC = () => {
   const activeTickets = tickets.filter((t) => t.status !== 'closed');
   const archivedTickets = tickets.filter((t) => t.status === 'closed');
 
-  // Current Working Dataset
-  const currentTicketPool = activeView === 'archive' ? archivedTickets : activeTickets;
-
-  // Filtered tickets
-  const filteredTickets = currentTicketPool.filter((t) => {
+  // Filtered active tickets (for Semua Tiket workspace)
+  const filteredActiveTickets = activeTickets.filter((t) => {
     const matchCat = selectedCategory === 'all' || t.category.toLowerCase().includes(selectedCategory.toLowerCase());
     const matchStatus = selectedStatus === 'all' || (t.status || 'open') === selectedStatus;
     const matchSearch =
@@ -316,6 +315,23 @@ export const OperatorDashboard: React.FC = () => {
       (t.requester_email || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchCat && matchStatus && matchSearch;
   });
+
+  // Filtered archived tickets (Dedicated search for Arsip Tiket, e.g. TICK-20260903-6991, subject, requester, etc.)
+  const effectiveArchiveQuery = (archiveSearchQuery || searchQuery).trim().toLowerCase();
+  const filteredArchivedTickets = archivedTickets.filter((t) => {
+    if (!effectiveArchiveQuery) return true;
+    const matchId = t.ticket_id.toLowerCase().includes(effectiveArchiveQuery);
+    const matchSub = (t.subject || '').toLowerCase().includes(effectiveArchiveQuery);
+    const matchReq =
+      (t.requester_name || '').toLowerCase().includes(effectiveArchiveQuery) ||
+      (t.requester_email || '').toLowerCase().includes(effectiveArchiveQuery);
+    const matchCat = (t.category || '').toLowerCase().includes(effectiveArchiveQuery);
+    const matchLoc = (t.location || '').toLowerCase().includes(effectiveArchiveQuery);
+    return matchId || matchSub || matchReq || matchCat || matchLoc;
+  });
+
+  // Current Working Dataset
+  const filteredTickets = activeView === 'archive' ? filteredArchivedTickets : filteredActiveTickets;
 
   // Calculate Real Stats Strip
   const stats = {
@@ -447,8 +463,8 @@ export const OperatorDashboard: React.FC = () => {
             {/* VIEW: ARSIP TIKET */}
             {activeView === 'archive' && (
               <div className="flex flex-col gap-4 h-full">
-                {/* Clean, Light-themed Archive Header */}
-                <div className="flex items-center justify-between bg-white border border-[#E2E8F0]/80 rounded-[14px] p-4 shadow-2xs flex-wrap gap-3 flex-shrink-0">
+                {/* Clean, Light-themed Archive Header with Dedicated In-Page Search */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between bg-white border border-[#E2E8F0]/80 rounded-[14px] p-4 shadow-2xs gap-3 flex-shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[10px] bg-[#ECFDF5] border border-[#A7F3D0] flex items-center justify-center text-[#059669] flex-shrink-0">
                       <Archive size={20} />
@@ -456,35 +472,64 @@ export const OperatorDashboard: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <h2 className="text-[16px] font-bold text-[#0F172A]">Arsip Tiket Selesai</h2>
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]">
-                          {archivedTickets.length} Selesai
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]">
+                          {archivedTickets.length} Tersimpan
                         </span>
                       </div>
                       <p className="text-[12px] text-[#64748B]">
-                        Seluruh tiket yang telah tuntas ditangani otomatis tersimpan di sini agar antrean kerja aktif tidak menumpuk.
+                        Seluruh riwayat tiket yang telah tuntas ditangani tersimpan di sini dalam format tabel arsip.
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-[12px] text-[#64748B] flex items-center gap-1.5 bg-[#F8FAFC] border border-[#E2E8F0] px-3 py-1.5 rounded-[8px]">
-                    <span>Tiket otomatis diarsipkan saat berstatus <strong>Selesai</strong>.</span>
+                  {/* Dedicated In-Page Search Bar for Archive (Instant search by Ticket ID e.g. TICK-20260903-6991) */}
+                  <div className="relative w-full md:w-88 flex-shrink-0">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#64748B]">
+                      <Search size={15} />
+                    </div>
+                    <input
+                      type="text"
+                      value={archiveSearchQuery}
+                      onChange={(e) => setArchiveSearchQuery(e.target.value)}
+                      placeholder="Cari ID Tiket (cth: TICK-20260903-6991)..."
+                      className="w-full h-10 pl-9.5 pr-8 bg-[#F8FAFC] border border-[#CBD5E1] rounded-[10px] text-[13px] text-[#0F172A] placeholder-[#94A3B8] focus:bg-white focus:border-[#0D5C75] focus:ring-2 focus:ring-[#0D5C75]/15 transition-all outline-none"
+                    />
+                    {archiveSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setArchiveSearchQuery('')}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#94A3B8] hover:text-[#0F172A] cursor-pointer"
+                        title="Bersihkan pencarian"
+                      >
+                        <X size={15} />
+                      </button>
+                    )}
                   </div>
                 </div>
 
+                {/* Archive Search Feedback */}
+                {archiveSearchQuery && (
+                  <div className="flex items-center justify-between px-1 text-[12px] text-[#64748B] flex-shrink-0">
+                    <span>
+                      Hasil pencarian arsip untuk "<strong>{archiveSearchQuery}</strong>": {filteredArchivedTickets.length} tiket ditemukan
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setArchiveSearchQuery('')}
+                      className="text-[#0D5C75] font-semibold hover:underline cursor-pointer"
+                    >
+                      Reset Pencarian
+                    </button>
+                  </div>
+                )}
+
+                {/* Always Table Format for Archive View */}
                 <div className="flex-1 min-h-0">
-                  {layoutMode === 'kanban' ? (
-                    <SageKanbanBoard
-                      tickets={filteredTickets}
-                      onTicketClick={(t) => setSelectedTicket(t)}
-                      onStatusChange={handleStatusChange}
-                    />
-                  ) : (
-                    <SageTableView
-                      tickets={filteredTickets}
-                      onTicketClick={(t) => setSelectedTicket(t)}
-                      onStatusChange={handleStatusChange}
-                    />
-                  )}
+                  <SageTableView
+                    tickets={filteredArchivedTickets}
+                    onTicketClick={(t) => setSelectedTicket(t)}
+                    onStatusChange={handleStatusChange}
+                  />
                 </div>
               </div>
             )}

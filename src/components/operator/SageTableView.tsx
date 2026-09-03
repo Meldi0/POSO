@@ -87,7 +87,7 @@ export const SageTableView: React.FC<SageTableViewProps> = ({
               </tr>
             ) : (
               sortedTickets.map((ticket) => {
-                const parsed = parseTicketDetails(ticket.description, ticket.category);
+                const parsed = parseTicketDetails(ticket.description, ticket.category, ticket.attachments);
                 return (
                   <tr
                     key={ticket.ticket_id}

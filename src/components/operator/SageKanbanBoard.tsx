@@ -14,7 +14,6 @@ const columns: { id: TicketStatus; label: string; color: string; bg: string; bor
   { id: 'open', label: 'Open', color: '#0284C7', bg: '#EFF6FF', border: '#BAE6FD' },
   { id: 'in_progress', label: 'In Progress', color: '#8B5CF6', bg: '#F5F3FF', border: '#DDD6FE' },
   { id: 'waiting', label: 'Menunggu', color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
-  { id: 'closed', label: 'Selesai', color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
 ];
 
 export const SageKanbanBoard: React.FC<SageKanbanBoardProps> = ({
@@ -39,16 +38,17 @@ export const SageKanbanBoard: React.FC<SageKanbanBoardProps> = ({
     setDragOverColumn(null);
   };
 
-  const handleDrop = (colId: TicketStatus) => {
-    if (draggingTicket && draggingTicket.status !== colId) {
-      onStatusChange(draggingTicket, colId);
+  const handleDrop = (targetStatus: TicketStatus) => {
+    if (!draggingTicket) return;
+    if (draggingTicket.status !== targetStatus) {
+      onStatusChange(draggingTicket, targetStatus);
     }
     setDraggingTicket(null);
     setDragOverColumn(null);
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 h-full min-h-0 items-start overflow-x-auto pb-4 custom-scrollbar">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full min-h-0 items-start overflow-x-auto pb-4 custom-scrollbar">
       {columns.map((col) => {
         const colTickets = tickets.filter((t) => (t.status || 'open') === col.id);
         const isDragTarget = dragOverColumn === col.id;
