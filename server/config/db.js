@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 // Load .env from project root
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const isSsl = process.env.DB_SSL === 'true' || process.env.DB_SSL === 'REQUIRED';
+const isSsl = process.env.DB_SSL === 'true' || process.env.DB_SSL === 'REQUIRED' || (process.env.DB_HOST && process.env.DB_HOST.includes('aivencloud.com'));
 
 export const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -18,7 +18,7 @@ export const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || 'defaultdb',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: process.env.VERCEL ? 3 : 10,
   queueLimit: 0,
   ssl: isSsl ? { rejectUnauthorized: false } : undefined,
   enableKeepAlive: true,

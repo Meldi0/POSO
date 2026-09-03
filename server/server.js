@@ -25,6 +25,7 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Mount API routes
 app.use('/api', apiRouter);
+app.use(apiRouter); // Fallback for Vercel serverless rewrite if /api prefix is stripped
 
 // Root health
 app.get('/', (req, res) => {
@@ -55,16 +56,19 @@ app.use((err, req, res, next) => {
   });
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(` POSO Backend API Server running on port ${PORT}`);
-  console.log(` Database: Aiven for MySQL (SSL Mode: REQUIRED)`);
-  console.log(` API URL : http://localhost:${PORT}/api`);
-  console.log(`=======================================================`);
-});
+// Only listen locally, Vercel serverless handles HTTP natively
+if (!process.env.VERCEL) {
+  const server = app.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(` POSO Backend API Server running on port ${PORT}`);
+    console.log(` Database: Aiven for MySQL (SSL Mode: REQUIRED)`);
+    console.log(` API URL : http://localhost:${PORT}/api`);
+    console.log(`=======================================================`);
+  });
 
-server.on('error', (err) => {
-  console.error('Server Fatal Error on listen:', err);
-});
+  server.on('error', (err) => {
+    console.error('Server Fatal Error on listen:', err);
+  });
+}
 
 export default app;
