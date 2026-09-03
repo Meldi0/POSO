@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
-## Aplikasi: POSO — Sistem Helpdesk & Manajemen Tiket Terpadu (v2.0)
+## Aplikasi: POSO — Sistem Helpdesk & Manajemen Tiket Terpadu (v2.1)
 
-**Versi:** 2.0 (Responsive & Interactive Architecture)  
+**Versi:** 2.1 (Universal Attachment Viewer & Real-Time Customer Notification Subsystem)  
 **Status:** Live & Implemented  
 **Tipe Dokumen:** Product Requirements & Technical Specification Document  
 
@@ -9,9 +9,9 @@
 
 ## 1. Ringkasan Produk
 
-**POSO Helpdesk** adalah sistem helpdesk dan manajemen tiket terpadu modern multi-channel berbasis **React 18 + TypeScript + Vite** dengan antarmuka **Ocean Cyan Glassmorphism**, didukung backend serverless **Google Apps Script REST API**, penyimpanan berkas **Google Drive**, serta basis data **Google Sheets**.
+**POSO Helpdesk** adalah sistem helpdesk dan manajemen tiket terpadu modern multi-channel berbasis **React 18 + TypeScript + Vite** dengan antarmuka **Ocean Cyan Glassmorphism**, didukung backend serverless **Google Apps Script REST API**, penyimpanan berkas **Google Drive**, basis data **Google Sheets**, serta subsistem komunikasi & notifikasi real-time instan (**WebSocket + Universal LocalStorage Event + BroadcastChannel + Web Audio API**).
 
-Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk, Teknisi UPT, dan Super Administrator*), mendukung pengunggahan foto bukti kerusakan, pemisahan percakapan publik dan catatan internal, *Live Ticket Preview*, *Interactive Kanban Board*, notifikasi *Toast*, serta desain **100% responsif di perangkat mobile, tablet, dan desktop**.
+Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk, Teknisi UPT, dan Super Administrator*), mendukung pengunggahan foto bukti kerusakan dengan pratinjau thumbnail dan Lightbox modal langsung, pemisahan percakapan publik dan catatan internal, *Live Ticket Preview*, *Interactive Kanban Board*, sistem notifikasi multi-lapisan untuk staf dan pelanggan, serta desain **100% responsif di perangkat mobile, tablet, dan desktop**.
 
 ---
 
@@ -21,12 +21,14 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk,
 |---|---|---|
 | **Frontend Framework** | React 18 + TypeScript + Vite | SPA dengan perutean berbasis `react-router-dom` v7 |
 | **Styling & Design System** | Tailwind CSS + CSS Custom Tokens | Desain Glassmorphism modern, Apple-inspired spring physics, pulse glow |
-| **Micro-Interactions** | Framer Motion v11 | Animasi transisi layout, popup modal, slide drawer, toast alerts |
+| **Micro-Interactions** | Framer Motion v11 | Animasi transisi layout, popup modal, slide drawer, toast alerts, badge bounce |
 | **Iconography** | Lucide React Icons | 100% Ikon vektor profesional |
-| **Penyimpanan Berkas** | Google Drive API (`DriveApp`) | File lampiran disimpan di Google Drive Folder resmi |
-| **Backend REST API** | Google Apps Script (`doGet` & `doPost`) | Penanganan request RESTful, JSON Payload, Selective LockService |
-| **Basis Data Master** | Google Sheets (`POSO Master Database`) | Penyimpanan terstruktur: `Tickets`, `Users`, `Ticket_Threads` |
-| **Notifikasi Global** | Custom Floating Toast Context | Notifikasi mengapung responsif dengan progress timer dan auto-dismiss |
+| **Audio Synthesizer** | Web Audio API (Native 0ms Latency) | Penghasil nada ganda harmonik C6/G6 tanpa dependensi file audio eksternal |
+| **Notifikasi Browser** | Web Push Notification API | Peringatan desktop/smartphone saat tab peramban sedang tidak aktif |
+| **Penyimpanan Berkas** | Google Drive API (`DriveApp`) + Google CDN | File lampiran disimpan di Google Drive resmi; thumbnail via `lh3.googleusercontent.com/d/{id}` |
+| **Backend REST API** | Google Apps Script (`doGet` & `doPost`) | Penanganan request RESTful, JSON Payload, Selective LockService, Sanitizer |
+| **Basis Data Master** | Google Sheets (`POSO Master Database`) | Penyimpanan terstruktur: `Tickets`, `Users`, `Ticket_Threads`, `Audit_Log` |
+| **Real-time Sync Engine** | WebSocket + BroadcastChannel + Storage Events | Sinkronisasi pesan dan status lintas tab dan lintas perangkat (<50ms) |
 
 ---
 
@@ -50,7 +52,7 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk,
 
 ## 4. Struktur Modul & Fitur Utama
 
-### 4.1 Portal Publik (Untuk Tamu & Pengguna Umum)
+### 4.1 Portal Publik & Pelanggan
 1. **Beranda Institusional (`/`)**:
    - Banner hero interaktif dengan 2 kartu aksi utama: **[Ajukan Tiket Baru]** dan **[Lacak Status Tiket]**.
    - Katalog 6 bidang layanan dengan filter chip interaktif.
@@ -61,11 +63,18 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk,
    - Kotak tips cerdas berbasis kategori yang dipilih.
    - Modal sukses pengajuan dengan tombol 1-klik salin nomor ID tiket.
 3. **Pelacak Status Tiket Mandiri (`/track`)**:
-   - **Stepper Timeline 4 Tahap Visual** (*Laporan Masuk, Triase Helpdesk, Pengerjaan UPT, Selesai*) dengan node beranimasi status terkini.
-   - Galeri foto lampiran dengan zoom Lightbox.
-   - Formulir kirim tanggapan balasan langsung dari pelapor.
+   - **Stepper Timeline 4 Tahap Visual** (*Laporan Masuk, Triase Helpdesk, Pengerjaan UPT, Selesai*) dengan node status beranimasi.
+   - **Galeri Foto & Lampiran Universal**: Pratinjau thumbnail langsung (termasuk foto Google Drive) dengan Lightbox perbesar layar penuh.
+   - **Notifikasi Real-time Pelanggan**:
+     - Nada denting ganda (*Web Audio API*) saat teknisi merespons.
+     - Notifikasi browser desktop (*Push Notification*).
+     - Banner respons live di bagian atas layar.
+     - Notifikasi pembaruan status pengerjaan tiket oleh UPT.
+   - Kolom percakapan dua arah dengan pemisahan identitas (*Tanggapan Pelapor* vs *Petugas UPT*).
 4. **Halaman Tiket Saya (`/my-tickets`)**:
-   - Filter tab status (*Semua, Open, In Progress, Waiting, Closed*), pencarian cepat, dan kartu tiket dengan animasi mikro.
+   - Filter tab status (*Semua, Open, In Progress, Waiting, Closed*), pencarian cepat, dan kartu tiket dengan indikator jumlah foto lampiran.
+   - **Lonceng Notifikasi (*Notification Bell*)**: Dropdown daftar balasan baru dengan counter badge merah.
+   - **Floating Chat Badge**: Widget mengambang di pojok kanan bawah dengan popup preview balasan terbaru dan tombol navigasi langsung ke `/track?id=...`.
 5. **Autentikasi (`/login` & `/register`)**:
    - Form pendaftaran mandiri khusus pengguna umum.
    - Tombol 1-klik demo akun (*Super Admin, Operator, Pelapor*).
@@ -75,17 +84,17 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk,
    - Desktop rail mode + Mobile slide drawer.
    - Indikator status sesi online, kartu user profil, dan penghitung tiket aktif/selesai.
 2. **Top Bar Header**:
-   - Kolom pencarian instan (`Ctrl+K`), filter kategori, filter rentang tanggal, dan toggle papan Kanban vs Tabel.
+   - Kolom pencarian instan (`Ctrl+K`), filter kategori, filter rentang tanggal, toggle papan Kanban vs Tabel, dan **Notification Bell**.
    - Tombol refresh data dengan feedback animasi.
 3. **Papan Triase Kanban**:
    - Kolom status: `Tiket Masuk (Open)`, `Sedang Dikerjakan UPT (In Progress)`, `Menunggu Respon (Waiting)`, dan `Selesai (Closed)`.
    - Tombol aksi 1-klik langsung pada kartu: `[ Proses ]` dan `[ Selesai ]`.
 4. **Laci Detail Tiket Bertab (`SageTicketDrawer`)**:
-   - **Tab Diskusi**: Percakapan publik dengan pelapor dan catatan internal staf (🔒).
+   - **Tab Diskusi**: Percakapan publik dengan pelapor dan catatan internal staf (🔒) dengan galeri foto terintegrasi.
    - **Tab Triase & UPT**: Pengaturan status tiket dan penugasan teknisi UPT.
    - **Tab Info & SLA**: Detail pelapor, tanggal, dan target waktu SLA.
-5. **Floating Action Button (FAB)**:
-   - Tombol mengambang di kanan bawah untuk pembuatan tiket cepat dari mana saja.
+5. **Floating Chat Badge & FAB**:
+   - Bubble interaktif untuk membuka percakapan aktif dan tombol pembuatan tiket cepat.
 
 ### 4.3 Modul Administrasi
 1. **Manajemen Pengguna & Staf (`UserManagement`)**:
@@ -93,48 +102,42 @@ Sistem ini melayani 4 peran pengguna (*Pengguna Umum/Pelapor, Operator Helpdesk,
    - Penugasan unit kerja teknis spesifik untuk akun UPT.
 2. **Konfigurasi Sumber Data (`DataSourceConfig`)**:
    - Pemantauan ID Google Spreadsheet aktif dan Folder Google Drive penyimpanan berkas.
+   - Uji latensi koneksi (*Ping test*) ke backend Google Apps Script.
 
 ---
 
-## 5. Skema Basis Data Google Sheets
+## 5. Pipeline Pengolahan Lampiran & Gambar (Image Pipeline)
 
-### Sheet 1: `Tickets`
-| Kolom | Tipe | Deskripsi |
-|---|---|---|
-| `ticket_id` | String | ID Unik Tiket (contoh: `TICK-20260901-1001`) |
-| `created_at` | ISO Date String | Waktu pembuatan tiket |
-| `updated_at` | ISO Date String | Waktu pembaruan terakhir |
-| `subject` | String | Judul keluhan atau laporan |
-| `category` | String | Kategori permasalahan teknis |
-| `description` | Text | Penjelasan rinci kendala |
-| `status` | String | `open` \| `in_progress` \| `waiting` \| `closed` |
-| `priority` | String | `low` \| `medium` \| `high` \| `urgent` |
-| `channel` | String | Saluran masuk (`web` \| `email`) |
-| `requester_email`| String | Alamat email pelapor |
-| `assigned_upt` | String | Unit teknis penanggung jawab |
-| `assigned_operator` | String | Email staf helpdesk pengelola |
-| `sla_due_at` | ISO Date String | Batas waktu penyelesaian SLA |
+```
+[Pelapor Mengunggah Foto] 
+         │
+         ▼
+[Google Apps Script: uploadToDrive] ──> Simpan ke Folder Google Drive Instansi
+         │
+         ▼
+[Google Sheets: Ticket_Threads] ─────> Format URL Berkas Terenkripsi
+         │
+         ▼
+[Frontend: ticketFormatter.ts] ──────> Ekstrak Google Drive File ID
+         │                             └─> Direct Thumbnail CDN: https://lh3.googleusercontent.com/d/{id}
+         ▼
+[AttachmentGallery.tsx] ─────────────> 1. Thumbnail Box dengan auto-fallback
+                                       2. Lightbox Modal Full-Screen Zoom
+                                       3. Tombol [Buka di Google Drive / Tab Baru]
+```
 
-### Sheet 2: `Users`
-| Kolom | Tipe | Deskripsi |
-|---|---|---|
-| `user_id` | String | ID Pengguna (contoh: `USR-ADMIN01`) |
-| `name` | String | Nama lengkap pengguna |
-| `email` | String | Email untuk login |
-| `password_hash` | String | Hash kata sandi |
-| `role` | String | `admin` \| `operator` \| `upt` \| `pengguna_umum` |
-| `upt_unit` | String | Nama unit UPT jika role adalah `upt` |
-| `is_active` | Boolean | Status aktif akun (`TRUE` / `FALSE`) |
-| `created_by` | String | Pembuat akun |
-| `created_at` | ISO Date String | Waktu pendaftaran |
+---
 
-### Sheet 3: `Ticket_Threads`
-| Kolom | Tipe | Deskripsi |
-|---|---|---|
-| `thread_id` | String | ID Pesan (contoh: `TH-a1b2c3d4`) |
-| `ticket_id` | String | ID Tiket terkait |
-| `sender_id` | String | ID Pengirim pesan |
-| `sender_role` | String | Peran pengirim saat membalas |
-| `message` | Text | Isi pesan / balasan / catatan internal |
-| `visibility` | String | `public` (terlihat pelapor) \| `internal` (khusus staf) |
-| `created_at` | ISO Date String | Waktu pengiriman pesan |
+## 6. Skema Basis Data Google Sheets
+
+### 6.1 Sheet `Tickets`
+`ticket_id` | `created_at` | `updated_at` | `subject` | `category` | `description` | `status` | `priority` | `channel` | `requester_name` | `requester_email` | `assigned_upt` | `assigned_operator` | `sla_due_at`
+
+### 6.2 Sheet `Ticket_Threads`
+`thread_id` | `ticket_id` | `sender_id` | `sender_role` | `message` | `visibility` | `created_at`
+
+### 6.3 Sheet `Users`
+`user_id` | `name` | `email` | `password_hash` | `salt` | `role` | `assigned_upt` | `created_at`
+
+### 6.4 Sheet `Audit_Log`
+`log_id` | `timestamp` | `user_id` | `action` | `target_id` | `details`

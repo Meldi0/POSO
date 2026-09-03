@@ -1,8 +1,8 @@
-# POSO — Sistem Helpdesk & Manajemen Tiket Terpadu (v2.0)
+# POSO — Sistem Helpdesk & Manajemen Tiket Terpadu (v2.1)
 
-Aplikasi Helpdesk dan Manajemen Tiket Terpadu Modern berbasis **React 18 + TypeScript + Vite** dengan desain visual **Ocean Cyan & Glassmorphism**, didukung backend serverless **Google Apps Script REST API**, penyimpanan berkas **Google Drive**, basis data **Google Sheets**, serta sistem komunikasi real-time instan (**WebSocket + Universal LocalStorage Event + BroadcastChannel**).
+Aplikasi Helpdesk dan Manajemen Tiket Terpadu Modern berbasis **React 18 + TypeScript + Vite** dengan desain visual **Ocean Cyan & Glassmorphism**, didukung backend serverless **Google Apps Script REST API**, penyimpanan berkas **Google Drive**, basis data **Google Sheets**, serta sistem komunikasi & notifikasi real-time instan (**WebSocket + Universal LocalStorage Event + BroadcastChannel + Web Audio API**).
 
-Aplikasi ini dirancang **100% responsif** (ponsel, tablet, desktop) dan kaya akan interaktivitas seperti animasi mikro (*Framer Motion*), sistem notifikasi audio visual (*Toast & Chime Alerts*), *Live Ticket Preview*, *Interactive Kanban Board*, dan *Multi-Tab Isolated Session Architecture*.
+Aplikasi ini dirancang **100% responsif** (ponsel, tablet, desktop) dengan fitur unggulan: **Galeri Foto & Pratinjau Lampiran Google Drive Terpadu**, **Sistem Notifikasi Real-time Pelanggan & Staf**, *Live Ticket Preview*, *Interactive Kanban Board*, dan *Multi-Tab Isolated Session Architecture*.
 
 ---
 
@@ -11,7 +11,7 @@ Aplikasi ini dirancang **100% responsif** (ponsel, tablet, desktop) dan kaya aka
 ```
 POSO/
 ├── backend/
-│   ├── Code.gs             # Backend Apps Script: REST API, LockService, Drive File Upload, Sanitizer & Threading
+│   ├── Code.gs             # Backend Apps Script: REST API, LockService, Google Drive File Storage & Threading
 │   ├── appsscript.json     # Manifest Apps Script (OAuth Scopes & Service Declarations)
 │   └── PANDUAN_SETUP_BACKEND.md # Panduan setup & deployment Google Apps Script
 ├── src/
@@ -22,7 +22,7 @@ POSO/
 │   │   ├── auth/
 │   │   │   └── AuthGuard.tsx           # Pelindung rute login & otorisasi RBAC
 │   │   ├── common/
-│   │   │   ├── AttachmentGallery.tsx   # Galeri thumbnail gambar asli & Lightbox zoom modal
+│   │   │   ├── AttachmentGallery.tsx   # Galeri thumbnail gambar asli, Google CDN preview & Lightbox modal
 │   │   │   ├── Badge.tsx               # Komponen badge status/prioritas
 │   │   │   ├── ErrorBoundary.tsx       # Penangkap error React DOM runtime yang aman
 │   │   │   └── Modal.tsx               # Komponen modal dialog responsif
@@ -48,16 +48,16 @@ POSO/
 │   │   └── public/
 │   │       ├── LandingPage.tsx         # Beranda publik, filter bidang layanan, metrik performa & SLA
 │   │       ├── PublicTicketForm.tsx    # Formulir tiket baru + Live Ticket Preview + Drag & Drop upload
-│   │       ├── PublicTicketTracker.tsx # Pelacak tiket mandiri dengan Stepper Timeline 4 tahap & live chat
-│   │       └── MyTicketsPage.tsx       # Portal daftar tiket pengaduan milik pelapor terdaftar
+│   │       ├── PublicTicketTracker.tsx # Pelacak tiket mandiri dengan Stepper Timeline 4 tahap, chat & audio notif
+│   │       └── MyTicketsPage.tsx       # Portal daftar tiket pelapor + Lonceng Notifikasi & Floating Chat
 │   ├── services/
 │   │   ├── api.ts                      # Klien API terintegrasi Google Apps Script Web App & Mock Storage
 │   │   └── realtime.ts                 # Layanan WebSocket, BroadcastChannel & LocalStorage realtime sync
 │   ├── types/
 │   │   └── index.ts                    # Definisi tipe data TypeScript (Ticket, Thread, User, ApiResponse)
 │   ├── utils/
-│   │   ├── sound.ts                    # Layanan audio chimes & Web Browser Notifications
-│   │   └── ticketFormatter.ts          # Parser deskripsi, lampiran, dan format tanggal aman
+│   │   ├── sound.ts                    # Layanan audio synthesizer (Web Audio API) & Web Browser Notifications
+│   │   └── ticketFormatter.ts          # Parser deskripsi, ekstraksi lampiran/Google Drive, & pembersih teks
 │   ├── App.tsx                         # Konfigurasi router & provider global
 │   ├── index.css                       # Desain sistem Glassmorphism, smooth scrollbar & pulse glowing
 │   ├── main.tsx                        # Entry point React
@@ -114,56 +114,55 @@ Pada halaman **Login (`/login`)**, Anda dapat menggunakan kredensial berikut ata
 | **2. Operator Helpdesk** | `operator@poso.local` | `Operator123!` | Triase tiket Kanban, delegasi tiket ke unit UPT, chat langsung dengan pelapor, monitoring SLA dan status tiket. |
 | **3. Staf UPT TI & Jaringan** | `upt.ti@poso.local` | `Poso123!` | Penanganan teknis tiket bidang TI & Sistem Informasi, update progres, dan catatan penyelesaian. |
 | **4. Staf UPT Sarana & Prasarana** | `upt.sarpras@poso.local` | `Poso123!` | Penanganan teknis tiket sarana, fasilitas gedung, dan kelistrikan. |
-| **5. Pengguna Umum (Pelapor)** | `dewi@gmail.com` | `User123!` | Pengajuan tiket pengaduan, pelacakan progres 4-tahap, chat dua arah dengan petugas, dan riwayat tiket pribadi. |
+| **5. Pengguna Umum (Pelapor)** | `dewi@gmail.com` | `User123!` | Pengajuan tiket pengaduan, pelacakan progres 4-tahap, chat dua arah dengan petugas, notifikasi suara/browser, dan riwayat tiket pribadi. |
 
 ---
 
 ## 4. FITUR UTAMA & KEUNGGULAN SISTEM
 
-1. **Komunikasi Realtime Dua Arah & Separasi Identitas Ketat**:
-   - **Obrolan Instan (<50ms)**: Balasan dari Admin/Petugas maupun Pelapor langsung terkirim tanpa delay.
-   - **Separasi Identitas**: Pesan dari Pelapor tampil sebagai *Tanggapan Pelapor* (ikon User abu-abu) dan pesan dari Admin/Teknisi tampil sebagai *Petugas* (ikon Headphone biru). Identitas pelapor terkunci dan tidak dapat tertimpa menjadi staf.
-   - **Notifikasi Multi-Lapisan**: Dilengkapi lonceng notifikasi di navbar, audio chime pengingat, dan widget chat mengambang ala WhatsApp/Telegram di pojok kanan bawah.
+1. **Galeri Foto & Pratinjau Lampiran Google Drive Terpadu**:
+   - **Ekstraksi Tautan Otomatis**: Tautan Google Drive (`/file/d/{id}` atau `id={id}`) otomatis diekstrak File ID-nya dan dikonversi menjadi thumbnail Google CDN (`https://lh3.googleusercontent.com/d/{id}`).
+   - **Tampilan Bersih**: Kode mentah `[Lampiran Berkas]` otomatis dihilangkan dari isi chat dan digantikan galeri foto interaktif.
+   - **Lightbox Modal Perbesar**: Pengguna dapat memperbesar gambar ke ukuran penuh, menyalin tautan, atau membuka langsung di Google Drive / tab baru.
 
-2. **Isolasi Sesi Multi-Tab (`sessionStorage` Architecture)**:
-   - Sesi login diisolasi secara independen per-tab. Anda dapat membuka Tab Admin dan Tab Pelapor dalam satu peramban yang sama, dan keduanya **tidak akan tertukar saat di-refresh (Ctrl+R / Ctrl+F5)**.
+2. **Sistem Notifikasi Real-time Pelanggan & Staf**:
+   - **Audio Chime (Web Audio API)**: Suara denting ganda harmonik C6/G6 (0ms latency tanpa file audio eksternal) berbunyi instan saat ada balasan teknisi atau perubahan status.
+   - **Web Browser Push Notification**: Notifikasi desktop tetap muncul meskipun tab sedang berada di latar belakang.
+   - **Live Response Banner**: Banner respons interaktif di bagian atas halaman saat teknisi membalas.
+   - **Notification Bell Dropdown**: Lonceng notifikasi dengan badge angka belum dibaca pada dashboard staf dan portal pelanggan (`/my-tickets`).
+   - **Floating Chat Badge**: Widget mengambang di kanan bawah yang memunculkan bubble preview tanggapan terbaru dengan tombol langsung ke pelacakan tiket.
 
-3. **Antarmuka Sepenuhnya Responsif (Mobile-First)**:
-   - **Mobile Drawer Menu**: Navigasi sidebar tersembunyi rapi di ponsel dan dapat dibuka melalui tombol hamburger.
-   - **Desktop Mini-Rail**: Sidebar desktop dapat diperkecil menjadi mode ringkas (*compact icon mode*) untuk memaksimalkan area kerja.
-   - **Kanban Column Switcher**: Pengguna ponsel dapat beralih antar kolom status secara instan tanpa kesulitan menggeser layar secara horizontal.
-   - **Tabel Adaptif**: Berubah menjadi *card list* yang rapi di layar ponsel dan tabel data interaktif dengan fitur pengurutan (*sorting*) di layar besar.
+3. **Komunikasi Dua Arah & Separasi Identitas Ketat**:
+   - **Obrolan Instan (<50ms)**: Balasan terkirim secara instan melalui WebSocket, BroadcastChannel, dan storage events.
+   - **Pemisahan Identitas Visual**: Pesan dari Pelapor berlabel *Tanggapan Pelapor* (ikon User abu-abu) dan pesan dari Admin/Teknisi berlabel *Petugas UPT* (ikon Headphone biru).
 
-4. **Live Ticket Preview & Smart Category Hints**:
-   - Pada formulir pengaduan publik ([PublicTicketForm.tsx](file:///c:/ticket-dashboard/src/pages/public/PublicTicketForm.tsx)), pengguna dapat melihat pratinjau kartu tiket secara real-time (*live preview*) saat mengetik.
-   - Dilengkapi panduan cepat penanganan (*smart tips*) sesuai kategori keluhan yang dipilih.
+4. **Isolasi Sesi Multi-Tab (`sessionStorage` Architecture)**:
+   - Sesi login diisolasi secara independen per-tab. Anda dapat membuka Tab Admin dan Tab Pelapor dalam satu peramban yang sama tanpa tertukar saat di-refresh.
 
-5. **Stepper Timeline Visual Pelacak Tiket**:
-   - Pada pelacak tiket ([PublicTicketTracker.tsx](file:///c:/ticket-dashboard/src/pages/public/PublicTicketTracker.tsx)), kemajuan pengerjaan tiket divisualisasikan dalam 4 tahapan (*Laporan Masuk, Triase Helpdesk, Pengerjaan UPT, Selesai*) dengan node status yang beranimasi.
-
-6. **Drawer Detail Tiket Bertab (Multi-Tab)**:
-   - **Tab Diskusi**: Percakapan publik dengan pelapor dan catatan internal khusus staf (🔒).
-   - **Tab Triase & UPT**: Ubah status tiket (*Open, In Progress, Waiting, Closed*) dan delegasikan ke unit UPT terkait.
-   - **Tab Info & SLA**: Detail pelapor, tanggal pembuatan, target batas waktu SLA, dan panduan SOP.
+5. **Antarmuka Sepenuhnya Responsif (Mobile-First)**:
+   - **Mobile Drawer Menu**: Navigasi sidebar tersembunyi rapi di ponsel dengan tombol hamburger.
+   - **Desktop Mini-Rail**: Sidebar desktop dapat diperkecil menjadi mode rail ikon ramping.
+   - **Kanban Column Switcher**: Pengguna ponsel dapat berpindah antar kolom status tiket dengan tombol pill interaktif.
+   - **Tabel Adaptif**: Berubah menjadi format kartu responsif pada smartphone.
 
 ---
 
 ## 5. INTEGRASI GOOGLE WORKSPACE & APPS SCRIPT
 
-### Konfigurasi Database:
-* **Folder Google Drive (Upload Lampiran)**: Folder Google Drive publik/organisasi untuk menampung file lampiran bukti pengaduan.
-* **Google Spreadsheet Master Database**: Spreadsheet yang memuat sheet `Tickets`, `Threads`, `Users`, `Settings`, `AuditLogs`.
-* **Deployment Web App URL** (`.env`):
-  ```env
-  VITE_GAS_API_URL=https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec
-  ```
+### Panduan Menyimpan File ke Folder Google Drive Tertentu:
+1. Buka [Google Drive](https://drive.google.com) dan buat folder (misal: `POSO_Lampiran_Tiket`).
+2. Salin **Folder ID** dari URL folder (contoh: `https://drive.google.com/drive/folders/1RqlknF3O-0gXcTeX0JfO9FzyBESq-hwR` -> ID-nya adalah `1RqlknF3O-0gXcTeX0JfO9FzyBESq-hwR`).
+3. Buka file [`backend/Code.gs`](file:///c:/Users/Asus/Documents/POSIND/POSO/backend/Code.gs) baris 23 dan masukkan Folder ID Anda:
+   ```javascript
+   const TARGET_CLIENT_FOLDER_ID = '1RqlknF3O-0gXcTeX0JfO9FzyBESq-hwR';
+   ```
 
-### Panduan Deploy Google Apps Script:
-1. Buka Google Sheets database Anda.
-2. Pilih menu **Ekstensi > Apps Script**.
-3. Salin isi file `backend/Code.gs` ke editor Apps Script.
-4. Buka **Project Settings (Ikon Gerigi)** > centang **"Show 'appsscript.json' manifest file in editor"**.
-5. Buka tab `appsscript.json` dan pastikan isinya sesuai dengan `backend/appsscript.json`.
-6. Klik **Deploy > Manage deployments > Edit > New version > Deploy**.
-7. Pastikan hak akses disetel ke **"Anyone" (Siapa saja)**.
-8. Salin URL Web App (`/exec`) dan tempelkan ke file `.env` aplikasi Anda.
+### Panduan Deploy Google Apps Script (Agar Masuk ke Akun Khusus):
+1. Buka [https://script.google.com](https://script.google.com) pada akun Google yang ingin dijadikan tempat penyimpanan.
+2. Buat **New Project** dan tempel seluruh isi file [`backend/Code.gs`](file:///c:/Users/Asus/Documents/POSIND/POSO/backend/Code.gs).
+3. Buka **Project Settings** (Ikon Gerigi) > centang **"Show 'appsscript.json' manifest file in editor"**.
+4. Buka tab `appsscript.json` dan pastikan isinya sesuai dengan `backend/appsscript.json`.
+5. Klik **Deploy > New deployment > Web app**:
+   - **Execute as**: `Me (email-akun-anda@gmail.com)` *(Memastikan file masuk ke akun ini)*
+   - **Who has access**: `Anyone` *(Agar frontend web dapat mengirim tiket & foto)*
+6. Salin URL Web App (`/exec`) dan tempelkan ke menu **Pengaturan Data Source** di web atau di file `.env`.
